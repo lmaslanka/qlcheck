@@ -1,0 +1,4 @@
+# Directories Qlcheck will not scan. Gitignore syntax.
+bin/
+obj/
+.git/

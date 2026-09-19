@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")"
+
+prefix="${XDG_DATA_HOME:-$HOME/.local/share}/qlcheck"
+bindir="${XDG_BIN_HOME:-$HOME/.local/bin}"
+
+dotnet publish src/Qlcheck/Qlcheck.csproj -c Release -o "$prefix" --nologo
+mkdir -p "$bindir"
+ln -sfn "$prefix/qlcheck" "$bindir/qlcheck"
+
+echo "Installed $bindir/qlcheck"
+if [[ ":$PATH:" != *":$bindir:"* ]]; then
+  echo "Add to PATH: export PATH=\"$bindir:\$PATH\""
+fi
