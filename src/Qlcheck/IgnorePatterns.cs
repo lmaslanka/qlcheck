@@ -7,7 +7,22 @@ public sealed class IgnorePatterns
 {
     public const string FileName = ".qlcheck_ignore";
 
-    private static readonly string[] Defaults = ["bin/", "obj/", ".git/"];
+    private static readonly string[] Defaults =
+    [
+        "bin/",
+        "obj/",
+        ".git/",
+        ".vs/",
+        ".idea/",
+        ".svn/",
+        ".hg/",
+        "node_modules/",
+        "bower_components/",
+        "packages/",
+        "TestResults/",
+        "coverage/",
+        "dist/",
+    ];
 
     private readonly IReadOnlyList<Rule> _rules;
 

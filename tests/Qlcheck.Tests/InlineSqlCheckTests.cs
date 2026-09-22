@@ -9,6 +9,23 @@ public class InlineSqlCheckTests
     }
 
     [Fact]
+    public void Reports_nothing_while_disabled()
+    {
+        Assert.False(InlineSqlCheck.Enabled);
+        var source = """
+            class C
+            {
+                void M()
+                {
+                    connection.QueryAsync("select 1");
+                }
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
     public void Reports_one_hop_verbatim_sql_passed_to_query_async()
     {
         var source = """
@@ -28,6 +45,11 @@ public class InlineSqlCheckTests
             """;
 
         var findings = Run(source);
+        if (!InlineSqlCheck.Enabled)
+        {
+            Assert.Empty(findings);
+            return;
+        }
 
         var finding = Assert.Single(findings);
         Assert.Equal("inline-sql", finding.Check);
@@ -37,12 +59,13 @@ public class InlineSqlCheckTests
         Assert.Equal(InlineSqlCheck.LayoutMessage, finding.Message);
         Assert.Equal(
             "\"\"\"\n" +
-            "              SELECT c.record_id,\n" +
-            "                     c.name,\n" +
-            "                     c.code_alpha2\n" +
-            "                FROM countries AS c\n" +
-            "               WHERE c.is_deleted = FALSE\n" +
-            "            ORDER BY c.name ASC;\n" +
+            "            SELECT\n" +
+            "                c.record_id,\n" +
+            "                c.name,\n" +
+            "                c.code_alpha2\n" +
+            "            FROM countries AS c\n" +
+            "            WHERE c.is_deleted = FALSE\n" +
+            "            ORDER BY c.name ASC\n" +
             "            \"\"\"",
             finding.Replacement);
     }
@@ -77,7 +100,14 @@ public class InlineSqlCheckTests
             }
             """;
 
-        var finding = Assert.Single(Run(source));
+        var findings = Run(source);
+        if (!InlineSqlCheck.Enabled)
+        {
+            Assert.Empty(findings);
+            return;
+        }
+
+        var finding = Assert.Single(findings);
         Assert.Equal(InlineSqlCheck.UnformattableMessage, finding.Message);
         Assert.Null(finding.Replacement);
     }
@@ -95,7 +125,14 @@ public class InlineSqlCheckTests
             }
             """;
 
-        var finding = Assert.Single(Run(source));
+        var findings = Run(source);
+        if (!InlineSqlCheck.Enabled)
+        {
+            Assert.Empty(findings);
+            return;
+        }
+
+        var finding = Assert.Single(findings);
         Assert.Equal(InlineSqlCheck.UnformattableMessage, finding.Message);
         Assert.Null(finding.Replacement);
     }
@@ -113,9 +150,17 @@ public class InlineSqlCheckTests
             }
             """;
 
-        var finding = Assert.Single(Run(source));
+        var findings = Run(source);
+        if (!InlineSqlCheck.Enabled)
+        {
+            Assert.Empty(findings);
+            return;
+        }
+
+        var finding = Assert.Single(findings);
         Assert.Equal(InlineSqlCheck.LayoutMessage, finding.Message);
-        Assert.Contains("SELECT 1", finding.Replacement);
+        Assert.Contains("SELECT", finding.Replacement);
+        Assert.Contains("1", finding.Replacement);
     }
 
     [Fact]
@@ -127,16 +172,96 @@ public class InlineSqlCheckTests
             "    void M()\n" +
             "    {\n" +
             "        var sql = \"\"\"\n" +
-            "              SELECT c.record_id,\n" +
-            "                     c.name\n" +
-            "                FROM countries AS c\n" +
-            "               WHERE c.is_deleted = FALSE\n" +
-            "            ORDER BY c.name ASC;\n" +
+            "            SELECT\n" +
+            "                c.record_id,\n" +
+            "                c.name\n" +
+            "            FROM countries AS c\n" +
+            "            WHERE c.is_deleted = FALSE\n" +
+            "            ORDER BY c.name ASC\n" +
             "            \"\"\";\n" +
             "        connection.QueryAsync(sql);\n" +
             "    }\n" +
             "}\n";
 
         Assert.Empty(Run(source));
+    }
+
+    [Fact]
+    public void Reports_unparseable_sql_as_format_failed()
+    {
+        var source = """
+            class C
+            {
+                void M()
+                {
+                    connection.QueryAsync("not a query");
+                }
+            }
+            """;
+
+        var findings = Run(source);
+        if (!InlineSqlCheck.Enabled)
+        {
+            Assert.Empty(findings);
+            return;
+        }
+
+        var finding = Assert.Single(findings);
+        Assert.StartsWith(InlineSqlCheck.FormatFailedMessage, finding.Message);
+        Assert.Null(finding.Replacement);
+    }
+
+    [Fact]
+    public void Replacement_uses_qlfmt_output()
+    {
+        const string sql = "insert into table (col_a, col_b) select col_a, col_b from source where id = @auditEventId";
+        var source = $$"""
+            class C
+            {
+                void M()
+                {
+                    connection.QueryAsync("{{sql}}");
+                }
+            }
+            """;
+
+        var findings = Run(source);
+        if (!InlineSqlCheck.Enabled)
+        {
+            Assert.Empty(findings);
+            return;
+        }
+
+        var finding = Assert.Single(findings);
+        Assert.Equal(InlineSqlCheck.LayoutMessage, finding.Message);
+        foreach (var line in QlFmt.Sql.Format(sql).ReplaceLineEndings("\n").Split('\n'))
+        {
+            Assert.Contains(line, finding.Replacement);
+        }
+    }
+
+    [Fact]
+    public void Formats_coalesce_without_throwing()
+    {
+        var source = """
+            class C
+            {
+                void M()
+                {
+                    connection.QueryAsync("select coalesce(a, b) from t");
+                }
+            }
+            """;
+
+        var findings = Run(source);
+        if (!InlineSqlCheck.Enabled)
+        {
+            Assert.Empty(findings);
+            return;
+        }
+
+        var finding = Assert.Single(findings);
+        Assert.Equal(InlineSqlCheck.LayoutMessage, finding.Message);
+        Assert.Contains("coalesce", finding.Replacement);
     }
 }

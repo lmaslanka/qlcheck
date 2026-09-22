@@ -57,7 +57,7 @@ public sealed class MagicLiteralCheck : ICheck
                 return false;
             }
 
-            if (IsIgnoredContext(literal))
+            if (IsIgnoredContext(literal) || IsCollectionElement(literal))
             {
                 return false;
             }
@@ -156,6 +156,26 @@ public sealed class MagicLiteralCheck : ICheck
             QualifiedNameSyntax q => q.Right.Identifier.Text,
             _ => type.ToString(),
         };
+    }
+
+    private static bool IsCollectionElement(LiteralExpressionSyntax literal)
+    {
+        for (var node = literal.Parent; node is not null; node = node.Parent)
+        {
+            if (node is CollectionExpressionSyntax)
+            {
+                return true;
+            }
+
+            if (node is InitializerExpressionSyntax init &&
+                (init.IsKind(SyntaxKind.ArrayInitializerExpression) ||
+                 init.IsKind(SyntaxKind.CollectionInitializerExpression)))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool IsIgnoredContext(LiteralExpressionSyntax literal)

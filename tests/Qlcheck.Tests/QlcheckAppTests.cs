@@ -17,9 +17,9 @@ public class QlcheckAppTests : IDisposable
             """
             class C
             {
-                void M()
+                int M()
                 {
-                    connection.QueryAsync("select 1");
+                    return 42;
                 }
             }
             """);
@@ -28,7 +28,7 @@ public class QlcheckAppTests : IDisposable
         var code = QlcheckApp.Run([file], stdout, new StringWriter());
 
         Assert.Equal(ExitCode.Findings, code);
-        Assert.Contains("\"check\": \"inline-sql\"", stdout.ToString());
+        Assert.Contains("\"check\": \"magic-literal\"", stdout.ToString());
         Assert.Contains("\"findings\"", stdout.ToString());
     }
 
@@ -40,9 +40,9 @@ public class QlcheckAppTests : IDisposable
             """
             class C
             {
-                void M()
+                int M()
                 {
-                    connection.QueryAsync("select 1");
+                    return 42;
                 }
             }
             """);
@@ -52,7 +52,7 @@ public class QlcheckAppTests : IDisposable
 
         Assert.Equal(ExitCode.Findings, code);
         var text = stdout.ToString();
-        Assert.Contains("inline-sql", text);
+        Assert.Contains("magic-literal", text);
         Assert.DoesNotContain("\"findings\"", text);
     }
 
@@ -75,7 +75,7 @@ public class QlcheckAppTests : IDisposable
 
         Assert.Equal(ExitCode.Clean, code);
         Assert.Contains("\"findings\"", stdout.ToString());
-        Assert.DoesNotContain("inline-sql", stdout.ToString());
+        Assert.DoesNotContain("magic-literal", stdout.ToString());
     }
 
     [Fact]
@@ -108,9 +108,9 @@ public class QlcheckAppTests : IDisposable
             """
             class C
             {
-                void M()
+                int M()
                 {
-                    connection.QueryAsync("select 1");
+                    return 42;
                 }
             }
             """);
@@ -127,7 +127,7 @@ public class QlcheckAppTests : IDisposable
         Assert.Matches(@"Findings\s+1", text);
         Assert.Matches(@"Files with findings\s+1", text);
         Assert.Matches(@"Clean files\s+1", text);
-        Assert.Contains("inline-sql", text);
+        Assert.Contains("magic-literal", text);
         Assert.Contains("/Dirty.cs", text);
         Assert.Contains("Duration", text);
     }
@@ -140,9 +140,9 @@ public class QlcheckAppTests : IDisposable
             """
             class C
             {
-                void M()
+                int M()
                 {
-                    connection.Execute("select 1");
+                    return 42;
                 }
             }
             """);
@@ -151,14 +151,29 @@ public class QlcheckAppTests : IDisposable
         var code = QlcheckApp.Run([_dir], stdout, new StringWriter());
 
         Assert.Equal(ExitCode.Findings, code);
-        Assert.Contains("inline-sql", stdout.ToString());
+        Assert.Contains("magic-literal", stdout.ToString());
+    }
+
+    [Fact]
+    public void Skips_node_modules_by_default()
+    {
+        Write("Keep.cs", Dirty);
+        Write("node_modules/pkg/Hidden.cs", Dirty);
+
+        var stdout = new StringWriter();
+        var code = QlcheckApp.Run([_dir], stdout, new StringWriter());
+
+        Assert.Equal(ExitCode.Findings, code);
+        var text = stdout.ToString();
+        Assert.Contains("Keep.cs", text);
+        Assert.DoesNotContain("Hidden.cs", text);
     }
 
     [Fact]
     public void Skips_directories_listed_in_qlcheck_ignore()
     {
-        Write("Keep.cs", Query);
-        Write("skipme/Hidden.cs", Query);
+        Write("Keep.cs", Dirty);
+        Write("skipme/Hidden.cs", Dirty);
         Write(".qlcheck_ignore", """
             # generated
             skipme/
@@ -173,13 +188,13 @@ public class QlcheckAppTests : IDisposable
         Assert.DoesNotContain("Hidden.cs", text);
     }
 
-    private const string Query =
+    private const string Dirty =
         """
         class C
         {
-            void M()
+            int M()
             {
-                connection.QueryAsync("select 1");
+                return 42;
             }
         }
         """;

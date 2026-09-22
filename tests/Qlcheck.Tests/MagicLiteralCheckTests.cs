@@ -154,4 +154,72 @@ public class MagicLiteralCheckTests
 
         Assert.Empty(Run(source));
     }
+
+    [Fact]
+    public void Skips_strings_in_array_initializer()
+    {
+        var source = """
+            class C
+            {
+                string[] M() => new string[] { "Aguascalientes", "Chiapas" };
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
+    public void Skips_strings_in_collection_initializer()
+    {
+        var source = """
+            class C
+            {
+                System.Collections.Generic.List<string> M() => new System.Collections.Generic.List<string> { "Chiapas" };
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
+    public void Skips_strings_in_collection_expression()
+    {
+        var source = """
+            class C
+            {
+                string[] M() => ["Chiapas"];
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
+    public void Reports_string_in_object_initializer()
+    {
+        var source = """
+            class Foo { public string Name; }
+            class C
+            {
+                Foo M() => new Foo { Name = "pending" };
+            }
+            """;
+
+        var finding = Assert.Single(Run(source));
+        Assert.Equal(MagicLiteralCheck.StringMessage("pending"), finding.Message);
+    }
+
+    [Fact]
+    public void Reports_number_in_array_initializer()
+    {
+        var source = """
+            class C
+            {
+                int[] M() => new int[] { 42 };
+            }
+            """;
+
+        var finding = Assert.Single(Run(source));
+        Assert.Equal(MagicLiteralCheck.NumberMessage("42"), finding.Message);
+    }
 }

@@ -39,4 +39,50 @@ public class UnusedUsingCheckTests
 
         Assert.Empty(Run(source));
     }
+
+    [Fact]
+    public void Ignores_using_whose_namespace_is_not_in_the_compilation()
+    {
+        var source = """
+            using Missing.Package;
+
+            class C
+            {
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
+    public void Ignores_using_that_is_used_when_types_are_not_in_the_compilation()
+    {
+        var source = """
+            namespace Tests;
+
+            using App.Status;
+
+            class C
+            {
+                void M() => Classifier.Run();
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
+    public void Ignores_using_when_file_has_unresolved_types()
+    {
+        var source = """
+            using System.Net.Http;
+
+            class C
+            {
+                IHttpClientFactory M() => null!;
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
 }

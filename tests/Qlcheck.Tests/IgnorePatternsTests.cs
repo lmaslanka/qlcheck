@@ -45,4 +45,26 @@ public class IgnorePatternsTests
 
         Assert.True(ignore.IsIgnored("skipme", isDirectory: true));
     }
+
+    [Theory]
+    [InlineData("bin")]
+    [InlineData("obj")]
+    [InlineData(".git")]
+    [InlineData(".vs")]
+    [InlineData(".idea")]
+    [InlineData(".svn")]
+    [InlineData(".hg")]
+    [InlineData("node_modules")]
+    [InlineData("bower_components")]
+    [InlineData("packages")]
+    [InlineData("TestResults")]
+    [InlineData("coverage")]
+    [InlineData("dist")]
+    public void Load_skips_common_non_source_directories(string name)
+    {
+        var ignore = IgnorePatterns.Load(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
+
+        Assert.True(ignore.IsIgnored(name, isDirectory: true));
+        Assert.True(ignore.IsIgnored($"src/{name}", isDirectory: true));
+    }
 }

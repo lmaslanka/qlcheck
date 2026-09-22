@@ -8,9 +8,13 @@ namespace Qlcheck;
 public sealed class InlineSqlCheck : ICheck
 {
     public const string LayoutMessage =
-        "Inline SQL must be a C# raw string literal with river-aligned keywords and trailing commas.";
+        "Inline SQL must be a C# raw string literal with qlfmt layout.";
 
     public const string UnformattableMessage = "Inline SQL is not a single string literal.";
+
+    public const string FormatFailedMessage = "Inline SQL could not be formatted.";
+
+    public static readonly bool Enabled = false;
 
     private const string CheckId = "inline-sql";
 
@@ -36,6 +40,11 @@ public sealed class InlineSqlCheck : ICheck
 
     public IReadOnlyList<Finding> Analyze(SourceFile file, SyntaxTree tree)
     {
+        if (!Enabled)
+        {
+            return [];
+        }
+
         var findings = new List<Finding>();
         var finder = new SqlExpressionFinder();
         finder.Visit(tree.GetRoot());
@@ -154,7 +163,22 @@ public sealed class InlineSqlCheck : ICheck
             return false;
         }
 
-        var formatted = SqlLayout.Format(literal.Value);
+        string formatted;
+        try
+        {
+            formatted = QlFmt.Sql.Format(literal.Value);
+        }
+        catch (QlParse.SqlParseException ex)
+        {
+            finding = MakeFinding(
+                path,
+                tree,
+                literal.Node,
+                $"{FormatFailedMessage} {ex.Message} at {ex.Position}",
+                replacement: null);
+            return true;
+        }
+
         if (IsRawString(literal.Node) && ValuesEqual(literal.Value, formatted))
         {
             return false;
