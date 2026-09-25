@@ -14,9 +14,7 @@ public sealed class InlineSqlCheck : ICheck
 
     public const string FormatFailedMessage = "Inline SQL could not be formatted.";
 
-    public static readonly bool Enabled = false;
-
-    private const string CheckId = "inline-sql";
+    public const string CheckId = "inline-sql";
 
     private static readonly HashSet<string> DapperMethods = new(StringComparer.Ordinal)
     {
@@ -40,11 +38,6 @@ public sealed class InlineSqlCheck : ICheck
 
     public IReadOnlyList<Finding> Analyze(SourceFile file, SyntaxTree tree)
     {
-        if (!Enabled)
-        {
-            return [];
-        }
-
         var findings = new List<Finding>();
         var finder = new SqlExpressionFinder();
         finder.Visit(tree.GetRoot());

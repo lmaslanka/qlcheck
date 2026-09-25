@@ -13,7 +13,7 @@ One reported problem for an agent to fix. It has a stable ID.
 _Avoid_: Violation, diagnostic, issue, error
 
 **Inline SQL**:
-A SQL string that reaches a Dapper or ADO execution call.
+A SQL string that reaches a Dapper or ADO execution call. The inline-sql check is opt-in (`--inline-sql` or `--check inline-sql`).
 
 **Magic literal**:
 A numeric or string literal that should be a named const or enum member.

@@ -9,23 +9,6 @@ public class InlineSqlCheckTests
     }
 
     [Fact]
-    public void Reports_nothing_while_disabled()
-    {
-        Assert.False(InlineSqlCheck.Enabled);
-        var source = """
-            class C
-            {
-                void M()
-                {
-                    connection.QueryAsync("select 1");
-                }
-            }
-            """;
-
-        Assert.Empty(Run(source));
-    }
-
-    [Fact]
     public void Reports_one_hop_verbatim_sql_passed_to_query_async()
     {
         var source = """
@@ -44,14 +27,7 @@ public class InlineSqlCheckTests
             }
             """;
 
-        var findings = Run(source);
-        if (!InlineSqlCheck.Enabled)
-        {
-            Assert.Empty(findings);
-            return;
-        }
-
-        var finding = Assert.Single(findings);
+        var finding = Assert.Single(Run(source));
         Assert.Equal("inline-sql", finding.Check);
         Assert.Equal("Repo.cs", finding.File);
         Assert.Equal(5, finding.Line);
@@ -100,14 +76,7 @@ public class InlineSqlCheckTests
             }
             """;
 
-        var findings = Run(source);
-        if (!InlineSqlCheck.Enabled)
-        {
-            Assert.Empty(findings);
-            return;
-        }
-
-        var finding = Assert.Single(findings);
+        var finding = Assert.Single(Run(source));
         Assert.Equal(InlineSqlCheck.UnformattableMessage, finding.Message);
         Assert.Null(finding.Replacement);
     }
@@ -125,14 +94,7 @@ public class InlineSqlCheckTests
             }
             """;
 
-        var findings = Run(source);
-        if (!InlineSqlCheck.Enabled)
-        {
-            Assert.Empty(findings);
-            return;
-        }
-
-        var finding = Assert.Single(findings);
+        var finding = Assert.Single(Run(source));
         Assert.Equal(InlineSqlCheck.UnformattableMessage, finding.Message);
         Assert.Null(finding.Replacement);
     }
@@ -150,14 +112,7 @@ public class InlineSqlCheckTests
             }
             """;
 
-        var findings = Run(source);
-        if (!InlineSqlCheck.Enabled)
-        {
-            Assert.Empty(findings);
-            return;
-        }
-
-        var finding = Assert.Single(findings);
+        var finding = Assert.Single(Run(source));
         Assert.Equal(InlineSqlCheck.LayoutMessage, finding.Message);
         Assert.Contains("SELECT", finding.Replacement);
         Assert.Contains("1", finding.Replacement);
@@ -199,14 +154,7 @@ public class InlineSqlCheckTests
             }
             """;
 
-        var findings = Run(source);
-        if (!InlineSqlCheck.Enabled)
-        {
-            Assert.Empty(findings);
-            return;
-        }
-
-        var finding = Assert.Single(findings);
+        var finding = Assert.Single(Run(source));
         Assert.StartsWith(InlineSqlCheck.FormatFailedMessage, finding.Message);
         Assert.Null(finding.Replacement);
     }
@@ -225,14 +173,7 @@ public class InlineSqlCheckTests
             }
             """;
 
-        var findings = Run(source);
-        if (!InlineSqlCheck.Enabled)
-        {
-            Assert.Empty(findings);
-            return;
-        }
-
-        var finding = Assert.Single(findings);
+        var finding = Assert.Single(Run(source));
         Assert.Equal(InlineSqlCheck.LayoutMessage, finding.Message);
         foreach (var line in QlFmt.Sql.Format(sql).ReplaceLineEndings("\n").Split('\n'))
         {
@@ -253,15 +194,8 @@ public class InlineSqlCheckTests
             }
             """;
 
-        var findings = Run(source);
-        if (!InlineSqlCheck.Enabled)
-        {
-            Assert.Empty(findings);
-            return;
-        }
-
-        var finding = Assert.Single(findings);
+        var finding = Assert.Single(Run(source));
         Assert.Equal(InlineSqlCheck.LayoutMessage, finding.Message);
-        Assert.Contains("coalesce", finding.Replacement);
+        Assert.Contains("coalesce", finding.Replacement, StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -32,7 +32,15 @@ public static class QlcheckApp
                 stderr.WriteLine("Unknown check: " + string.Join(", ", unknown));
                 return ExitCode.Error;
             }
+        }
 
+        if (!options.InlineSql && !options.CheckIds.Contains(InlineSqlCheck.CheckId))
+        {
+            checks = checks.Where(c => c.Id != InlineSqlCheck.CheckId).ToList();
+        }
+
+        if (options.CheckIds.Count > 0)
+        {
             checks = checks.Where(c => options.CheckIds.Contains(c.Id)).ToList();
         }
 
@@ -104,6 +112,7 @@ public static class QlcheckApp
     {
         var human = false;
         var stats = false;
+        var inlineSql = false;
         var checkIds = new List<string>();
         var paths = new List<string>();
         for (var i = 0; i < args.Count; i++)
@@ -125,6 +134,12 @@ public static class QlcheckApp
             if (arg == "--stats")
             {
                 stats = true;
+                continue;
+            }
+
+            if (arg == "--inline-sql")
+            {
+                inlineSql = true;
                 continue;
             }
 
@@ -160,7 +175,7 @@ public static class QlcheckApp
             return false;
         }
 
-        options = new Options(human, stats, checkIds, paths);
+        options = new Options(human, stats, inlineSql, checkIds, paths);
         return true;
     }
 
@@ -401,9 +416,14 @@ public static class QlcheckApp
         return Math.Max(0, (int)duration.TotalMilliseconds) + " ms";
     }
 
-    private const string Usage = "Usage: qlcheck [--human] [--stats] [--check <id>] <path>...";
+    private const string Usage = "Usage: qlcheck [--human] [--stats] [--check <id>] [--inline-sql] <path>...";
 
-    private sealed record Options(bool Human, bool Stats, IReadOnlyList<string> CheckIds, IReadOnlyList<string> Paths);
+    private sealed record Options(
+        bool Human,
+        bool Stats,
+        bool InlineSql,
+        IReadOnlyList<string> CheckIds,
+        IReadOnlyList<string> Paths);
 
     private sealed record Report(IReadOnlyList<Finding> Findings);
 }

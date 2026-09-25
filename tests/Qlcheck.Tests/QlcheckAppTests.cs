@@ -100,6 +100,56 @@ public class QlcheckAppTests : IDisposable
     }
 
     [Fact]
+    public void Inline_sql_flag_reports_layout_finding()
+    {
+        var file = Write("Repo.cs", InlineSql);
+
+        var stdout = new StringWriter();
+        var code = QlcheckApp.Run(["--inline-sql", file], stdout, new StringWriter());
+
+        Assert.Equal(ExitCode.Findings, code);
+        Assert.Contains("\"check\": \"inline-sql\"", stdout.ToString());
+    }
+
+    [Fact]
+    public void Default_run_skips_inline_sql()
+    {
+        var file = Write("Repo.cs", InlineSql);
+
+        var stdout = new StringWriter();
+        var code = QlcheckApp.Run([file], stdout, new StringWriter());
+
+        Assert.Equal(ExitCode.Clean, code);
+        Assert.DoesNotContain("inline-sql", stdout.ToString());
+    }
+
+    [Fact]
+    public void Check_flag_enables_inline_sql_exclusively()
+    {
+        var file = Write("Repo.cs", InlineSql);
+
+        var stdout = new StringWriter();
+        var code = QlcheckApp.Run(["--check", "inline-sql", file], stdout, new StringWriter());
+
+        Assert.Equal(ExitCode.Findings, code);
+        var text = stdout.ToString();
+        Assert.Contains("\"check\": \"inline-sql\"", text);
+        Assert.DoesNotContain("magic-literal", text);
+    }
+
+    [Fact]
+    public void Check_filter_excludes_inline_sql_even_with_flag()
+    {
+        var file = Write("Repo.cs", InlineSql);
+
+        var stdout = new StringWriter();
+        var code = QlcheckApp.Run(["--check", "magic-literal", "--inline-sql", file], stdout, new StringWriter());
+
+        Assert.Equal(ExitCode.Clean, code);
+        Assert.DoesNotContain("inline-sql", stdout.ToString());
+    }
+
+    [Fact]
     public void Writes_formatted_stats()
     {
         Write("Clean.cs", "class C {}\n");
@@ -123,7 +173,7 @@ public class QlcheckAppTests : IDisposable
         Assert.DoesNotContain("\"findings\"", text);
         Assert.Matches(@"Files checked\s+2", text);
         Assert.Matches(@"Lines checked\s+\d+", text);
-        Assert.Matches(@"Checks run\s+7", text);
+        Assert.Matches(@"Checks run\s+6", text);
         Assert.Matches(@"Findings\s+1", text);
         Assert.Matches(@"Files with findings\s+1", text);
         Assert.Matches(@"Clean files\s+1", text);
@@ -187,6 +237,17 @@ public class QlcheckAppTests : IDisposable
         Assert.Contains("Keep.cs", text);
         Assert.DoesNotContain("Hidden.cs", text);
     }
+
+    private const string InlineSql =
+        """
+        class C
+        {
+            void M()
+            {
+                connection.QueryAsync("select 1");
+            }
+        }
+        """;
 
     private const string Dirty =
         """
