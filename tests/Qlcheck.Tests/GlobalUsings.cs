@@ -1,6 +1,7 @@
 global using Qlcheck;
 global using Qlcheck.Languages.CSharp;
 global using Qlcheck.Languages.CSharp.Checks.Compilation;
+global using Qlcheck.Languages.CSharp.Checks.Coverage;
 global using Qlcheck.Languages.CSharp.Checks.File;
 global using Qlcheck.Run;
 global using Qlcheck.Scan;

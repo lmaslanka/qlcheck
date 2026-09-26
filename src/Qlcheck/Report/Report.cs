@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -40,6 +41,7 @@ internal static class Report
         IReadOnlyList<SourceScan.LoadedSource> loaded,
         IReadOnlyList<ICheck> checks,
         IReadOnlyList<Finding> findings,
+        IReadOnlyList<CoverageFile> coverage,
         TimeSpan duration,
         TextWriter stdout)
     {
@@ -49,7 +51,7 @@ internal static class Report
         }
         else if (!options.Stats)
         {
-            stdout.WriteLine(JsonSerializer.Serialize(new Payload(findings), JsonOptions));
+            stdout.WriteLine(JsonSerializer.Serialize(new Payload(findings, ToJson(coverage, loaded)), JsonOptions));
         }
 
         if (!options.Stats)
@@ -233,5 +235,105 @@ internal static class Report
         return $"{Math.Max(0, (int)duration.TotalMilliseconds)} ms";
     }
 
-    private sealed record Payload(IReadOnlyList<Finding> Findings);
+    private static IReadOnlyList<FilePayload>? ToJson(
+        IReadOnlyList<CoverageFile> coverage,
+        IReadOnlyList<SourceScan.LoadedSource> loaded)
+    {
+        if (coverage.Count == 0)
+        {
+            return null;
+        }
+
+        var sources = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var source in loaded)
+        {
+            sources[source.File.Path] = source.File.Text;
+        }
+
+        var files = new List<FilePayload>(coverage.Count);
+        foreach (var file in coverage)
+        {
+            sources.TryGetValue(file.File, out var text);
+            files.Add(new FilePayload(file.File, file.Missing ? true : null, MethodPayloads(file, text)));
+        }
+
+        return files;
+    }
+
+    private static IReadOnlyList<MethodPayload>? MethodPayloads(CoverageFile file, string? text)
+    {
+        if (file.Methods.Count == 0)
+        {
+            return null;
+        }
+
+        var methods = new List<MethodPayload>(file.Methods.Count);
+        foreach (var method in file.Methods)
+        {
+            var name = string.IsNullOrEmpty(method.Name) ? null : method.Name;
+            methods.Add(new MethodPayload(name, MethodText(text, method.Lines)));
+        }
+
+        return methods;
+    }
+
+    private static string MethodText(string? text, IReadOnlyList<int> lines)
+    {
+        var builder = new StringBuilder();
+        foreach (var line in lines)
+        {
+            if (builder.Length > 0)
+            {
+                builder.Append('\n');
+            }
+
+            builder.Append(line.ToString(CultureInfo.InvariantCulture));
+            builder.Append('|');
+            builder.Append(SourceLine(text, line));
+        }
+
+        return builder.ToString();
+    }
+
+    private static string SourceLine(string? text, int line)
+    {
+        if (string.IsNullOrEmpty(text) || line < 1)
+        {
+            return string.Empty;
+        }
+
+        var current = 1;
+        var start = 0;
+        for (var i = 0; i < text.Length; i++)
+        {
+            if (text[i] != '\n')
+            {
+                continue;
+            }
+
+            if (current == line)
+            {
+                return StripCr(text[start..i]);
+            }
+
+            current++;
+            start = i + 1;
+        }
+
+        return current == line ? StripCr(text[start..]) : string.Empty;
+    }
+
+    private static string StripCr(string value) =>
+        value.EndsWith('\r') ? value[..^1] : value;
+
+    private sealed record Payload(
+        IReadOnlyList<Finding> Findings,
+        IReadOnlyList<FilePayload>? Coverage);
+
+    private sealed record FilePayload(
+        string File,
+        bool? Missing,
+        IReadOnlyList<MethodPayload>? Methods);
+
+    private sealed record MethodPayload(string? Name, string Text);
 }

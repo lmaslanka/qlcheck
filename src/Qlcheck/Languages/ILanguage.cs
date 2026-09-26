@@ -9,7 +9,7 @@ internal interface ILanguage
 
     bool Matches(string path);
 
-    IReadOnlyList<Finding> Execute(
+    RunResult Execute(
         IReadOnlyList<SourceScan.LoadedSource> files,
         IReadOnlyList<ICheck> checks);
 }

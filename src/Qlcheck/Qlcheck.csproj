@@ -11,7 +11,21 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
+    <PackageDownload Include="coverlet.console" Version="[10.0.1]" />
   </ItemGroup>
+
+  <Target Name="CopyCoverletConsole" AfterTargets="Build">
+    <PropertyGroup>
+      <CoverletSource>$(NuGetPackageRoot)coverlet.console/10.0.1/tools/net10.0/any/</CoverletSource>
+    </PropertyGroup>
+    <ItemGroup>
+      <CoverletFile Include="$(CoverletSource)**/*.*" />
+    </ItemGroup>
+    <Copy
+      SourceFiles="@(CoverletFile)"
+      DestinationFiles="@(CoverletFile->'$(OutputPath)coverlet/%(RecursiveDir)%(Filename)%(Extension)')"
+      SkipUnchangedFiles="true" />
+  </Target>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\qlfmt\src\QlFmt\QlFmt.csproj" />
@@ -19,6 +33,10 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Qlcheck.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Languages\CSharp\Catalog\checks.json" />
   </ItemGroup>
 
 </Project>

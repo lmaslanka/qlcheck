@@ -47,4 +47,16 @@ public sealed record Finding(
         string message,
         string? replacement = null) =>
         At(checkId, path, token.GetLocation(), message, replacement);
+
+    public static Finding At(string checkId, string path, int line, int column, string message)
+    {
+        var file = path.Replace('\\', '/');
+        return new Finding(
+            Id: $"{checkId}:{file}:{line}:{column}",
+            Check: checkId,
+            File: file,
+            Line: line,
+            Column: column,
+            Message: message);
+    }
 }

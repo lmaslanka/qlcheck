@@ -34,10 +34,20 @@ public static class QlcheckApp
         }
 
         var timer = Stopwatch.StartNew();
-        var findings = CheckRun.Execute(loaded, checks, languages);
+        RunResult run;
+        try
+        {
+            run = CheckRun.Execute(loaded, checks, languages);
+        }
+        catch (Exception ex)
+        {
+            stderr.WriteLine(ex.Message);
+            return ExitCode.Error;
+        }
+
         timer.Stop();
 
-        Report.Report.Write(options, loaded, checks, findings, timer.Elapsed, stdout);
-        return findings.Count == 0 ? ExitCode.Clean : ExitCode.Findings;
+        Report.Report.Write(options, loaded, checks, run.Findings, run.Coverage, timer.Elapsed, stdout);
+        return run.Findings.Count == 0 ? ExitCode.Clean : ExitCode.Findings;
     }
 }

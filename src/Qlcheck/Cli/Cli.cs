@@ -2,7 +2,7 @@ namespace Qlcheck.Cli;
 
 internal static class Cli
 {
-    private const string Usage = "Usage: qlcheck [--human] [--stats] [--check <id>] [--inline-sql] <path>...";
+    private const string Usage = "Usage: qlcheck [--human] [--stats] [--check <id>] [--inline-sql] [--coverage] <path>...";
 
     private const string HelpOption = "--help";
 
@@ -15,6 +15,10 @@ internal static class Cli
     private const string InlineSqlOption = "--inline-sql";
 
     private const string InlineSqlCheckId = "inline-sql";
+
+    private const string CoverageOption = "--coverage";
+
+    private const string CoverageCheckId = "coverage";
 
     private const string CheckOption = "--check";
 
@@ -58,6 +62,12 @@ internal static class Cli
             if (arg == InlineSqlOption)
             {
                 enableIds.Add(InlineSqlCheckId);
+                continue;
+            }
+
+            if (arg == CoverageOption)
+            {
+                enableIds.Add(CoverageCheckId);
                 continue;
             }
 

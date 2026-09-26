@@ -51,10 +51,10 @@ public class CheckRunTests
                 new RecordingLanguage(FakeLanguageId, FakeExtension),
             ]);
 
-        Assert.Contains(findings, finding => finding.Check == MagicLiteralCheck.CheckId && finding.File == CSharpPath);
-        Assert.DoesNotContain(findings, finding => finding.Check == MagicLiteralCheck.CheckId && finding.File == FakePath);
-        Assert.Contains(findings, finding => finding.Check == FakeLanguageId && finding.File == FakePath);
-        Assert.DoesNotContain(findings, finding => finding.Check == FakeLanguageId && finding.File == CSharpPath);
+        Assert.Contains(findings.Findings, finding => finding.Check == MagicLiteralCheck.CheckId && finding.File == CSharpPath);
+        Assert.DoesNotContain(findings.Findings, finding => finding.Check == MagicLiteralCheck.CheckId && finding.File == FakePath);
+        Assert.Contains(findings.Findings, finding => finding.Check == FakeLanguageId && finding.File == FakePath);
+        Assert.DoesNotContain(findings.Findings, finding => finding.Check == FakeLanguageId && finding.File == CSharpPath);
     }
 
     [Fact]
@@ -108,7 +108,7 @@ public class CheckRunTests
         public bool Matches(string path) =>
             path.EndsWith(_extension, StringComparison.OrdinalIgnoreCase);
 
-        public IReadOnlyList<Finding> Execute(
+        public RunResult Execute(
             IReadOnlyList<SourceScan.LoadedSource> files,
             IReadOnlyList<ICheck> checks)
         {
@@ -127,7 +127,7 @@ public class CheckRunTests
                 }
             }
 
-            return findings;
+            return new RunResult(findings, []);
         }
     }
 

@@ -13,5 +13,13 @@ public class CheckDiscoveryTests
         Assert.Contains(checks, c => c.Id == SwitchPatternCheck.CheckId && c is SwitchPatternCheck);
         Assert.Contains(checks, c => c.Id == UnusedUsingCheck.CheckId && c is UnusedUsingCheck);
         Assert.Contains(checks, c => c.Id == OneTypePerFileCheck.CheckId && c is OneTypePerFileCheck);
+        Assert.Contains(checks, c => c.Id == CoverageCheck.CheckId && c is CoverageCheck && !c.EnabledByDefault);
+    }
+
+    [Fact]
+    public void Default_selection_skips_coverage()
+    {
+        Assert.True(CheckDiscovery.TrySelect([], [], out var checks, new StringWriter()));
+        Assert.DoesNotContain(checks, check => check.Id == CoverageCheck.CheckId);
     }
 }

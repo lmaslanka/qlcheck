@@ -1,3 +1,4 @@
+// Copyright (c) qlcheck contributors.
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -13,16 +14,11 @@ internal static class CSharpCompilations
 
     private static readonly Lazy<MetadataReference[]> PlatformReferences = new(LoadPlatform);
 
-    public static Compilation Create(string assemblyName, IEnumerable<SyntaxTree> trees)
-    {
-        var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
-            .WithSpecificDiagnosticOptions(
-                new Dictionary<string, ReportDiagnostic>
-                {
-                    [UnusedUsingDiagnostic] = ReportDiagnostic.Warn,
-                });
-        return CSharpCompilation.Create(assemblyName, trees, PlatformReferences.Value, options);
-    }
+    public static Compilation Create(string assemblyName, IEnumerable<SyntaxTree> trees) =>
+        CreateWith(assemblyName, trees, PlatformReferences.Value);
+
+    public static Compilation CreateForProject(string assemblyName, string csproj, IEnumerable<SyntaxTree> trees) =>
+        CreateWith(assemblyName, trees, Merge(PlatformReferences.Value, ProjectReferences.Load(csproj)));
 
     public static string? FindCsproj(string filePath)
     {
@@ -39,6 +35,38 @@ internal static class CSharpCompilations
         }
 
         return null;
+    }
+
+    private static Compilation CreateWith(
+        string assemblyName,
+        IEnumerable<SyntaxTree> trees,
+        IEnumerable<MetadataReference> references)
+    {
+        var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+            .WithSpecificDiagnosticOptions(
+                new Dictionary<string, ReportDiagnostic>
+                {
+                    [UnusedUsingDiagnostic] = ReportDiagnostic.Warn,
+                });
+        return CSharpCompilation.Create(assemblyName, trees, references, options);
+    }
+
+    private static MetadataReference[] Merge(
+        IEnumerable<MetadataReference> platform,
+        IEnumerable<MetadataReference> extra)
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var refs = new List<MetadataReference>();
+        foreach (var reference in platform.Concat(extra))
+        {
+            var path = reference.Display ?? string.Empty;
+            if (seen.Add(path))
+            {
+                refs.Add(reference);
+            }
+        }
+
+        return refs.ToArray();
     }
 
     private static MetadataReference[] LoadPlatform()

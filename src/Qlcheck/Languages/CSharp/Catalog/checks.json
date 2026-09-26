@@ -1,0 +1,2014 @@
+[
+  {
+    "id": "abstract-class-mixed",
+    "message": "An abstract class should have both abstract and concrete methods."
+  },
+  {
+    "id": "abstract-no-public-constructor",
+    "message": "`abstract` classes should not have `public` constructors."
+  },
+  {
+    "id": "accessor-expected-field",
+    "message": "Getters and setters should access the expected fields."
+  },
+  {
+    "id": "allocation-dos",
+    "message": "Do not size an allocation from untrusted input."
+  },
+  {
+    "id": "architecture-component",
+    "message": "An intended architecture component is missing."
+  },
+  {
+    "id": "architecture-interface",
+    "message": "A relationship does not match the intended architecture."
+  },
+  {
+    "id": "architecture-location",
+    "message": "Move this class to the location the architecture requires."
+  },
+  {
+    "id": "architecture-move",
+    "message": "Move this component as the architecture requires."
+  },
+  {
+    "id": "architecture-relationship",
+    "message": "This relationship does not match the intended architecture."
+  },
+  {
+    "id": "architecture-rename",
+    "message": "Rename this component as the architecture requires."
+  },
+  {
+    "id": "architecture-tangle",
+    "message": "Remove this relationship. It tangles the architecture."
+  },
+  {
+    "id": "argument-exception-name",
+    "message": "The name passed to `ArgumentException` must be a real parameter."
+  },
+  {
+    "id": "argument-injection",
+    "message": "Do not pass untrusted input as an OS command argument."
+  },
+  {
+    "id": "argument-order",
+    "message": "Arguments should be passed in the same order as the method parameters."
+  },
+  {
+    "id": "assembly-version",
+    "message": "Assemblies should have version information."
+  },
+  {
+    "id": "assert-argument-order",
+    "message": "Assertion arguments should be passed in the correct order."
+  },
+  {
+    "id": "assert-no-side-effect",
+    "message": "Expressions used in `Debug.Assert` should not produce side effects."
+  },
+  {
+    "id": "async-name-suffix",
+    "message": "Name an async method with the `Async` suffix."
+  },
+  {
+    "id": "async-not-void",
+    "message": "`async` methods should not return `void`."
+  },
+  {
+    "id": "attribute-usage",
+    "message": "Custom attributes should be marked with `System.AttributeUsageAttribute`."
+  },
+  {
+    "id": "auto-property",
+    "message": "Trivial properties should be auto-implemented."
+  },
+  {
+    "id": "azure-function-error-handling",
+    "message": "Azure Functions should use Structured Error Handling."
+  },
+  {
+    "id": "azure-function-logs-failure",
+    "message": "Azure Functions should log all failures."
+  },
+  {
+    "id": "begin-invoke-end-invoke",
+    "message": "Calls to delegate's method `BeginInvoke` should be paired with calls to `EndInvoke`."
+  },
+  {
+    "id": "blazor-query-param-type",
+    "message": "This Blazor query parameter type is not supported. Change it."
+  },
+  {
+    "id": "brace-at-line-start",
+    "message": "A close curly brace should be located at the beginning of a line."
+  },
+  {
+    "id": "braces-required",
+    "message": "Control structures should use curly braces."
+  },
+  {
+    "id": "caller-info-last",
+    "message": "Caller information parameters should come at the end of the parameter list."
+  },
+  {
+    "id": "cartesian-explosion",
+    "message": "This query can multiply rows. Shape it so it does not."
+  },
+  {
+    "id": "case-length",
+    "message": "A switch case exceeds 8 lines. Extract a method."
+  },
+  {
+    "id": "catch-only-rethrow",
+    "message": "`catch` clauses should do more than rethrow."
+  },
+  {
+    "id": "check-model-state",
+    "message": "ModelState.IsValid should be called in controller actions."
+  },
+  {
+    "id": "check-stream-read",
+    "message": "The length returned from a stream read should be checked."
+  },
+  {
+    "id": "class-coupling",
+    "message": "A class depends on more than 30 other classes."
+  },
+  {
+    "id": "client-evaluated-default",
+    "message": "Client-evaluated default values should use database functions."
+  },
+  {
+    "id": "cls-compliant",
+    "message": "Assemblies should be marked as CLS compliant."
+  },
+  {
+    "id": "cognitive-complexity",
+    "message": "Cognitive complexity exceeds 15 for a method, or 3 for a property."
+  },
+  {
+    "id": "collection-self-argument",
+    "message": "Collections should not be passed as arguments to their own methods."
+  },
+  {
+    "id": "collection-size-compare",
+    "message": "Collection sizes and array length comparisons should make sense."
+  },
+  {
+    "id": "com-visible-explicit",
+    "message": "Assemblies should explicitly specify COM visibility."
+  },
+  {
+    "id": "command-argument-injection",
+    "message": "Validate OS command arguments taken from untrusted input."
+  },
+  {
+    "id": "command-injection",
+    "message": "Do not build an OS command from untrusted input."
+  },
+  {
+    "id": "commented-code",
+    "message": "Remove commented-out code."
+  },
+  {
+    "id": "comparable-equals",
+    "message": "`Equals` and the comparison operators should be overridden when implementing `IComparable`."
+  },
+  {
+    "id": "complete-assertion",
+    "message": "Assertions should be complete."
+  },
+  {
+    "id": "concise-declaration",
+    "message": "Declarations and initializations should be as concise as possible."
+  },
+  {
+    "id": "conditional-on-new-line",
+    "message": "Conditionals should start on new lines."
+  },
+  {
+    "id": "configure-await-false",
+    "message": "`ConfigureAwait(false)` should be used."
+  },
+  {
+    "id": "connection-string-injection",
+    "message": "Do not build a connection string from untrusted input."
+  },
+  {
+    "id": "const-not-static-readonly",
+    "message": "`static readonly` constants should be `const` instead."
+  },
+  {
+    "id": "constant-log-template",
+    "message": "Logging templates should be constant."
+  },
+  {
+    "id": "constructor-argument-exists",
+    "message": "`ConstructorArgument` parameters should exist in constructors."
+  },
+  {
+    "id": "constructor-non-virtual",
+    "message": "Constructors should only call non-overridable methods."
+  },
+  {
+    "id": "consume-valuetask",
+    "message": "`ValueTask` should be consumed correctly."
+  },
+  {
+    "id": "controller-base",
+    "message": "API Controllers should derive from ControllerBase instead of Controller."
+  },
+  {
+    "id": "controller-route",
+    "message": "A Route attribute should be added to the controller when a route template is specified at the action level."
+  },
+  {
+    "id": "controller-single-responsibility",
+    "message": "Controllers should not have mixed responsibilities."
+  },
+  {
+    "id": "cookie-httponly",
+    "message": "Cookies should have the `HttpOnly` flag."
+  },
+  {
+    "id": "cookie-secure",
+    "message": "Cookies should have the `secure` flag."
+  },
+  {
+    "id": "copyright-header",
+    "message": "Add a copyright header comment at the top of the file."
+  },
+  {
+    "id": "coverage-exclusion-reason",
+    "message": "`ExcludeFromCodeCoverage` attributes should include a justification."
+  },
+  {
+    "id": "csrf-enabled",
+    "message": "CSRF protections should not be disabled."
+  },
+  {
+    "id": "database-password",
+    "message": "A secure password should be used when connecting to a database."
+  },
+  {
+    "id": "datetime-kind",
+    "message": "Always set the `DateTimeKind` when creating new `DateTime` instances."
+  },
+  {
+    "id": "datetime-utc",
+    "message": "Use UTC when recording DateTime instants."
+  },
+  {
+    "id": "debugger-display-member",
+    "message": "`DebuggerDisplayAttribute` strings should reference existing members."
+  },
+  {
+    "id": "default-first-or-last",
+    "message": "`default` clauses should be first or last."
+  },
+  {
+    "id": "default-parameter-value",
+    "message": "``DefaultValue`` should not be used when ``DefaultParameterValue`` is meant."
+  },
+  {
+    "id": "default-value-type",
+    "message": "Default values should be compatible with their entity property type."
+  },
+  {
+    "id": "deserialization-injection",
+    "message": "Do not deserialize untrusted input."
+  },
+  {
+    "id": "digit-separator",
+    "message": "Underscores should be used to make large numbers readable."
+  },
+  {
+    "id": "discarded-include",
+    "message": "`Include` calls discarded by query reshaping should be fixed."
+  },
+  {
+    "id": "disposable-finalizer",
+    "message": "Disposable types should declare finalizers."
+  },
+  {
+    "id": "disposable-members",
+    "message": "Classes with `IDisposable` members should implement `IDisposable`."
+  },
+  {
+    "id": "disposable-pattern",
+    "message": "`IDisposable` should be implemented correctly."
+  },
+  {
+    "id": "dispose-created",
+    "message": "`IDisposables` should be disposed."
+  },
+  {
+    "id": "dispose-implements-interface",
+    "message": "Methods named `Dispose` should implement `IDisposable.Dispose`."
+  },
+  {
+    "id": "dispose-own-members",
+    "message": "Classes should `Dispose` of members from the classes' own `Dispose` methods."
+  },
+  {
+    "id": "duplicate-string",
+    "message": "This string literal is repeated 3 or more times. Name it."
+  },
+  {
+    "id": "durable-entity-interface",
+    "message": "Interfaces for durable entities should satisfy the restrictions."
+  },
+  {
+    "id": "dynamic-code-injection",
+    "message": "Do not execute code built from untrusted input."
+  },
+  {
+    "id": "dynamic-sql",
+    "message": "SQL queries should not be dynamically formatted."
+  },
+  {
+    "id": "else-required",
+    "message": "`if ... else if` constructs should end with `else` clauses."
+  },
+  {
+    "id": "empty-class",
+    "message": "Classes should not be empty."
+  },
+  {
+    "id": "empty-method",
+    "message": "Methods should not be empty."
+  },
+  {
+    "id": "empty-statement",
+    "message": "Empty statements should be removed."
+  },
+  {
+    "id": "enum-int32",
+    "message": "Enumerations should have `Int32` storage."
+  },
+  {
+    "id": "enum-name",
+    "message": "Name this enumeration in PascalCase."
+  },
+  {
+    "id": "enum-name-suffix",
+    "message": "Enumeration type names should not have `Flags` or `Enum` suffixes."
+  },
+  {
+    "id": "enum-not-reserved",
+    "message": "Enumeration members should not be named `Reserved`."
+  },
+  {
+    "id": "equals-and-hashcode",
+    "message": "`Equals(Object)` and `GetHashCode()` should be overridden in pairs."
+  },
+  {
+    "id": "equatable-sealed",
+    "message": "Classes implementing `IEquatable<T>` should be sealed."
+  },
+  {
+    "id": "equatable-value-type",
+    "message": "Value types should implement `IEquatable<T>`."
+  },
+  {
+    "id": "escape-extension-keyword",
+    "message": "Identifiers should not conflict with the C# 14 `extension` contextual keyword."
+  },
+  {
+    "id": "escape-field-keyword",
+    "message": "Identifiers should not conflict with the C# 14 `field` contextual keyword."
+  },
+  {
+    "id": "escape-partial-return",
+    "message": "Return types named `partial` should be escaped with `@`."
+  },
+  {
+    "id": "escape-scoped",
+    "message": "`scoped` should be escaped when used as an identifier or type name in parenthesized lambda parameter lists."
+  },
+  {
+    "id": "event-args",
+    "message": "Events should have proper arguments."
+  },
+  {
+    "id": "event-handler-signature",
+    "message": "Event Handlers should have the correct signature."
+  },
+  {
+    "id": "exception-name-extends",
+    "message": "Classes named like `Exception` should extend `Exception` or a subclass."
+  },
+  {
+    "id": "exception-public",
+    "message": "Exception types should be `public`."
+  },
+  {
+    "id": "exception-standard-constructors",
+    "message": "Exceptions should provide standard constructors."
+  },
+  {
+    "id": "explicit-whitespace",
+    "message": "Whitespace and control characters in string literals should be explicit."
+  },
+  {
+    "id": "export-implements-contract",
+    "message": "Classes should implement their `ExportAttribute` interfaces."
+  },
+  {
+    "id": "expression-complexity",
+    "message": "An expression exceeds complexity 3."
+  },
+  {
+    "id": "extension-own-namespace",
+    "message": "Extensions should be in separate namespaces."
+  },
+  {
+    "id": "field-private",
+    "message": "Fields should be private."
+  },
+  {
+    "id": "field-readonly",
+    "message": "Fields that are only assigned in the constructor should be `readonly`."
+  },
+  {
+    "id": "field-used-as-local",
+    "message": "Private fields only used as local variables in methods should become local variables."
+  },
+  {
+    "id": "file-length",
+    "message": "A file exceeds 1000 lines. Split it."
+  },
+  {
+    "id": "filesystem-oracle",
+    "message": "Do not let file access reveal whether a path exists to an untrusted caller."
+  },
+  {
+    "id": "filter-before-sort",
+    "message": "The collection should be filtered before sorting by using `Where` before `OrderBy`."
+  },
+  {
+    "id": "finalizer-no-throw",
+    "message": "Finalizers should not throw exceptions."
+  },
+  {
+    "id": "flags-attribute-only-flags",
+    "message": "Non-flags enums should not be marked with `FlagsAttribute`."
+  },
+  {
+    "id": "flags-initialized",
+    "message": "Flags enumerations should explicitly initialize all their members."
+  },
+  {
+    "id": "flags-none",
+    "message": "Flags enumerations zero-value members should be named `None`."
+  },
+  {
+    "id": "float-equality",
+    "message": "Floating point numbers should not be tested for equality."
+  },
+  {
+    "id": "format-provider-on-parse",
+    "message": "Use a format provider when parsing date and time."
+  },
+  {
+    "id": "format-string-args",
+    "message": "Composite format strings should not lead to unexpected behavior at runtime."
+  },
+  {
+    "id": "format-string-valid",
+    "message": "Composite format strings should be used correctly."
+  },
+  {
+    "id": "function-length",
+    "message": "A function exceeds 80 lines."
+  },
+  {
+    "id": "generic-arity",
+    "message": "A type has more than 2 type parameters, or a method has more than 3."
+  },
+  {
+    "id": "generic-collection",
+    "message": "Collections should implement the generic interface."
+  },
+  {
+    "id": "generic-event-handler",
+    "message": "Generic event handlers should be used."
+  },
+  {
+    "id": "group-overloads",
+    "message": "Method overloads should be grouped together."
+  },
+  {
+    "id": "hardcoded-credential",
+    "message": "Do not hard-code a credential."
+  },
+  {
+    "id": "hardcoded-ip",
+    "message": "IP addresses should not be hardcoded."
+  },
+  {
+    "id": "hardcoded-secret",
+    "message": "Do not hard-code a secret."
+  },
+  {
+    "id": "hashcode-immutable",
+    "message": "`GetHashCode` should not reference mutable fields."
+  },
+  {
+    "id": "http-client-factory",
+    "message": "You should pool HTTP connections with HttpClientFactory."
+  },
+  {
+    "id": "http-verb-attribute",
+    "message": "REST API actions should be annotated with an HTTP verb attribute."
+  },
+  {
+    "id": "identical-branch",
+    "message": "Two branches in a conditional structure should not have exactly the same implementation."
+  },
+  {
+    "id": "identical-branches",
+    "message": "All branches in a conditional structure should not have exactly the same implementation."
+  },
+  {
+    "id": "identical-if-condition",
+    "message": "Related `if/else if` statements should not have the same condition."
+  },
+  {
+    "id": "identical-method",
+    "message": "Methods should not have identical implementations."
+  },
+  {
+    "id": "identical-operands",
+    "message": "Identical expressions should not be used on both sides of operators."
+  },
+  {
+    "id": "implement-partial",
+    "message": "Implementations should be provided for `partial` methods."
+  },
+  {
+    "id": "indent-conditional",
+    "message": "A conditionally executed single line should be denoted by indentation."
+  },
+  {
+    "id": "indexer-string-or-int",
+    "message": "Strings or integral types should be used for indexers."
+  },
+  {
+    "id": "indexof-not-positive",
+    "message": "`IndexOf` checks should not be for positive numbers."
+  },
+  {
+    "id": "inheritance-depth",
+    "message": "An inheritance chain is deeper than 5. Flatten it."
+  },
+  {
+    "id": "integer-division-to-float",
+    "message": "Results of integer division should not be assigned to floating point variables."
+  },
+  {
+    "id": "interface-method-callable",
+    "message": "Interface methods should be callable by derived types."
+  },
+  {
+    "id": "invariant-loop-bound",
+    "message": "`for` loop stop conditions should be invariant."
+  },
+  {
+    "id": "invoke-event",
+    "message": "Events should be invoked."
+  },
+  {
+    "id": "iserializable-correct",
+    "message": "`ISerializable` should be implemented correctly."
+  },
+  {
+    "id": "js-invokable-public",
+    "message": "`JSInvokable` attribute should only be used on public methods."
+  },
+  {
+    "id": "jwt-strong-signature",
+    "message": "JWT should be signed and verified with strong cipher algorithms."
+  },
+  {
+    "id": "ldap-authenticated",
+    "message": "LDAP connections should be authenticated."
+  },
+  {
+    "id": "ldap-injection",
+    "message": "Do not build an LDAP query from untrusted input."
+  },
+  {
+    "id": "literal-suffix-upper",
+    "message": "Literal suffixes should be upper case."
+  },
+  {
+    "id": "lock-readonly-field",
+    "message": "Blocks should be synchronized on read-only fields."
+  },
+  {
+    "id": "lock-released",
+    "message": "Locks should be released on all paths."
+  },
+  {
+    "id": "log-argument-position",
+    "message": "Logging arguments should be passed to the correct parameter."
+  },
+  {
+    "id": "log-caught-exception",
+    "message": "Logging in a catch clause should pass the caught exception as a parameter."
+  },
+  {
+    "id": "log-injection",
+    "message": "Do not write untrusted input into a log message."
+  },
+  {
+    "id": "log-or-rethrow",
+    "message": "Exceptions should be either logged or rethrown but not both."
+  },
+  {
+    "id": "log-placeholder-order",
+    "message": "Log message template placeholders should be in the right order."
+  },
+  {
+    "id": "log-placeholder-pascal-case",
+    "message": "Use PascalCase for named placeholders."
+  },
+  {
+    "id": "log-template-syntax",
+    "message": "Log message template should be syntactically correct."
+  },
+  {
+    "id": "logger-generic-matches-type",
+    "message": "Generic logger injection should match enclosing type."
+  },
+  {
+    "id": "logger-matches-type",
+    "message": "Loggers should be named for their enclosing types."
+  },
+  {
+    "id": "logger-name",
+    "message": "Name the logger field `log` or `_log`."
+  },
+  {
+    "id": "logger-private-static",
+    "message": "Logger fields should be `private static readonly`."
+  },
+  {
+    "id": "loop-bound-injection",
+    "message": "Do not take a loop bound from untrusted input."
+  },
+  {
+    "id": "loop-condition-reachable",
+    "message": "For-loop conditions should be true at least once."
+  },
+  {
+    "id": "loop-counter-direction",
+    "message": "A `for` loop update clause should move the counter in the right direction."
+  },
+  {
+    "id": "loop-more-than-once",
+    "message": "Loops with at most one iteration should be refactored."
+  },
+  {
+    "id": "loop-must-change-counter",
+    "message": "`for` loop increment clauses should modify the loops' counters."
+  },
+  {
+    "id": "matching-lock-release",
+    "message": "A write lock should not be released when a read lock has been acquired and vice versa."
+  },
+  {
+    "id": "member-not-more-visible",
+    "message": "Types should not have members with visibility set higher than the type's visibility."
+  },
+  {
+    "id": "merge-identical-catch",
+    "message": "`try` statements with identical `catch` and/or `finally` blocks should be merged."
+  },
+  {
+    "id": "merge-if",
+    "message": "Mergeable `if` statements should be combined."
+  },
+  {
+    "id": "merge-include",
+    "message": "`Include` and `ThenInclude` chains of reference navigations should be merged into a single `Include` call."
+  },
+  {
+    "id": "method-complexity",
+    "message": "A method or property exceeds complexity 10."
+  },
+  {
+    "id": "migration-narrow-column",
+    "message": "Migrations should not narrow column types without converting existing data."
+  },
+  {
+    "id": "model-binding",
+    "message": "Use model binding instead of reading raw request data."
+  },
+  {
+    "id": "modulus-not-equality",
+    "message": "Modulus results should not be checked for direct equality."
+  },
+  {
+    "id": "move-method-to-inner-class",
+    "message": "`private` methods called only by inner classes should be moved to those classes."
+  },
+  {
+    "id": "multiline-needs-braces",
+    "message": "Multiline blocks should be enclosed in curly braces."
+  },
+  {
+    "id": "named-namespace",
+    "message": "Types should be defined in named namespaces."
+  },
+  {
+    "id": "nesting-depth",
+    "message": "Control flow is nested more than 3 levels. Flatten it."
+  },
+  {
+    "id": "neutral-resources-language",
+    "message": "Assemblies should be marked with `NeutralResourcesLanguageAttribute`."
+  },
+  {
+    "id": "newline-at-eof",
+    "message": "Files should end with a newline."
+  },
+  {
+    "id": "no-ambiguous-params",
+    "message": "Method calls should not resolve ambiguously to overloads with `params`."
+  },
+  {
+    "id": "no-anonymous-unsubscribe",
+    "message": "Anonymous delegates should not be used to unsubscribe from Events."
+  },
+  {
+    "id": "no-array-covariance",
+    "message": "Array covariance should not be used."
+  },
+  {
+    "id": "no-array-for-params",
+    "message": "Arrays should not be created for params parameters."
+  },
+  {
+    "id": "no-assignment-in-expression",
+    "message": "Assignments should not be made from within sub-expressions."
+  },
+  {
+    "id": "no-async-identifier",
+    "message": "`async` and `await` should not be used as identifiers."
+  },
+  {
+    "id": "no-backslash-route",
+    "message": "Backslash should be avoided in route templates."
+  },
+  {
+    "id": "no-base-equals",
+    "message": "Classes directly extending `object` should not call `base` in `GetHashCode` or `Equals`."
+  },
+  {
+    "id": "no-base-equals-for-reference",
+    "message": "`base.Equals` should not be used to check for reference equality in `Equals` if `base` is not `object`."
+  },
+  {
+    "id": "no-bitwise-non-flags",
+    "message": "Non-flags enums should not be used in bitwise operations."
+  },
+  {
+    "id": "no-blocking-async",
+    "message": "Calls to `async` methods should not be blocking."
+  },
+  {
+    "id": "no-blocking-async-function",
+    "message": "Calls to `async` methods should not be blocking in Azure Functions."
+  },
+  {
+    "id": "no-boolean-literal-assert",
+    "message": "Literal boolean values should not be used in assertions."
+  },
+  {
+    "id": "no-case-only-field-difference",
+    "message": "Child class fields should not differ from parent class fields only by capitalization."
+  },
+  {
+    "id": "no-catch-exception",
+    "message": "`Exception` should not be caught."
+  },
+  {
+    "id": "no-catch-null-reference",
+    "message": "NullReferenceException should not be caught."
+  },
+  {
+    "id": "no-cleartext-protocol",
+    "message": "Clear-text protocols should not be used."
+  },
+  {
+    "id": "no-collection-copy-property",
+    "message": "Properties should not make collection or array copies."
+  },
+  {
+    "id": "no-colliding-interface-inherit",
+    "message": "Interfaces should not simply inherit from base interfaces with colliding members."
+  },
+  {
+    "id": "no-compare-before-assign",
+    "message": "Variables should not be checked against the values they're about to be assigned."
+  },
+  {
+    "id": "no-conflicting-transparency",
+    "message": "Members should not have conflicting transparency annotations."
+  },
+  {
+    "id": "no-console-log",
+    "message": "Standard outputs should not be used directly to log anything."
+  },
+  {
+    "id": "no-constant-return",
+    "message": "Methods should not return constants."
+  },
+  {
+    "id": "no-custom-crypto",
+    "message": "Custom cryptographic algorithms should not be used."
+  },
+  {
+    "id": "no-dangerous-get-handle",
+    "message": "`SafeHandle.DangerousGetHandle` should not be called."
+  },
+  {
+    "id": "no-datetime-now-timing",
+    "message": "Avoid using `DateTime.Now` for benchmarking or timing operations."
+  },
+  {
+    "id": "no-datetime-primary-key",
+    "message": "Date and time should not be used as a type for primary keys."
+  },
+  {
+    "id": "no-debug-in-production",
+    "message": "Debugging features should not be enabled in production."
+  },
+  {
+    "id": "no-default-argument",
+    "message": "Default parameter values should not be passed as arguments."
+  },
+  {
+    "id": "no-default-initializer",
+    "message": "Members should not be initialized to default values."
+  },
+  {
+    "id": "no-delegate-subtraction",
+    "message": "Delegates should not be subtracted."
+  },
+  {
+    "id": "no-double-dispose",
+    "message": "Objects should not be disposed more than once."
+  },
+  {
+    "id": "no-double-prefix",
+    "message": "Doubled prefix operators `!!` and `~~` should not be used."
+  },
+  {
+    "id": "no-duplicate-cast",
+    "message": "Duplicate casts should not be made."
+  },
+  {
+    "id": "no-duplicate-condition",
+    "message": "Sequential tests should not check the same condition."
+  },
+  {
+    "id": "no-empty-block",
+    "message": "Nested blocks of code should not be left empty."
+  },
+  {
+    "id": "no-empty-collection-access",
+    "message": "Empty collections should not be accessed or iterated."
+  },
+  {
+    "id": "no-empty-comment",
+    "message": "Comments should not be empty."
+  },
+  {
+    "id": "no-empty-default",
+    "message": "Empty `default` clauses should be removed."
+  },
+  {
+    "id": "no-empty-fallthrough-case",
+    "message": "Empty `case` clauses that fall through to the `default` should be omitted."
+  },
+  {
+    "id": "no-empty-finalizer",
+    "message": "Finalizers should not be empty."
+  },
+  {
+    "id": "no-empty-interface",
+    "message": "Interfaces should not be empty."
+  },
+  {
+    "id": "no-empty-namespace",
+    "message": "Namespaces should not be empty."
+  },
+  {
+    "id": "no-empty-nullable-access",
+    "message": "Empty nullable value should not be accessed."
+  },
+  {
+    "id": "no-equality-on-reference",
+    "message": "`operator==` should not be overloaded on reference types."
+  },
+  {
+    "id": "no-exit",
+    "message": "Exit methods should not be called."
+  },
+  {
+    "id": "no-expected-exception",
+    "message": "``ExpectedException`` should not be used."
+  },
+  {
+    "id": "no-explicit-caller-info",
+    "message": "Caller information arguments should not be provided explicitly."
+  },
+  {
+    "id": "no-explicit-foreach-cast",
+    "message": "`Explicit` conversions of `foreach` loops should not be used."
+  },
+  {
+    "id": "no-explicit-rethrow",
+    "message": "Exceptions should not be explicitly rethrown."
+  },
+  {
+    "id": "no-extend-object",
+    "message": "Extension methods should not extend `object`."
+  },
+  {
+    "id": "no-fake-operator",
+    "message": "Non-existent operators like `=+` should not be used."
+  },
+  {
+    "id": "no-fixme",
+    "message": "Remove the FIXME comment."
+  },
+  {
+    "id": "no-gc-collect",
+    "message": "`GC.Collect` should not be called."
+  },
+  {
+    "id": "no-general-exception",
+    "message": "General or reserved exceptions should never be thrown."
+  },
+  {
+    "id": "no-get-executing-assembly",
+    "message": "`Assembly.GetExecutingAssembly` should not be called."
+  },
+  {
+    "id": "no-goto",
+    "message": "`goto` statement should not be used."
+  },
+  {
+    "id": "no-gratuitous-boolean",
+    "message": "Boolean expressions should not be gratuitous."
+  },
+  {
+    "id": "no-hardcoded-date-format",
+    "message": "Don't hardcode the format when turning dates and times to strings."
+  },
+  {
+    "id": "no-hardcoded-jwt-secret",
+    "message": "JWT secret keys should not be disclosed."
+  },
+  {
+    "id": "no-hardcoded-uri",
+    "message": "URIs should not be hardcoded."
+  },
+  {
+    "id": "no-hide-base-method",
+    "message": "Base class methods should not be hidden."
+  },
+  {
+    "id": "no-ignored-exception",
+    "message": "Generic exceptions should not be ignored."
+  },
+  {
+    "id": "no-ignored-initial-value",
+    "message": "Method parameters, caught exceptions and foreach variables' initial values should not be ignored."
+  },
+  {
+    "id": "no-ignored-test",
+    "message": "Tests should not be ignored."
+  },
+  {
+    "id": "no-increment-in-expression",
+    "message": "Increment (++) and decrement (--) operators should not be used in a method call or mixed with other operators in an expression."
+  },
+  {
+    "id": "no-infinite-loop",
+    "message": "Loops and recursions should not be infinite."
+  },
+  {
+    "id": "no-inline-suppression",
+    "message": "Do not suppress a finding in source."
+  },
+  {
+    "id": "no-insecure-random",
+    "message": "Pseudorandom number generators (PRNGs) should not be used in security contexts."
+  },
+  {
+    "id": "no-interface-cast",
+    "message": "`interface` instances should not be cast to concrete types."
+  },
+  {
+    "id": "no-inverted-boolean",
+    "message": "Boolean checks should not be inverted."
+  },
+  {
+    "id": "no-is-this",
+    "message": "`is` should not be used with `this`."
+  },
+  {
+    "id": "no-lambda-in-blazor-loop",
+    "message": "Using lambda expressions in loops should be avoided in Blazor markup section."
+  },
+  {
+    "id": "no-list-in-public-api",
+    "message": "`Generic.List` instances should not be part of public APIs."
+  },
+  {
+    "id": "no-literal-localized-arg",
+    "message": "Literals should not be passed as localized parameters."
+  },
+  {
+    "id": "no-lock-local",
+    "message": "Blocks should not be synchronized on local variables."
+  },
+  {
+    "id": "no-multidimensional-array",
+    "message": "Multidimensional arrays should not be used."
+  },
+  {
+    "id": "no-nan-compare",
+    "message": "`NaN` should not be used in comparisons."
+  },
+  {
+    "id": "no-narrow-visibility",
+    "message": "Inherited member visibility should not be decreased."
+  },
+  {
+    "id": "no-nested-block",
+    "message": "Nested code blocks should not be used."
+  },
+  {
+    "id": "no-nested-generic-signature",
+    "message": "Method signatures should not contain nested generic types."
+  },
+  {
+    "id": "no-nested-switch",
+    "message": "`switch` statements should not be nested."
+  },
+  {
+    "id": "no-nested-ternary",
+    "message": "Ternary operators should not be nested."
+  },
+  {
+    "id": "no-new-guid",
+    "message": "`new Guid()` should not be used."
+  },
+  {
+    "id": "no-new-shared-part",
+    "message": "`Shared` parts should not be created with `new`."
+  },
+  {
+    "id": "no-not-implemented",
+    "message": "Do not throw `NotImplementedException`."
+  },
+  {
+    "id": "no-null-and-is",
+    "message": "Null checks should not be combined with `is` operator checks."
+  },
+  {
+    "id": "no-null-compare-unconstrained",
+    "message": "Generic parameters not constrained to reference types should not be compared to `null`."
+  },
+  {
+    "id": "no-obsolete-base-type",
+    "message": "Types should not extend outdated base types."
+  },
+  {
+    "id": "no-optional-parameter",
+    "message": "Optional parameters should not be used."
+  },
+  {
+    "id": "no-optional-ref",
+    "message": "``Optional`` should not be used on `ref` or `out` parameters."
+  },
+  {
+    "id": "no-overflow",
+    "message": "Calculations should not overflow."
+  },
+  {
+    "id": "no-overlapping-overload",
+    "message": "Method overloads with default parameter values should not overlap."
+  },
+  {
+    "id": "no-params-on-override",
+    "message": "`params` should not be introduced on overrides."
+  },
+  {
+    "id": "no-path-resolution",
+    "message": "OS commands should not rely on PATH resolution."
+  },
+  {
+    "id": "no-plaintext-password",
+    "message": "Passwords should not be stored in plaintext or with a fast hashing algorithm."
+  },
+  {
+    "id": "no-private-only-constructors",
+    "message": "Classes should not have only `private` constructors."
+  },
+  {
+    "id": "no-public-const",
+    "message": "Public constant members should not be used."
+  },
+  {
+    "id": "no-public-field",
+    "message": "Fields should not have public accessibility."
+  },
+  {
+    "id": "no-public-multidimensional",
+    "message": "Public methods should not have multidimensional array parameters."
+  },
+  {
+    "id": "no-public-pointer",
+    "message": "Pointers to unmanaged memory should not be visible."
+  },
+  {
+    "id": "no-public-static-field",
+    "message": "Non-constant static fields should not be visible."
+  },
+  {
+    "id": "no-public-static-mutable",
+    "message": "Mutable fields should not be `public static`."
+  },
+  {
+    "id": "no-public-temp-file",
+    "message": "Temporary files should not be created in publicly writable directories."
+  },
+  {
+    "id": "no-recursive-inheritance",
+    "message": "Type inheritance should not be recursive."
+  },
+  {
+    "id": "no-redundant-base",
+    "message": "Inheritance list should not be redundant."
+  },
+  {
+    "id": "no-redundant-constructor",
+    "message": "Constructor and destructor declarations should not be redundant."
+  },
+  {
+    "id": "no-redundant-initializer",
+    "message": "Member initializer values should not be redundant."
+  },
+  {
+    "id": "no-redundant-jump",
+    "message": "Jump statements should not be redundant."
+  },
+  {
+    "id": "no-ref-parameter",
+    "message": "`out` and `ref` parameters should not be used."
+  },
+  {
+    "id": "no-reference-equals-value",
+    "message": "`Object.ReferenceEquals` should not be used for value types."
+  },
+  {
+    "id": "no-reflection-accessibility",
+    "message": "Reflection should not be used to increase accessibility of classes, methods, or fields."
+  },
+  {
+    "id": "no-return-from-using",
+    "message": "`IDisposables` created in a `using` statement should not be returned."
+  },
+  {
+    "id": "no-rooted-action-route",
+    "message": "ASP.NET controller actions should not have a route template starting with `/`."
+  },
+  {
+    "id": "no-self-assignment",
+    "message": "Variables should not be self-assigned."
+  },
+  {
+    "id": "no-shadow",
+    "message": "Local variables should not shadow class fields or properties."
+  },
+  {
+    "id": "no-shadow-outer-static",
+    "message": "Inner class members should not shadow outer class `static` or type members."
+  },
+  {
+    "id": "no-sleep-in-test",
+    "message": "`Thread.Sleep` should not be used in tests."
+  },
+  {
+    "id": "no-stack-trace-disclosure",
+    "message": "Do not send a stack trace to a caller."
+  },
+  {
+    "id": "no-static-in-generic",
+    "message": "Static fields should not be used in generic types."
+  },
+  {
+    "id": "no-static-write-from-instance",
+    "message": "Instance members should not write to `static` fields."
+  },
+  {
+    "id": "no-static-write-in-constructor",
+    "message": "Static fields should not be updated in constructors."
+  },
+  {
+    "id": "no-suppress-finalize",
+    "message": "`GC.SuppressFinalize` should not be called."
+  },
+  {
+    "id": "no-tabs",
+    "message": "Tabulation characters should not be used."
+  },
+  {
+    "id": "no-this-from-constructor",
+    "message": "`this` should not be exposed from constructors."
+  },
+  {
+    "id": "no-thread-static-initializer",
+    "message": "`ThreadStatic` fields should not be initialized."
+  },
+  {
+    "id": "no-thread-suspend",
+    "message": "`Thread.Resume` and `Thread.Suspend` should not be used."
+  },
+  {
+    "id": "no-throw-in-finally",
+    "message": "Exceptions should not be thrown in finally blocks."
+  },
+  {
+    "id": "no-throw-in-getter",
+    "message": "Exceptions should not be thrown from property getters."
+  },
+  {
+    "id": "no-todo",
+    "message": "Remove the TODO comment."
+  },
+  {
+    "id": "no-trace-write",
+    "message": "`Trace.Write` and `Trace.WriteLine` should not be used."
+  },
+  {
+    "id": "no-trace-write-line-if",
+    "message": "`Trace.WriteLineIf` should not be used with `TraceSwitch` levels."
+  },
+  {
+    "id": "no-type-on-type",
+    "message": "Type should not be examined on `System.Type` instances."
+  },
+  {
+    "id": "no-unconditional-replace",
+    "message": "Collection elements should not be replaced unconditionally."
+  },
+  {
+    "id": "no-unexpected-throw",
+    "message": "Exceptions should not be thrown from unexpected methods."
+  },
+  {
+    "id": "no-unsafe",
+    "message": "Unsafe code blocks should not be used."
+  },
+  {
+    "id": "no-useless-bitwise",
+    "message": "Unnecessary bit operations should not be performed."
+  },
+  {
+    "id": "no-useless-comparison",
+    "message": "Unnecessary mathematical comparisons should not be made."
+  },
+  {
+    "id": "no-useless-increment",
+    "message": "Values should not be uselessly incremented."
+  },
+  {
+    "id": "no-virtual-field-event",
+    "message": "Field-like events should not be virtual."
+  },
+  {
+    "id": "no-weak-hash",
+    "message": "Weak hashing algorithms should not be used."
+  },
+  {
+    "id": "no-weak-lock",
+    "message": "Shared resources should not be used for locking."
+  },
+  {
+    "id": "no-weak-lock-object",
+    "message": "Threads should not lock on objects with weak identity."
+  },
+  {
+    "id": "no-weak-tls",
+    "message": "Weak SSL/TLS protocols should not be used."
+  },
+  {
+    "id": "no-world-accessible-file",
+    "message": "File permissions should not be set to world-accessible values."
+  },
+  {
+    "id": "no-write-only-property",
+    "message": "Write-only properties should not be used."
+  },
+  {
+    "id": "no-xxe",
+    "message": "Do not parse XML that can load external entities."
+  },
+  {
+    "id": "normalize-uppercase",
+    "message": "Strings should be normalized to uppercase."
+  },
+  {
+    "id": "nosql-injection",
+    "message": "Do not build a NoSQL query from untrusted input."
+  },
+  {
+    "id": "null-dereference",
+    "message": "Null pointers should not be dereferenced."
+  },
+  {
+    "id": "null-forgiving-needs-nullable",
+    "message": "Null-forgiving operators should not be used when nullable warnings are disabled."
+  },
+  {
+    "id": "obsolete-needs-reason",
+    "message": "`Obsolete` attributes should include explanations."
+  },
+  {
+    "id": "omit-redundant-name",
+    "message": "Redundant property names should be omitted in anonymous classes."
+  },
+  {
+    "id": "one-statement-per-line",
+    "message": "Statements should be on separate lines."
+  },
+  {
+    "id": "one-variable-per-line",
+    "message": "Multiple variables should not be declared on the same line."
+  },
+  {
+    "id": "one-way-operation-void",
+    "message": "One-way `OperationContract` methods should have `void` return type."
+  },
+  {
+    "id": "open-redirect",
+    "message": "Do not redirect to a URL taken from untrusted input."
+  },
+  {
+    "id": "operator-named-alternative",
+    "message": "Operator overloads should have named alternatives."
+  },
+  {
+    "id": "operators-consistent",
+    "message": "Operators should be overloaded consistently."
+  },
+  {
+    "id": "optional-attribute-pair",
+    "message": "Parameters with ``DefaultParameterValue`` attributes should also be marked ``Optional``."
+  },
+  {
+    "id": "optional-field-deserialize",
+    "message": "Deserialization methods should be provided for `OptionalField` members."
+  },
+  {
+    "id": "override-does-more",
+    "message": "Overriding members should do more than simply call the same member in the base class."
+  },
+  {
+    "id": "override-keeps-defaults",
+    "message": "Method overrides should not change parameter defaults."
+  },
+  {
+    "id": "parameter-base-type",
+    "message": "Method parameters should be declared with base types."
+  },
+  {
+    "id": "parameter-name-matches-base",
+    "message": "Parameter names should match base declaration and other partial definitions."
+  },
+  {
+    "id": "parameter-name-not-method",
+    "message": "Parameter names should not duplicate the names of their methods."
+  },
+  {
+    "id": "params-on-override",
+    "message": "`params` should be used on overrides."
+  },
+  {
+    "id": "part-creation-policy",
+    "message": "`PartCreationPolicyAttribute` should be used with `ExportAttribute`."
+  },
+  {
+    "id": "pascal-case-member",
+    "message": "Methods and properties should be named in PascalCase."
+  },
+  {
+    "id": "pascal-case-type",
+    "message": "Types should be named in PascalCase."
+  },
+  {
+    "id": "pass-optional-to-base",
+    "message": "Optional parameters should be passed to `base` calls."
+  },
+  {
+    "id": "password-salt",
+    "message": "Password hashing functions should use an unpredictable salt."
+  },
+  {
+    "id": "path-injection",
+    "message": "Do not build a file path from untrusted input."
+  },
+  {
+    "id": "prefer-any",
+    "message": "`Any()` should be used to test for emptiness."
+  },
+  {
+    "id": "prefer-assembly-load",
+    "message": "`Assembly.Load` should be used."
+  },
+  {
+    "id": "prefer-awaitable",
+    "message": "Awaitable method should be used."
+  },
+  {
+    "id": "prefer-cancellation-token",
+    "message": "The overload accepting a `CancellationToken` should be used."
+  },
+  {
+    "id": "prefer-char-overload",
+    "message": "`StartsWith` and `EndsWith` overloads that take a `char` should be used instead of the ones that take a `string`."
+  },
+  {
+    "id": "prefer-contains",
+    "message": "`Contains` should be used instead of `Any` for simple equality checks."
+  },
+  {
+    "id": "prefer-datetimeoffset",
+    "message": "Use `DateTimeOffset` instead of `DateTime`."
+  },
+  {
+    "id": "prefer-exists",
+    "message": "Collection-specific `Exists` method should be used instead of the `Any` extension."
+  },
+  {
+    "id": "prefer-find",
+    "message": "`Find` method should be used instead of the `FirstOrDefault` extension."
+  },
+  {
+    "id": "prefer-first-not-or-default",
+    "message": "First/Single should be used instead of FirstOrDefault/SingleOrDefault on collections that are known to be non-empty."
+  },
+  {
+    "id": "prefer-format-provider",
+    "message": "Overloads with a `CultureInfo` or an `IFormatProvider` parameter should be used."
+  },
+  {
+    "id": "prefer-generic",
+    "message": "Generics should be used when appropriate."
+  },
+  {
+    "id": "prefer-index",
+    "message": "Prefer indexing instead of `Enumerable` methods on types implementing `IList`."
+  },
+  {
+    "id": "prefer-isnullorempty",
+    "message": "`string.IsNullOrEmpty` should be used."
+  },
+  {
+    "id": "prefer-linked-list-ends",
+    "message": "`First` and `Last` properties of `LinkedList` should be used instead of the `First()` and `Last()` extension methods."
+  },
+  {
+    "id": "prefer-linq",
+    "message": "Loops should be simplified with `LINQ` expressions."
+  },
+  {
+    "id": "prefer-nameof",
+    "message": "`nameof` should be used."
+  },
+  {
+    "id": "prefer-params",
+    "message": "`params` should be used instead of `varargs`."
+  },
+  {
+    "id": "prefer-property",
+    "message": "Properties should be preferred."
+  },
+  {
+    "id": "prefer-range",
+    "message": "Start index should be used instead of calling Substring."
+  },
+  {
+    "id": "prefer-set-min-max",
+    "message": "`Min/Max` properties of `Set` types should be used instead of the `Enumerable` extension methods."
+  },
+  {
+    "id": "prefer-string-comparison",
+    "message": "Overloads with a `StringComparison` parameter should be used."
+  },
+  {
+    "id": "prefer-string-create",
+    "message": "`string.Create` should be used instead of `FormattableString`."
+  },
+  {
+    "id": "prefer-trueforall",
+    "message": "The collection-specific `TrueForAll` method should be used instead of the `All` extension."
+  },
+  {
+    "id": "prefer-while",
+    "message": "A `while` loop should be used instead of a `for` loop."
+  },
+  {
+    "id": "produces-response-type",
+    "message": "Actions that return a value should be annotated with ProducesResponseTypeAttribute containing the return type."
+  },
+  {
+    "id": "property-not-get-method",
+    "message": "Property names should not match get methods."
+  },
+  {
+    "id": "pure-returns-value",
+    "message": "Methods with `Pure` attribute should return a value."
+  },
+  {
+    "id": "reachable-branch",
+    "message": "Conditionally executed code should be reachable."
+  },
+  {
+    "id": "readonly-collection-property",
+    "message": "Collection properties should be readonly."
+  },
+  {
+    "id": "readonly-field-assignment",
+    "message": "Property assignments should not be made for `readonly` fields not constrained to reference types."
+  },
+  {
+    "id": "readonly-not-mutable",
+    "message": "Mutable, non-private fields should not be `readonly`."
+  },
+  {
+    "id": "redundant-boolean",
+    "message": "Boolean literals should not be redundant."
+  },
+  {
+    "id": "redundant-cast",
+    "message": "Redundant casts should not be used."
+  },
+  {
+    "id": "redundant-include",
+    "message": "Redundant `Include` calls should be removed."
+  },
+  {
+    "id": "redundant-modifier",
+    "message": "Redundant modifiers should not be used."
+  },
+  {
+    "id": "redundant-null-forgiving",
+    "message": "Null-forgiving operators should not be redundant."
+  },
+  {
+    "id": "redundant-nullable-compare",
+    "message": "Nullable type comparison should not be redundant."
+  },
+  {
+    "id": "redundant-parentheses",
+    "message": "Remove redundant parentheses."
+  },
+  {
+    "id": "redundant-to-array",
+    "message": "`string.ToCharArray()` and `ReadOnlySpan<T>.ToArray()` should not be called redundantly."
+  },
+  {
+    "id": "redundant-tostring",
+    "message": "`ToString()` calls should not be redundant."
+  },
+  {
+    "id": "reflected-xss",
+    "message": "Do not write untrusted input into a response."
+  },
+  {
+    "id": "reflection-injection",
+    "message": "Do not reflect over a name taken from untrusted input."
+  },
+  {
+    "id": "regex-dos",
+    "message": "Do not run an untrusted regular expression without a timeout."
+  },
+  {
+    "id": "regex-timeout",
+    "message": "Regular expressions should be executed with a timeout."
+  },
+  {
+    "id": "regular-number-pattern",
+    "message": "Number patterns should be regular."
+  },
+  {
+    "id": "release-lock-same-method",
+    "message": "Locks should be released within the same method."
+  },
+  {
+    "id": "remove-obsolete",
+    "message": "Remove obsolete code."
+  },
+  {
+    "id": "request-size-limit",
+    "message": "Limit the HTTP request body to 8 MB."
+  },
+  {
+    "id": "request-validation",
+    "message": "ASP.NET Request Validation should not be disabled."
+  },
+  {
+    "id": "required-value-input",
+    "message": "Value type property used as input in a controller action should be nullable, required or annotated with the JsonRequiredAttribute to avoid under-posting."
+  },
+  {
+    "id": "restrict-cors",
+    "message": "Cross-Origin Resource Sharing (CORS) policy should be restricted to trusted origins."
+  },
+  {
+    "id": "restrict-deserialized-types",
+    "message": "Types allowed to be deserialized should be restricted."
+  },
+  {
+    "id": "restrictive-csp",
+    "message": "Content Security Policies should be restrictive."
+  },
+  {
+    "id": "return-empty-not-null",
+    "message": "Empty arrays and collections should be returned instead of null."
+  },
+  {
+    "id": "reuse-client",
+    "message": "Client instances should not be recreated on each Azure Function invocation."
+  },
+  {
+    "id": "robust-cipher",
+    "message": "Cipher algorithms should be robust."
+  },
+  {
+    "id": "route-constraint-type",
+    "message": "Component parameter type should match the route parameter type constraint."
+  },
+  {
+    "id": "safe-cast",
+    "message": "Invalid casts should be avoided."
+  },
+  {
+    "id": "seal-attribute",
+    "message": "Non-abstract attributes should be sealed."
+  },
+  {
+    "id": "seal-private-class",
+    "message": "Non-derived `private` classes and records should be `sealed`."
+  },
+  {
+    "id": "sealed-no-protected",
+    "message": "`sealed` classes should not have `protected` members."
+  },
+  {
+    "id": "secure-cipher-mode",
+    "message": "Encryption algorithms should be used with secure mode and padding scheme."
+  },
+  {
+    "id": "secure-temp-file",
+    "message": "Insecure temporary file creation methods should not be used."
+  },
+  {
+    "id": "serialization-callback",
+    "message": "Serialization event handlers should be implemented correctly."
+  },
+  {
+    "id": "service-and-operation-contract",
+    "message": "`ServiceContract` and `OperationContract` attributes should be used together."
+  },
+  {
+    "id": "set-locale",
+    "message": "Locales should be set for data types."
+  },
+  {
+    "id": "shift-out-of-range",
+    "message": "Integral numbers should not be shifted by zero or more than their number of bits-1."
+  },
+  {
+    "id": "shift-right-integer",
+    "message": "Right operands of shift operators should be integers."
+  },
+  {
+    "id": "short-circuit",
+    "message": "Short-circuit logic should be used in boolean contexts."
+  },
+  {
+    "id": "simplest-condition",
+    "message": "The simplest possible condition syntax should be used."
+  },
+  {
+    "id": "simplify-linq",
+    "message": "LINQ expressions should be simplified."
+  },
+  {
+    "id": "simplify-type-check",
+    "message": "Runtime type checking should be simplified."
+  },
+  {
+    "id": "single-key-attribute",
+    "message": "Multiple ``Key`` attributes should not be used to define a composite key."
+  },
+  {
+    "id": "single-orderby",
+    "message": "Multiple `OrderBy` calls should not be used."
+  },
+  {
+    "id": "sql-injection",
+    "message": "Do not build a database query from untrusted input."
+  },
+  {
+    "id": "sql-keyword-whitespace",
+    "message": "SQL keywords should be delimited by whitespace."
+  },
+  {
+    "id": "ssrf",
+    "message": "Do not request a URL taken from untrusted input."
+  },
+  {
+    "id": "ssrf-traversal",
+    "message": "Do not request a URL from untrusted input that can leave the intended host."
+  },
+  {
+    "id": "sta-thread",
+    "message": "Windows Forms entry points should be marked with STAThread."
+  },
+  {
+    "id": "stateless-azure-function",
+    "message": "Azure Functions should be stateless."
+  },
+  {
+    "id": "static-field-inline-init",
+    "message": "`static` fields should be initialized inline."
+  },
+  {
+    "id": "static-if-no-instance",
+    "message": "Methods and properties that don't access instance data should be static."
+  },
+  {
+    "id": "static-init-order",
+    "message": "Static fields should appear in the order they must be initialized."
+  },
+  {
+    "id": "string-culture",
+    "message": "Culture should be specified for `string` operations."
+  },
+  {
+    "id": "strong-crypto-key",
+    "message": "Cryptographic keys should be robust."
+  },
+  {
+    "id": "sum-overflow-check",
+    "message": "Overflow checking should not be disabled for `Enumerable.Sum`."
+  },
+  {
+    "id": "suppress-finalize-needs-destructor",
+    "message": "`GC.SuppressFinalize` should not be invoked for types without destructors."
+  },
+  {
+    "id": "switch-at-least-three",
+    "message": "`switch` statements should have at least 3 `case` clauses."
+  },
+  {
+    "id": "switch-default",
+    "message": "`switch/Select` statements should contain a `default/Case Else` clauses."
+  },
+  {
+    "id": "switch-too-many-cases",
+    "message": "A switch has more than 30 cases. Split it."
+  },
+  {
+    "id": "task-not-null",
+    "message": "Non-async `Task/Task<T>` methods should not return null."
+  },
+  {
+    "id": "test-has-assertion",
+    "message": "Tests should include assertions."
+  },
+  {
+    "id": "test-has-case",
+    "message": "Test classes should contain at least one test case."
+  },
+  {
+    "id": "test-signature",
+    "message": "Test method signatures should be correct."
+  },
+  {
+    "id": "testable-clock",
+    "message": "Use a testable date/time provider."
+  },
+  {
+    "id": "thread-static-on-static",
+    "message": "`ThreadStatic` should not be used on non-static fields."
+  },
+  {
+    "id": "throw-created-exception",
+    "message": "Exceptions should not be created without being thrown."
+  },
+  {
+    "id": "timezone-id-direct",
+    "message": "Use `TimeZoneInfo.FindSystemTimeZoneById` without converting the timezones with `TimezoneConverter`."
+  },
+  {
+    "id": "too-many-logs",
+    "message": "This block logs too often."
+  },
+  {
+    "id": "too-many-parameters",
+    "message": "A method has more than 7 parameters."
+  },
+  {
+    "id": "tostring-not-null",
+    "message": "`ToString()` method should not return null."
+  },
+  {
+    "id": "type-name-not-namespace",
+    "message": "Type names should not match namespaces."
+  },
+  {
+    "id": "type-name-suffix",
+    "message": "Attribute, EventArgs, and Exception type names should end with the type being extended."
+  },
+  {
+    "id": "type-param-in-signature",
+    "message": "All type parameters should be used in the parameter list to enable type inference."
+  },
+  {
+    "id": "typed-equals-interface",
+    "message": "Classes that provide `Equals(<T>)` should implement `IEquatable<T>`."
+  },
+  {
+    "id": "unassigned-member",
+    "message": "Unassigned members should be removed."
+  },
+  {
+    "id": "unchanged-is-const",
+    "message": "Unchanged variables should be marked as `const`."
+  },
+  {
+    "id": "unique-log-placeholder",
+    "message": "Message template placeholders should be unique."
+  },
+  {
+    "id": "unpredictable-iv",
+    "message": "Cipher Block Chaining IVs should be unpredictable."
+  },
+  {
+    "id": "unpredictable-random",
+    "message": "Secure random number generators should not output predictable values."
+  },
+  {
+    "id": "unread-private-field",
+    "message": "Unread `private` fields should be removed."
+  },
+  {
+    "id": "untrusted-environment-variable",
+    "message": "Do not set an environment variable from untrusted input."
+  },
+  {
+    "id": "untrusted-session-cookie",
+    "message": "Do not create a session cookie from untrusted input."
+  },
+  {
+    "id": "unused-assignment",
+    "message": "Unused assignments should be removed."
+  },
+  {
+    "id": "unused-local",
+    "message": "Unused local variables should be removed."
+  },
+  {
+    "id": "unused-parameter",
+    "message": "Unused method parameters should be removed."
+  },
+  {
+    "id": "unused-private-member",
+    "message": "Unused private types or members should be removed."
+  },
+  {
+    "id": "unused-return",
+    "message": "Methods should not return values that are never used."
+  },
+  {
+    "id": "unused-type-parameter",
+    "message": "Unused type parameters should be removed."
+  },
+  {
+    "id": "uri-not-string-argument",
+    "message": "`System.Uri` arguments should be used instead of strings."
+  },
+  {
+    "id": "uri-overload-calls-uri",
+    "message": "String URI overloads should call `System.Uri` overloads."
+  },
+  {
+    "id": "uri-parameter-not-string",
+    "message": "URI Parameters should not be strings."
+  },
+  {
+    "id": "uri-property-not-string",
+    "message": "URI properties should not be strings."
+  },
+  {
+    "id": "uri-return-not-string",
+    "message": "URI return values should not be strings."
+  },
+  {
+    "id": "use-created-object",
+    "message": "Objects should not be created to be dropped immediately without being used."
+  },
+  {
+    "id": "use-equals-not-operator",
+    "message": "`==` should not be used when `Equals` is overridden."
+  },
+  {
+    "id": "use-lambda-parameter",
+    "message": "The lambda parameter should be used instead of capturing arguments in `ConcurrentDictionary` methods."
+  },
+  {
+    "id": "use-return-value",
+    "message": "Methods without side effects should not have their return values ignored."
+  },
+  {
+    "id": "use-stringbuilder",
+    "message": "`StringBuilder` data should be used."
+  },
+  {
+    "id": "use-unix-epoch",
+    "message": "Use the `UnixEpoch` field instead of creating `DateTime` instances that point to the beginning of the Unix epoch."
+  },
+  {
+    "id": "use-value-keyword",
+    "message": "`value` contextual keyword should be used."
+  },
+  {
+    "id": "utility-private-constructor",
+    "message": "Utility classes should not have public constructors."
+  },
+  {
+    "id": "valid-regex",
+    "message": "Regular expressions should be syntactically valid."
+  },
+  {
+    "id": "validate-before-async",
+    "message": "Parameter validation in `async`/`await` methods should be wrapped."
+  },
+  {
+    "id": "validate-before-yield",
+    "message": "Parameter validation in yielding methods should be wrapped."
+  },
+  {
+    "id": "validate-on-deserialize",
+    "message": "Serializable objects should validate data during deserialization."
+  },
+  {
+    "id": "validate-public-arguments",
+    "message": "Arguments of public methods should be validated against null."
+  },
+  {
+    "id": "validate-xml-signature",
+    "message": "XML signatures should be validated securely."
+  },
+  {
+    "id": "variant-type-parameter",
+    "message": "Generic type parameters should be co/contravariant when possible."
+  },
+  {
+    "id": "verify-server-certificate",
+    "message": "Server certificates should be verified during SSL/TLS connections."
+  },
+  {
+    "id": "wrap-native-method",
+    "message": "Native methods should be wrapped."
+  },
+  {
+    "id": "xml-injection",
+    "message": "Do not build XML from untrusted input."
+  },
+  {
+    "id": "xpath-injection",
+    "message": "Do not build an XPath expression from untrusted input."
+  },
+  {
+    "id": "xslt-injection",
+    "message": "Do not build an XSLT transform from untrusted input."
+  },
+  {
+    "id": "zip-slip",
+    "message": "Do not extract an archive entry whose path escapes the destination."
+  }
+]

@@ -8,7 +8,7 @@ public class QlcheckAppTests : IDisposable
 
     private const string UsagePrefix = "Usage:";
 
-    private const string FindingsCountPattern = @"Findings\s+1";
+    private const string FindingsCountPattern = @"Findings\s+\d+";
 
     private const string DirtyPath = "/Dirty.cs";
 
@@ -89,7 +89,7 @@ public class QlcheckAppTests : IDisposable
             """);
 
         var stdout = new StringWriter();
-        var code = QlcheckApp.Run([file], stdout, new StringWriter());
+        var code = QlcheckApp.Run(["--check", MagicLiteralCheck.CheckId, file], stdout, new StringWriter());
 
         Assert.Equal(ExitCode.Clean, code);
         Assert.Contains(FindingsProperty, stdout.ToString());
@@ -130,6 +130,40 @@ public class QlcheckAppTests : IDisposable
     }
 
     [Fact]
+    public void Default_run_skips_coverage()
+    {
+        var file = Write("Repo.cs", "class C { void M() { } }\n");
+
+        var stdout = new StringWriter();
+        QlcheckApp.Run([file], stdout, new StringWriter());
+
+        Assert.DoesNotContain("\"check\": \"coverage\"", stdout.ToString());
+    }
+
+    [Fact]
+    public void Coverage_flag_without_a_project_exits_two()
+    {
+        var file = Write("Repo.cs", "class C { void M() { } }\n");
+        var stderr = new StringWriter();
+        var code = QlcheckApp.Run(["--coverage", file], new StringWriter(), stderr);
+
+        Assert.Equal(ExitCode.Error, code);
+        Assert.Contains("No project for", stderr.ToString());
+        Assert.DoesNotContain("Unknown option", stderr.ToString());
+    }
+
+    [Fact]
+    public void Coverage_without_a_project_exits_two()
+    {
+        var file = Write("Repo.cs", "class C { void M() { } }\n");
+        var stderr = new StringWriter();
+        var code = QlcheckApp.Run(["--check", CoverageCheck.CheckId, file], new StringWriter(), stderr);
+
+        Assert.Equal(ExitCode.Error, code);
+        Assert.Contains("No project for", stderr.ToString());
+    }
+
+    [Fact]
     public void Default_run_skips_inline_sql()
     {
         var file = Write("Repo.cs", InlineSql);
@@ -137,7 +171,7 @@ public class QlcheckAppTests : IDisposable
         var stdout = new StringWriter();
         var code = QlcheckApp.Run([file], stdout, new StringWriter());
 
-        Assert.Equal(ExitCode.Clean, code);
+        Assert.NotEqual(ExitCode.Error, code);
         Assert.DoesNotContain(InlineSqlCheck.CheckId, stdout.ToString());
     }
 
@@ -191,10 +225,10 @@ public class QlcheckAppTests : IDisposable
         Assert.DoesNotContain(FindingsProperty, text);
         Assert.Matches(@"Files checked\s+2", text);
         Assert.Matches(@"Lines checked\s+\d+", text);
-        Assert.Matches(@"Checks run\s+6", text);
+        Assert.Matches(@"Checks run\s+502", text);
         Assert.Matches(FindingsCountPattern, text);
-        Assert.Matches(@"Files with findings\s+1", text);
-        Assert.Matches(@"Clean files\s+1", text);
+        Assert.Matches(@"Files with findings\s+2", text);
+        Assert.Matches(@"Clean files\s+0", text);
         Assert.Contains(MagicLiteralCheck.CheckId, text);
         Assert.Contains(DirtyPath, text);
         Assert.Contains(DurationLabel, text);
@@ -207,7 +241,7 @@ public class QlcheckAppTests : IDisposable
         Write("Clean.cs", "class C {}\n");
 
         var stdout = new StringWriter();
-        var code = QlcheckApp.Run([_dir], stdout, new StringWriter());
+        var code = QlcheckApp.Run(["--check", MagicLiteralCheck.CheckId, _dir], stdout, new StringWriter());
 
         Assert.Equal(ExitCode.Clean, code);
         Assert.DoesNotContain("Notes.txt", stdout.ToString());

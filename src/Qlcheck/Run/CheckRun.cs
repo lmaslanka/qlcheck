@@ -6,7 +6,7 @@ namespace Qlcheck.Run;
 
 internal static class CheckRun
 {
-    public static IReadOnlyList<Finding> Execute(
+    public static RunResult Execute(
         IReadOnlyList<SourceScan.LoadedSource> loaded,
         IReadOnlyList<ICheck> checks,
         IReadOnlyList<ILanguage> languages)
@@ -14,6 +14,7 @@ internal static class CheckRun
         EnsureOwned(checks, languages);
         EnsureOneLanguage(loaded, languages);
         var findings = new List<Finding>();
+        var coverage = new List<CoverageFile>();
         foreach (var language in languages.OrderBy(language => language.Id, StringComparer.Ordinal))
         {
             var files = loaded.Where(source => language.Matches(source.FullPath)).ToList();
@@ -28,10 +29,12 @@ internal static class CheckRun
                 continue;
             }
 
-            findings.AddRange(language.Execute(files, mine));
+            var result = language.Execute(files, mine);
+            findings.AddRange(result.Findings);
+            coverage.AddRange(result.Coverage);
         }
 
-        return findings;
+        return new RunResult(findings, coverage);
     }
 
     private static void EnsureOwned(IReadOnlyList<ICheck> checks, IReadOnlyList<ILanguage> languages)
