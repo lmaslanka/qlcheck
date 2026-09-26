@@ -32,17 +32,16 @@ public static class QlcheckApp
                 stderr.WriteLine("Unknown check: " + string.Join(", ", unknown));
                 return ExitCode.Error;
             }
-        }
 
-        if (!options.InlineSql && !options.CheckIds.Contains(InlineSqlCheck.CheckId))
-        {
-            checks = checks.Where(c => c.Id != InlineSqlCheck.CheckId).ToList();
-        }
-
-        if (options.CheckIds.Count > 0)
-        {
             checks = checks.Where(c => options.CheckIds.Contains(c.Id)).ToList();
         }
+        else
+        {
+            checks = checks.Where(c => c.EnabledByDefault || options.EnableIds.Contains(c.Id)).ToList();
+        }
+
+        var fileChecks = checks.OfType<IFileCheck>().ToList();
+        var compilationChecks = checks.OfType<ICompilationCheck>().ToList();
 
         List<string> files;
         try
@@ -68,19 +67,22 @@ public static class QlcheckApp
             .SelectMany(file =>
             {
                 var tree = file.Tree;
-                return checks.SelectMany(c => c.Analyze(file, tree));
+                return fileChecks.SelectMany(c => c.Analyze(file, tree));
             })
             .ToList();
-        var included = sourceFiles.Select(f => f.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        foreach (var group in loaded.GroupBy(l => CSharpCompilations.FindCsproj(l.Full) ?? ""))
+        if (compilationChecks.Count > 0)
         {
-            var name = string.IsNullOrEmpty(group.Key)
-                ? "adhoc"
-                : Path.GetFileNameWithoutExtension(group.Key);
-            var compilation = CSharpCompilations.Create(name, group.Select(g => g.File.Tree));
-            foreach (var check in checks)
+            var included = sourceFiles.Select(f => f.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            foreach (var group in loaded.GroupBy(l => CSharpCompilations.FindCsproj(l.Full) ?? ""))
             {
-                findings.AddRange(check.AnalyzeCompilation(compilation, included));
+                var name = string.IsNullOrEmpty(group.Key)
+                    ? "adhoc"
+                    : Path.GetFileNameWithoutExtension(group.Key);
+                var compilation = CSharpCompilations.Create(name, group.Select(g => g.File.Tree));
+                foreach (var check in compilationChecks)
+                {
+                    findings.AddRange(check.AnalyzeCompilation(compilation, included));
+                }
             }
         }
 
@@ -112,7 +114,7 @@ public static class QlcheckApp
     {
         var human = false;
         var stats = false;
-        var inlineSql = false;
+        var enableIds = new List<string>();
         var checkIds = new List<string>();
         var paths = new List<string>();
         for (var i = 0; i < args.Count; i++)
@@ -139,7 +141,7 @@ public static class QlcheckApp
 
             if (arg == "--inline-sql")
             {
-                inlineSql = true;
+                enableIds.Add("inline-sql");
                 continue;
             }
 
@@ -175,7 +177,7 @@ public static class QlcheckApp
             return false;
         }
 
-        options = new Options(human, stats, inlineSql, checkIds, paths);
+        options = new Options(human, stats, enableIds, checkIds, paths);
         return true;
     }
 
@@ -421,7 +423,7 @@ public static class QlcheckApp
     private sealed record Options(
         bool Human,
         bool Stats,
-        bool InlineSql,
+        IReadOnlyList<string> EnableIds,
         IReadOnlyList<string> CheckIds,
         IReadOnlyList<string> Paths);
 

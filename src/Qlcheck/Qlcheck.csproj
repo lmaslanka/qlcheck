@@ -17,4 +17,8 @@
     <ProjectReference Include="..\..\..\qlfmt\src\QlFmt\QlFmt.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Qlcheck.Tests" />
+  </ItemGroup>
+
 </Project>

@@ -4,8 +4,8 @@ public class MagicLiteralCheckTests
 {
     private static IReadOnlyList<Finding> Run(string source, string path = "Repo.cs")
     {
-        ICheck check = new MagicLiteralCheck();
-        return check.Run(new CheckContext([new SourceFile(path, source)]));
+        var file = new SourceFile(path, source);
+        return new MagicLiteralCheck().Analyze(file, file.Tree);
     }
 
     [Fact]

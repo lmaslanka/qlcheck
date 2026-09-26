@@ -4,8 +4,10 @@ public class UnusedUsingCheckTests
 {
     private static IReadOnlyList<Finding> Run(string source, string path = "Repo.cs")
     {
-        ICheck check = new UnusedUsingCheck();
-        return check.Run(new CheckContext([new SourceFile(path, source)]));
+        var file = new SourceFile(path, source);
+        var compilation = CSharpCompilations.Create("qlcheck", [file.Tree]);
+        var included = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { path };
+        return new UnusedUsingCheck().AnalyzeCompilation(compilation, included);
     }
 
     [Fact]

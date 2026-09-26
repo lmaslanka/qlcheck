@@ -4,7 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Qlcheck;
 
-public sealed class MagicLiteralCheck : ICheck
+public sealed class MagicLiteralCheck : IFileCheck
 {
     public const string CheckId = "magic-literal";
 
@@ -69,17 +69,7 @@ public sealed class MagicLiteralCheck : ICheck
             return false;
         }
 
-        var span = literal.GetLocation().GetLineSpan().StartLinePosition;
-        var line = span.Line + 1;
-        var column = span.Character + 1;
-        var file = path.Replace('\\', '/');
-        finding = new Finding(
-            Id: $"{CheckId}:{file}:{line}:{column}",
-            Check: CheckId,
-            File: file,
-            Line: line,
-            Column: column,
-            Message: message);
+        finding = Finding.At(CheckId, path, literal, message);
         return true;
     }
 

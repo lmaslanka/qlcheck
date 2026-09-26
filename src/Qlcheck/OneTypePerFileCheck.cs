@@ -4,7 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Qlcheck;
 
-public sealed class OneTypePerFileCheck : ICheck
+public sealed class OneTypePerFileCheck : IFileCheck
 {
     public const string CheckId = "one-type-per-file";
 
@@ -40,18 +40,14 @@ public sealed class OneTypePerFileCheck : ICheck
             return [];
         }
 
-        var path = file.Path.Replace('\\', '/');
         var findings = new List<Finding>();
         foreach (var extra in unique.Skip(1))
         {
-            var span = extra.Identifier.GetLocation().GetLineSpan().StartLinePosition;
-            findings.Add(new Finding(
-                Id: $"{CheckId}:{path}:{span.Line + 1}:{span.Character + 1}",
-                Check: CheckId,
-                File: path,
-                Line: span.Line + 1,
-                Column: span.Character + 1,
-                Message: $"Move '{extra.Identifier.Text}' into its own file."));
+            findings.Add(Finding.At(
+                CheckId,
+                file.Path,
+                extra.Identifier,
+                $"Move '{extra.Identifier.Text}' into its own file."));
         }
 
         return findings;

@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Qlcheck;
 
-public sealed class InlineSqlCheck : ICheck
+public sealed class InlineSqlCheck : IFileCheck
 {
     public const string LayoutMessage =
         "Inline SQL must be a C# raw string literal with qlfmt layout.";
@@ -35,6 +35,8 @@ public sealed class InlineSqlCheck : ICheck
     };
 
     public string Id => CheckId;
+
+    public bool EnabledByDefault => false;
 
     public IReadOnlyList<Finding> Analyze(SourceFile file, SyntaxTree tree)
     {
@@ -147,7 +149,7 @@ public sealed class InlineSqlCheck : ICheck
 
         if (resolved is UnformattableSql unformattable)
         {
-            finding = MakeFinding(path, tree, unformattable.Node, UnformattableMessage, replacement: null);
+            finding = Finding.At(CheckId, path, unformattable.Node, UnformattableMessage);
             return true;
         }
 
@@ -163,12 +165,11 @@ public sealed class InlineSqlCheck : ICheck
         }
         catch (QlParse.SqlParseException ex)
         {
-            finding = MakeFinding(
+            finding = Finding.At(
+                CheckId,
                 path,
-                tree,
                 literal.Node,
-                $"{FormatFailedMessage} {ex.Message} at {ex.Position}",
-                replacement: null);
+                $"{FormatFailedMessage} {ex.Message} at {ex.Position}");
             return true;
         }
 
@@ -180,7 +181,7 @@ public sealed class InlineSqlCheck : ICheck
         var line = tree.GetText().Lines[literal.Node.GetLocation().GetLineSpan().StartLinePosition.Line];
         var contentIndent = line.ToString().TakeWhile(char.IsWhiteSpace).Count() + 4;
         var replacement = ToRawStringLiteral(formatted, contentIndent);
-        finding = MakeFinding(path, tree, literal.Node, LayoutMessage, replacement);
+        finding = Finding.At(CheckId, path, literal.Node, LayoutMessage, replacement);
         return true;
     }
 
@@ -330,27 +331,6 @@ public sealed class InlineSqlCheck : ICheck
 
         sb.Append(indent).Append("\"\"\"");
         return sb.ToString();
-    }
-
-    private static Finding MakeFinding(
-        string path,
-        SyntaxTree tree,
-        ExpressionSyntax node,
-        string message,
-        string? replacement)
-    {
-        var span = node.GetLocation().GetLineSpan().StartLinePosition;
-        var line = span.Line + 1;
-        var column = span.Character + 1;
-        var file = path.Replace('\\', '/');
-        return new Finding(
-            Id: $"{CheckId}:{file}:{line}:{column}",
-            Check: CheckId,
-            File: file,
-            Line: line,
-            Column: column,
-            Message: message,
-            Replacement: replacement);
     }
 
     private abstract record SqlTarget;

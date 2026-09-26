@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Qlcheck;
 
-public sealed class UnusedUsingCheck : ICheck
+public sealed class UnusedUsingCheck : ICompilationCheck
 {
     public const string CheckId = "unused-using";
 
@@ -17,13 +17,6 @@ public sealed class UnusedUsingCheck : ICheck
     };
 
     public string Id => CheckId;
-
-    public IReadOnlyList<Finding> Analyze(SourceFile file, SyntaxTree tree) => [];
-
-    IReadOnlyList<Finding> ICheck.AnalyzeCompilation(
-        Compilation compilation,
-        IReadOnlySet<string> includedFiles) =>
-        AnalyzeCompilation(compilation, includedFiles);
 
     public IReadOnlyList<Finding> AnalyzeCompilation(
         Compilation compilation,
@@ -62,17 +55,7 @@ public sealed class UnusedUsingCheck : ICheck
                 continue;
             }
 
-            var span = diagnostic.Location.GetLineSpan().StartLinePosition;
-            var line = span.Line + 1;
-            var column = span.Character + 1;
-            findings.Add(new Finding(
-                Id: $"{CheckId}:{path}:{line}:{column}",
-                Check: CheckId,
-                File: path,
-                Line: line,
-                Column: column,
-                Message: Message,
-                Replacement: string.Empty));
+            findings.Add(Finding.At(CheckId, path, diagnostic.Location, Message, string.Empty));
         }
 
         return findings;

@@ -4,8 +4,8 @@ public class OneTypePerFileCheckTests
 {
     private static IReadOnlyList<Finding> Run(string source, string path = "Repo.cs")
     {
-        ICheck check = new OneTypePerFileCheck();
-        return check.Run(new CheckContext([new SourceFile(path, source)]));
+        var file = new SourceFile(path, source);
+        return new OneTypePerFileCheck().Analyze(file, file.Tree);
     }
 
     [Fact]

@@ -4,7 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Qlcheck;
 
-public sealed class StringEmptyCheck : ICheck
+public sealed class StringEmptyCheck : IFileCheck
 {
     public const string CheckId = "string-empty";
 
@@ -24,18 +24,7 @@ public sealed class StringEmptyCheck : ICheck
                 continue;
             }
 
-            var span = literal.GetLocation().GetLineSpan().StartLinePosition;
-            var line = span.Line + 1;
-            var column = span.Character + 1;
-            var path = file.Path.Replace('\\', '/');
-            findings.Add(new Finding(
-                Id: $"{CheckId}:{path}:{line}:{column}",
-                Check: CheckId,
-                File: path,
-                Line: line,
-                Column: column,
-                Message: Message,
-                Replacement: "string.Empty"));
+            findings.Add(Finding.At(CheckId, file.Path, literal, Message, "string.Empty"));
         }
 
         return findings;

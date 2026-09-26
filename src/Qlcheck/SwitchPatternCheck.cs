@@ -4,7 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Qlcheck;
 
-public sealed class SwitchPatternCheck : ICheck
+public sealed class SwitchPatternCheck : IFileCheck
 {
     public const string CheckId = "switch-pattern";
 
@@ -22,17 +22,7 @@ public sealed class SwitchPatternCheck : ICheck
                 continue;
             }
 
-            var span = statement.SwitchKeyword.GetLocation().GetLineSpan().StartLinePosition;
-            var line = span.Line + 1;
-            var column = span.Character + 1;
-            var path = file.Path.Replace('\\', '/');
-            findings.Add(new Finding(
-                Id: $"{CheckId}:{path}:{line}:{column}",
-                Check: CheckId,
-                File: path,
-                Line: line,
-                Column: column,
-                Message: Message));
+            findings.Add(Finding.At(CheckId, file.Path, statement.SwitchKeyword, Message));
         }
 
         return findings;

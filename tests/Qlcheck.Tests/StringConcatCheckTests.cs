@@ -4,8 +4,8 @@ public class StringConcatCheckTests
 {
     private static IReadOnlyList<Finding> Run(string source, string path = "Repo.cs")
     {
-        ICheck check = new StringConcatCheck();
-        return check.Run(new CheckContext([new SourceFile(path, source)]));
+        var file = new SourceFile(path, source);
+        return new StringConcatCheck().Analyze(file, file.Tree);
     }
 
     [Fact]

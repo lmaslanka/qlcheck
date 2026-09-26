@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Qlcheck;
 
-public sealed class StringConcatCheck : ICheck
+public sealed class StringConcatCheck : IFileCheck
 {
     public const string CheckId = "string-concat";
 
@@ -26,13 +26,13 @@ public sealed class StringConcatCheck : ICheck
                          IsOutermost(binary) &&
                          !IsIgnoredContext(binary) &&
                          !IsSqlConcat(binary):
-                    findings.Add(MakeFinding(file.Path, binary, TryInterpolation(binary)));
+                    findings.Add(Finding.At(CheckId, file.Path, binary, Message, TryInterpolation(binary)));
                     break;
                 case InvocationExpressionSyntax invocation
                     when IsStringConcatCall(invocation) &&
                          !IsIgnoredContext(invocation) &&
                          !IsSqlConcatCall(invocation):
-                    findings.Add(MakeFinding(file.Path, invocation, replacement: null));
+                    findings.Add(Finding.At(CheckId, file.Path, invocation, Message));
                     break;
             }
         }
@@ -238,21 +238,5 @@ public sealed class StringConcatCheck : ICheck
         }
 
         return expression;
-    }
-
-    private static Finding MakeFinding(string path, SyntaxNode node, string? replacement)
-    {
-        var span = node.GetLocation().GetLineSpan().StartLinePosition;
-        var line = span.Line + 1;
-        var column = span.Character + 1;
-        var file = path.Replace('\\', '/');
-        return new Finding(
-            Id: $"{CheckId}:{file}:{line}:{column}",
-            Check: CheckId,
-            File: file,
-            Line: line,
-            Column: column,
-            Message: Message,
-            Replacement: replacement);
     }
 }
