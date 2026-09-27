@@ -259,11 +259,6 @@
     "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
-  "copyright-header": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n    }\n}\n",
-    "good": "// Copyright (c) qlcheck contributors.\nnamespace Sample\n{\n    class C\n    {\n    }\n}\n",
-    "path": "Repo.cs"
-  },
   "coverage-exclusion-reason": {
     "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            ExcludeFromCodeCoverage();\n        }\n    }\n}\n",
     "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",

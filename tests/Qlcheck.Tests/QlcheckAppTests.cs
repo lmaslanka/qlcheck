@@ -225,7 +225,7 @@ public class QlcheckAppTests : IDisposable
         Assert.DoesNotContain(FindingsProperty, text);
         Assert.Matches(@"Files checked\s+2", text);
         Assert.Matches(@"Lines checked\s+\d+", text);
-        Assert.Matches(@"Checks run\s+502", text);
+        Assert.Matches(@"Checks run\s+501", text);
         Assert.Matches(FindingsCountPattern, text);
         Assert.Matches(@"Files with findings\s+2", text);
         Assert.Matches(@"Clean files\s+0", text);

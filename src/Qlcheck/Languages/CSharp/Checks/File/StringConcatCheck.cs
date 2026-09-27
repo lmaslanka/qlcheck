@@ -1,4 +1,3 @@
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -7,8 +6,6 @@ namespace Qlcheck.Languages.CSharp.Checks.File;
 
 public sealed class StringConcatCheck : IFileCheck
 {
-    public const string CheckId = "string-concat";
-
     private const string ConcatMethod = "Concat";
 
     private const int MinConcatArguments = 2;
@@ -17,56 +14,45 @@ public sealed class StringConcatCheck : IFileCheck
 
     private const string StringTypeName = "String";
 
-    private const string EscapedBackslash = "\\\\";
-
-    private const string EscapedQuote = "\\\"";
-
     private const string EscapedOpenBrace = "{{";
 
     private const string EscapedCloseBrace = "}}";
 
-    private const string EscapedNewline = "\\n";
+    private const char QuoteChar = '"';
 
-    private const string EscapedReturn = "\\r";
+    private const string CheckIdValue = "string-concat";
 
-    private const string EscapedTab = "\\t";
+    public static string CheckId => CheckIdValue;
 
-    private const string InterpolationPrefix = "$\"";
-
-    private const string InterpolationSuffix = "\"";
-
-    public const string Message = "String concatenation should be string interpolation.";
+    public static string Message => "String concatenation should be string interpolation.";
 
     public string Id => CheckId;
 
     public string Language => CSharpLanguage.LanguageId;
 
-    public IReadOnlyList<Finding> Analyze(SourceFile file, SyntaxTree tree)
-    {
-        var findings = new List<Finding>();
-        foreach (var node in tree.GetRoot().DescendantNodes())
-        {
-            switch (node)
-            {
-                case BinaryExpressionSyntax binary
-                    when binary.IsKind(SyntaxKind.AddExpression) &&
-                         IsStringConcat(binary) &&
-                         IsOutermost(binary) &&
-                         !IsIgnoredContext(binary) &&
-                         !IsSqlConcat(binary):
-                    findings.Add(Finding.At(CheckId, file.Path, binary, Message, TryInterpolation(binary)));
-                    break;
-                case InvocationExpressionSyntax invocation
-                    when IsStringConcatCall(invocation) &&
-                         !IsIgnoredContext(invocation) &&
-                         !IsSqlConcatCall(invocation):
-                    findings.Add(Finding.At(CheckId, file.Path, invocation, Message));
-                    break;
-            }
-        }
+    public IReadOnlyList<Finding> Analyze(SourceFile file, SyntaxTree tree) =>
+        tree.GetRoot().DescendantNodes()
+            .Select(node => TryFinding(file, node))
+            .OfType<Finding>()
+            .ToList();
 
-        return findings;
-    }
+    private static Finding? TryFinding(SourceFile file, SyntaxNode node) =>
+        node switch
+        {
+            BinaryExpressionSyntax binary
+                when binary.IsKind(SyntaxKind.AddExpression)
+                     && IsStringConcat(binary)
+                     && IsOutermost(binary)
+                     && !IsIgnoredContext(binary)
+                     && !IsSqlConcat(binary)
+                => Finding.At(CheckId, file.Path, binary, Message, TryInterpolation(binary)),
+            InvocationExpressionSyntax invocation
+                when IsStringConcatCall(invocation)
+                     && !IsIgnoredContext(invocation)
+                     && !IsSqlConcatCall(invocation)
+                => Finding.At(CheckId, file.Path, invocation, Message),
+            _ => null,
+        };
 
     private static bool IsSqlConcat(BinaryExpressionSyntax binary)
     {
@@ -98,8 +84,8 @@ public sealed class StringConcatCheck : IFileCheck
 
     private static bool LooksLikeSql(ExpressionSyntax expression)
     {
-        if (expression is LiteralExpressionSyntax literal &&
-            literal.IsKind(SyntaxKind.StringLiteralExpression))
+        if (expression is LiteralExpressionSyntax literal
+            && literal.IsKind(SyntaxKind.StringLiteralExpression))
         {
             return SqlText.LooksLikeSql(literal.Token.ValueText);
         }
@@ -118,15 +104,15 @@ public sealed class StringConcatCheck : IFileCheck
     private static bool IsStringy(ExpressionSyntax expression)
     {
         expression = Unwrap(expression);
-        if (expression.IsKind(SyntaxKind.StringLiteralExpression) ||
-            expression is InterpolatedStringExpressionSyntax)
+        if (expression.IsKind(SyntaxKind.StringLiteralExpression)
+            || expression is InterpolatedStringExpressionSyntax)
         {
             return true;
         }
 
-        return expression is BinaryExpressionSyntax binary &&
-               binary.IsKind(SyntaxKind.AddExpression) &&
-               IsStringConcat(binary);
+        return expression is BinaryExpressionSyntax binary
+               && binary.IsKind(SyntaxKind.AddExpression)
+               && IsStringConcat(binary);
     }
 
     private static bool IsOutermost(BinaryExpressionSyntax binary)
@@ -137,9 +123,9 @@ public sealed class StringConcatCheck : IFileCheck
             parent = paren.Parent;
         }
 
-        return parent is not BinaryExpressionSyntax parentAdd ||
-               !parentAdd.IsKind(SyntaxKind.AddExpression) ||
-               !IsStringConcat(parentAdd);
+        return parent is not BinaryExpressionSyntax parentAdd
+               || !parentAdd.IsKind(SyntaxKind.AddExpression)
+               || !IsStringConcat(parentAdd);
     }
 
     private static bool IsStringConcatCall(InvocationExpressionSyntax invocation)
@@ -193,9 +179,9 @@ public sealed class StringConcatCheck : IFileCheck
                 return local.Modifiers.Any(SyntaxKind.ConstKeyword);
             }
 
-            if (current is FieldDeclarationSyntax field)
+            if (current is FieldDeclarationSyntax fieldDeclaration)
             {
-                return field.Modifiers.Any(SyntaxKind.ConstKeyword);
+                return fieldDeclaration.Modifiers.Any(SyntaxKind.ConstKeyword);
             }
         }
 
@@ -206,49 +192,44 @@ public sealed class StringConcatCheck : IFileCheck
     {
         var parts = new List<ExpressionSyntax>();
         Flatten(binary, parts);
-        var inner = new StringBuilder();
+        var segments = new List<string>();
         foreach (var part in parts)
         {
             var expr = Unwrap(part);
-            if (expr is LiteralExpressionSyntax literal &&
-                literal.IsKind(SyntaxKind.StringLiteralExpression))
-            {
-                foreach (var ch in literal.Token.ValueText)
-                {
-                    inner.Append(ch switch
-                    {
-                        '\\' => EscapedBackslash,
-                        '"' => EscapedQuote,
-                        '{' => EscapedOpenBrace,
-                        '}' => EscapedCloseBrace,
-                        '\n' => EscapedNewline,
-                        '\r' => EscapedReturn,
-                        '\t' => EscapedTab,
-                        _ => ch.ToString(),
-                    });
-                }
-            }
-            else if (expr is InterpolatedStringExpressionSyntax)
+            if (expr is InterpolatedStringExpressionSyntax)
             {
                 return null;
             }
-            else
-            {
-                inner.Append('{');
-                inner.Append(expr.WithoutTrivia().ToFullString());
-                inner.Append('}');
-            }
+
+            segments.Add(expr is LiteralExpressionSyntax literal && literal.IsKind(SyntaxKind.StringLiteralExpression)
+                ? string.Concat(literal.Token.ValueText.Select(EscapeChar))
+                : $"{{{expr.WithoutTrivia().ToFullString()}}}");
         }
 
-        return $"{InterpolationPrefix}{inner}{InterpolationSuffix}";
+        return $"${QuoteChar}{string.Concat(segments)}{QuoteChar}";
     }
+
+    private static string EscapeChar(char ch) =>
+        ch switch
+        {
+            '\\' => Escaped('\\'),
+            '"' => Escaped('"'),
+            '{' => EscapedOpenBrace,
+            '}' => EscapedCloseBrace,
+            '\n' => Escaped('n'),
+            '\r' => Escaped('r'),
+            '\t' => Escaped('t'),
+            _ => ch.ToString(),
+        };
+
+    private static string Escaped(char letter) => new string(new[] { '\\', letter });
 
     private static void Flatten(ExpressionSyntax expression, List<ExpressionSyntax> parts)
     {
         expression = Unwrap(expression);
-        if (expression is BinaryExpressionSyntax binary &&
-            binary.IsKind(SyntaxKind.AddExpression) &&
-            IsStringConcat(binary))
+        if (expression is BinaryExpressionSyntax binary
+            && binary.IsKind(SyntaxKind.AddExpression)
+            && IsStringConcat(binary))
         {
             Flatten(binary.Left, parts);
             Flatten(binary.Right, parts);

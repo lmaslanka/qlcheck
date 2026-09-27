@@ -236,10 +236,6 @@
     "message": "Cookies should have the `secure` flag."
   },
   {
-    "id": "copyright-header",
-    "message": "Add a copyright header comment at the top of the file."
-  },
-  {
     "id": "coverage-exclusion-reason",
     "message": "`ExcludeFromCodeCoverage` attributes should include a justification."
   },

@@ -8,8 +8,6 @@ internal static class FileFacts
 {
     private const int EmptyCommentLimit = 4;
 
-    private const string CopyrightWord = "copyright";
-
     private const char Newline = '\n';
 
     private const char Tab = '\t';
@@ -17,21 +15,6 @@ internal static class FileFacts
     public static bool MissingNewline(string text) => text.Length == 0 || text[^1] != Newline;
 
     public static bool HasTab(string text) => text.Contains(Tab);
-
-    public static bool MissingCopyright(SyntaxTree tree)
-    {
-        var root = tree.GetRoot();
-        var trivia = root.GetLeadingTrivia();
-        foreach (var item in trivia)
-        {
-            if (item.ToString().Contains(CopyrightWord, StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
 
     public static bool IsCodeComment(SyntaxTrivia trivia)
     {

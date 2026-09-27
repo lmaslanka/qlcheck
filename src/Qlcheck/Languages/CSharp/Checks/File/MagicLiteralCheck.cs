@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -6,7 +7,7 @@ namespace Qlcheck.Languages.CSharp.Checks.File;
 
 public sealed class MagicLiteralCheck : IFileCheck
 {
-    public const string CheckId = "magic-literal";
+    private const string CheckIdValue = "magic-literal";
 
     private const string ExceptionSuffix = "Exception";
 
@@ -15,6 +16,8 @@ public sealed class MagicLiteralCheck : IFileCheck
     private const int TruncateKeep = 37;
 
     private const string Ellipsis = "...";
+
+    public static string CheckId => CheckIdValue;
 
     public string Id => CheckId;
 
@@ -26,100 +29,65 @@ public sealed class MagicLiteralCheck : IFileCheck
     public static string StringMessage(string literal) =>
         $"Magic string \"{literal}\" should be a named const.";
 
-    public IReadOnlyList<Finding> Analyze(SourceFile file, SyntaxTree tree)
-    {
-        var findings = new List<Finding>();
-        foreach (var literal in tree.GetRoot().DescendantNodes().OfType<LiteralExpressionSyntax>())
-        {
-            if (TryCreateFinding(file.Path, literal, out var finding))
-            {
-                findings.Add(finding);
-            }
-        }
+    public IReadOnlyList<Finding> Analyze(SourceFile file, SyntaxTree tree) =>
+        tree.GetRoot().DescendantNodes()
+            .OfType<LiteralExpressionSyntax>()
+            .Select(literal => TryCreateFinding(file.Path, literal))
+            .OfType<Finding>()
+            .ToList();
 
-        return findings;
+    private static Finding? TryCreateFinding(string path, LiteralExpressionSyntax literal)
+    {
+        var kind = literal.Kind();
+        var message = kind switch
+        {
+            SyntaxKind.NumericLiteralExpression => TryNumberMessage(literal),
+            SyntaxKind.StringLiteralExpression => TryStringMessage(literal),
+            _ => null,
+        };
+
+        return message is null ? null : Finding.At(CheckId, path, literal, message);
     }
 
-    private static bool TryCreateFinding(string path, LiteralExpressionSyntax literal, out Finding finding)
+    private static string? TryNumberMessage(LiteralExpressionSyntax literal)
     {
-        finding = null!;
-        string message;
-        var kind = literal.Kind();
-        if (kind == SyntaxKind.NumericLiteralExpression)
+        if (IsAllowedNumber(literal.Token.Value) || IsIgnoredContext(literal))
         {
-            if (IsAllowedNumber(literal.Token.Value))
-            {
-                return false;
-            }
-
-            if (IsIgnoredContext(literal))
-            {
-                return false;
-            }
-
-            message = NumberMessage(literal.Token.Text);
-        }
-        else if (kind == SyntaxKind.StringLiteralExpression)
-        {
-            var value = literal.Token.ValueText;
-            if (value.Length == 0 || IsMessage(value, literal) || IsDottedName(value) || SqlText.LooksLikeSql(value))
-            {
-                return false;
-            }
-
-            if (IsIgnoredContext(literal) || IsCollectionElement(literal))
-            {
-                return false;
-            }
-
-            message = StringMessage(Truncate(value));
-        }
-        else
-        {
-            return false;
+            return null;
         }
 
-        finding = Finding.At(CheckId, path, literal, message);
-        return true;
+        return NumberMessage(literal.Token.Text);
+    }
+
+    private static string? TryStringMessage(LiteralExpressionSyntax literal)
+    {
+        var value = literal.Token.ValueText;
+        if (value.Length == 0 || IsMessage(value, literal) || IsDottedName(value) || SqlText.LooksLikeSql(value))
+        {
+            return null;
+        }
+
+        if (IsIgnoredContext(literal) || IsCollectionElement(literal))
+        {
+            return null;
+        }
+
+        return StringMessage(Truncate(value));
     }
 
     private static bool IsDottedName(string value)
     {
-        var dot = false;
-        var start = true;
-        foreach (var ch in value)
-        {
-            if (ch == '.')
-            {
-                if (start)
-                {
-                    return false;
-                }
-
-                dot = true;
-                start = true;
-                continue;
-            }
-
-            if (start)
-            {
-                if (ch is not ('_' or (>= 'A' and <= 'Z') or (>= 'a' and <= 'z')))
-                {
-                    return false;
-                }
-
-                start = false;
-                continue;
-            }
-
-            if (ch is not ('_' or (>= '0' and <= '9') or (>= 'A' and <= 'Z') or (>= 'a' and <= 'z')))
-            {
-                return false;
-            }
-        }
-
-        return dot && !start;
+        var segments = value.Split('.');
+        return segments.Length > 1 && segments.All(IsIdentifierSegment);
     }
+
+    private static bool IsIdentifierSegment(string segment) =>
+        segment.Length > 0 && IsIdentifierStart(segment[0]) && segment.Skip(1).All(IsIdentifierPart);
+
+    private static bool IsIdentifierStart(char ch) => ch is '_' or (>= 'A' and <= 'Z') or (>= 'a' and <= 'z');
+
+    private static bool IsIdentifierPart(char ch) =>
+        ch is '_' or (>= '0' and <= '9') or (>= 'A' and <= 'Z') or (>= 'a' and <= 'z');
 
     private static bool IsMessage(string value, LiteralExpressionSyntax literal)
     {
@@ -138,8 +106,8 @@ public sealed class MagicLiteralCheck : IFileCheck
                 return true;
             }
 
-            if (node is ObjectCreationExpressionSyntax creation &&
-                GetTypeName(creation.Type).EndsWith(ExceptionSuffix, StringComparison.Ordinal))
+            if (node is ObjectCreationExpressionSyntax creation
+                && GetTypeName(creation.Type).EndsWith(ExceptionSuffix, StringComparison.Ordinal))
             {
                 return true;
             }
@@ -167,9 +135,9 @@ public sealed class MagicLiteralCheck : IFileCheck
                 return true;
             }
 
-            if (node is InitializerExpressionSyntax init &&
-                (init.IsKind(SyntaxKind.ArrayInitializerExpression) ||
-                 init.IsKind(SyntaxKind.CollectionInitializerExpression)))
+            if (node is InitializerExpressionSyntax init
+                && (init.IsKind(SyntaxKind.ArrayInitializerExpression)
+                    || init.IsKind(SyntaxKind.CollectionInitializerExpression)))
             {
                 return true;
             }
@@ -207,7 +175,7 @@ public sealed class MagicLiteralCheck : IFileCheck
         return declaration switch
         {
             LocalDeclarationStatementSyntax local => local.Modifiers.Any(SyntaxKind.ConstKeyword),
-            FieldDeclarationSyntax field => field.Modifiers.Any(SyntaxKind.ConstKeyword),
+            FieldDeclarationSyntax fieldDeclaration => fieldDeclaration.Modifiers.Any(SyntaxKind.ConstKeyword),
             _ => false,
         };
     }
@@ -215,17 +183,8 @@ public sealed class MagicLiteralCheck : IFileCheck
     private static bool IsAllowedNumber(object? value) =>
         value switch
         {
-            int i => i is 0 or 1,
-            long l => l is 0 or 1,
-            uint u => u is 0 or 1,
-            ulong ul => ul is 0 or 1,
-            byte b => b is 0 or 1,
-            sbyte sb => sb is 0 or 1,
-            short s => s is 0 or 1,
-            ushort us => us is 0 or 1,
-            float f => f is 0 or 1,
-            double d => d is 0 or 1,
             decimal m => m is 0 or 1,
+            IConvertible number => number.ToDouble(CultureInfo.InvariantCulture) is 0 or 1,
             _ => false,
         };
 

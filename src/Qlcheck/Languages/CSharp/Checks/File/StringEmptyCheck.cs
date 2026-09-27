@@ -6,9 +6,13 @@ namespace Qlcheck.Languages.CSharp.Checks.File;
 
 public sealed class StringEmptyCheck : IFileCheck
 {
-    public const string CheckId = "string-empty";
+    private const string CheckIdValue = "string-empty";
 
-    public const string Message = "Use string.Empty instead of \"\".";
+    private const char QuoteChar = '"';
+
+    public static string CheckId => CheckIdValue;
+
+    public static string Message => $"Use string.Empty instead of {QuoteChar}{QuoteChar}.";
 
     public string Id => CheckId;
 
@@ -19,9 +23,9 @@ public sealed class StringEmptyCheck : IFileCheck
         var findings = new List<Finding>();
         foreach (var literal in tree.GetRoot().DescendantNodes().OfType<LiteralExpressionSyntax>())
         {
-            if (!literal.IsKind(SyntaxKind.StringLiteralExpression) ||
-                literal.Token.ValueText.Length != 0 ||
-                IsConstantContext(literal))
+            if (!literal.IsKind(SyntaxKind.StringLiteralExpression)
+                || literal.Token.ValueText.Length != 0
+                || IsConstantContext(literal))
             {
                 continue;
             }
@@ -40,7 +44,7 @@ public sealed class StringEmptyCheck : IFileCheck
             {
                 AttributeSyntax or ParameterSyntax or CaseSwitchLabelSyntax or ConstantPatternSyntax => true,
                 LocalDeclarationStatementSyntax local => local.Modifiers.Any(SyntaxKind.ConstKeyword),
-                FieldDeclarationSyntax field => field.Modifiers.Any(SyntaxKind.ConstKeyword),
+                FieldDeclarationSyntax fieldDeclaration => fieldDeclaration.Modifiers.Any(SyntaxKind.ConstKeyword),
                 _ => (bool?)null,
             };
             if (constant is bool result)

@@ -5,7 +5,7 @@ namespace Qlcheck.Languages.CSharp.Catalog;
 
 internal static class MetricEngine
 {
-    public static readonly WalkRow[] Rows =
+    public static WalkRow[] Rows { get; } =
     [
         Row.Metric("case-length", CheckClass.Metric, MetricNames.CaseLength),
         Row.Metric("class-coupling", CheckClass.Metric, MetricNames.Coupling),

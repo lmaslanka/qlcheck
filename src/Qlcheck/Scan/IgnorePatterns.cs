@@ -1,17 +1,22 @@
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Qlcheck.Scan;
 
 public sealed class IgnorePatterns
 {
-    public const string FileName = ".qlcheck_ignore";
+    private const string FileNameValue = ".qlcheck_ignore";
 
     private const string CurrentDirectory = ".";
 
     private const string GlobstarPrefix = "**/";
 
     private const int GlobstarPrefixLength = 3;
+
+    private const int SingleCharTokenLength = 1;
+
+    private const int GlobstarTokenLength = 2;
+
+    private const int GlobstarDirectoryTokenLength = 3;
 
     private const string AnchoredStart = "^";
 
@@ -46,29 +51,21 @@ public sealed class IgnorePatterns
 
     private readonly IReadOnlyList<Rule> _rules;
 
-    private IgnorePatterns(IReadOnlyList<Rule> rules)
+    internal IgnorePatterns(IReadOnlyList<Rule> rules)
     {
         _rules = rules;
     }
 
-    public static IgnorePatterns Parse(IEnumerable<string> lines)
-    {
-        var rules = new List<Rule>();
-        foreach (var line in lines)
-        {
-            if (TryParseRule(line, out var rule))
-            {
-                rules.Add(rule);
-            }
-        }
+    public static string FileName => FileNameValue;
 
-        return new IgnorePatterns(rules);
-    }
+    public static IgnorePatterns Parse(IEnumerable<string> lines) =>
+        new(lines.Select(TryParseRule).OfType<Rule>().ToList());
 
     public static IgnorePatterns Load(string scanRoot)
     {
         var lines = new List<string>(Defaults);
-        var file = Path.Combine(scanRoot, FileName);
+        var root = scanRoot;
+        var file = Path.Combine(root, FileName);
         if (File.Exists(file))
         {
             lines.AddRange(File.ReadAllLines(file));
@@ -102,13 +99,12 @@ public sealed class IgnorePatterns
         return ignored;
     }
 
-    private static bool TryParseRule(string line, out Rule rule)
+    private static Rule? TryParseRule(string line)
     {
-        rule = null!;
         var raw = line.Trim();
         if (raw.Length == 0 || raw.StartsWith('#'))
         {
-            return false;
+            return null;
         }
 
         var negation = raw.StartsWith('!');
@@ -126,7 +122,7 @@ public sealed class IgnorePatterns
         raw = raw.Replace('\\', '/');
         if (raw.Length == 0)
         {
-            return false;
+            return null;
         }
 
         var anchored = raw.StartsWith('/') || raw.Contains('/');
@@ -144,43 +140,49 @@ public sealed class IgnorePatterns
         var regex = new Regex(
             GlobToRegex(raw, anchored),
             RegexOptions.CultureInvariant | RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        rule = new Rule(negation, directoryOnly, regex);
-        return true;
+        return new Rule(negation, directoryOnly, regex);
     }
 
     private static string GlobToRegex(string glob, bool anchored)
     {
-        var sb = new StringBuilder();
-        sb.Append(anchored ? AnchoredStart : UnanchoredStart);
-        for (var i = 0; i < glob.Length; i++)
+        var segments = new List<string> { anchored ? AnchoredStart : UnanchoredStart };
+        var i = 0;
+        while (i < glob.Length)
         {
-            if (glob[i] == '*' && i + 1 < glob.Length && glob[i + 1] == '*')
-            {
-                i++;
-                if (i + 1 < glob.Length && glob[i + 1] == '/')
-                {
-                    i++;
-                    sb.Append(GlobstarDirectory);
-                }
-                else
-                {
-                    sb.Append(Globstar);
-                }
-
-                continue;
-            }
-
-            sb.Append(glob[i] switch
-            {
-                '*' => StarPattern,
-                '?' => QuestionPattern,
-                _ => Regex.Escape(glob[i].ToString()),
-            });
+            i += ConsumeToken(glob, i, segments);
         }
 
-        sb.Append(PathEnd);
-        return sb.ToString();
+        segments.Add(PathEnd);
+        return string.Concat(segments);
     }
 
-    private sealed record Rule(bool Negation, bool DirectoryOnly, Regex Regex);
+    private static int ConsumeToken(string glob, int i, List<string> segments)
+    {
+        if (glob[i] == '*' && i + 1 < glob.Length && glob[i + 1] == '*')
+        {
+            return ConsumeGlobstar(glob, i, segments);
+        }
+
+        segments.Add(glob[i] switch
+        {
+            '*' => StarPattern,
+            '?' => QuestionPattern,
+            _ => Regex.Escape(glob[i].ToString()),
+        });
+        return SingleCharTokenLength;
+    }
+
+    private static int ConsumeGlobstar(string glob, int i, List<string> segments)
+    {
+        if (i + GlobstarTokenLength < glob.Length && glob[i + GlobstarTokenLength] == '/')
+        {
+            segments.Add(GlobstarDirectory);
+            return GlobstarDirectoryTokenLength;
+        }
+
+        segments.Add(Globstar);
+        return GlobstarTokenLength;
+    }
+
+    internal sealed record Rule(bool Negation, bool DirectoryOnly, Regex Regex);
 }

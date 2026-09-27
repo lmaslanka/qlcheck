@@ -5,9 +5,9 @@ namespace Qlcheck.Languages.CSharp.Checks.Compilation;
 
 public sealed class UnusedUsingCheck : ICompilationCheck
 {
-    public const string CheckId = "unused-using";
+    private const string CheckIdValue = "unused-using";
 
-    public const string Message = "Remove unused using directive.";
+    private const string MessageValue = "Remove unused using directive.";
 
     private const string UnusedUsingDiagnostic = "CS8019";
 
@@ -15,6 +15,10 @@ public sealed class UnusedUsingCheck : ICompilationCheck
     {
         "CS0103", "CS0246", "CS1061",
     };
+
+    public static string CheckId => CheckIdValue;
+
+    public static string Message => MessageValue;
 
     public string Id => CheckId;
 
@@ -50,9 +54,9 @@ public sealed class UnusedUsingCheck : ICompilationCheck
             }
 
             var path = diagnostic.Location.SourceTree.FilePath.Replace('\\', '/');
-            if (includedFiles.Count > 0 &&
-                !includedFiles.Contains(path) &&
-                !includedFiles.Contains(diagnostic.Location.SourceTree.FilePath))
+            if (includedFiles.Count > 0
+                && !includedFiles.Contains(path)
+                && !includedFiles.Contains(diagnostic.Location.SourceTree.FilePath))
             {
                 continue;
             }

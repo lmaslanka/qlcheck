@@ -5,7 +5,7 @@ namespace Qlcheck.Languages.CSharp.Catalog;
 
 internal static class TaintEngine
 {
-    public static readonly WalkRow[] Rows =
+    public static WalkRow[] Rows { get; } =
     [
         Row.Handle("allocation-dos", CheckClass.Taint, Patterns.AllocDos),
         Row.Taint("argument-injection", CheckClass.Taint, "ArgumentList"),

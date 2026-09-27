@@ -6,7 +6,7 @@ namespace Qlcheck.Languages.CSharp.Checks.File;
 
 public sealed class OneTypePerFileCheck : IFileCheck
 {
-    public const string CheckId = "one-type-per-file";
+    private const string CheckIdValue = "one-type-per-file";
 
     private const string GeneratedSuffix = ".g.cs";
 
@@ -14,14 +14,16 @@ public sealed class OneTypePerFileCheck : IFileCheck
 
     private const int MinTopLevelTypes = 2;
 
+    public static string CheckId => CheckIdValue;
+
     public string Id => CheckId;
 
     public string Language => CSharpLanguage.LanguageId;
 
     public IReadOnlyList<Finding> Analyze(SourceFile file, SyntaxTree tree)
     {
-        if (file.Path.EndsWith(GeneratedSuffix, StringComparison.OrdinalIgnoreCase) ||
-            file.Path.EndsWith(DesignerSuffix, StringComparison.OrdinalIgnoreCase))
+        if (file.Path.EndsWith(GeneratedSuffix, StringComparison.OrdinalIgnoreCase)
+            || file.Path.EndsWith(DesignerSuffix, StringComparison.OrdinalIgnoreCase))
         {
             return [];
         }
@@ -33,32 +35,21 @@ public sealed class OneTypePerFileCheck : IFileCheck
             .Where(t => !t.Modifiers.Any(SyntaxKind.FileKeyword))
             .ToList();
 
-        var unique = new List<BaseTypeDeclarationSyntax>();
         var names = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var type in types)
-        {
-            if (names.Add(type.Identifier.Text))
-            {
-                unique.Add(type);
-            }
-        }
+        var unique = types.Where(type => names.Add(type.Identifier.Text)).ToList();
 
         if (unique.Count < MinTopLevelTypes)
         {
             return [];
         }
 
-        var findings = new List<Finding>();
-        foreach (var extra in unique.Skip(1))
-        {
-            findings.Add(Finding.At(
+        return unique.Skip(1)
+            .Select(extra => Finding.At(
                 CheckId,
                 file.Path,
                 extra.Identifier,
-                $"Move '{extra.Identifier.Text}' into its own file."));
-        }
-
-        return findings;
+                $"Move '{extra.Identifier.Text}' into its own file."))
+            .ToList();
     }
 
     private static bool IsTopLevel(BaseTypeDeclarationSyntax type) =>

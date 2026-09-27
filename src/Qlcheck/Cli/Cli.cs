@@ -33,11 +33,7 @@ internal static class Cli
 
     public static Options? TryParse(IReadOnlyList<string> args, TextWriter stderr)
     {
-        var human = false;
-        var stats = false;
-        var enableIds = new List<string>();
-        var checkIds = new List<string>();
-        var paths = new List<string>();
+        var state = new ParserState();
         for (var i = 0; i < args.Count; i++)
         {
             var arg = args[i];
@@ -47,40 +43,20 @@ internal static class Cli
                 return null;
             }
 
-            if (arg == HumanOption)
+            if (TryHandleSimpleFlag(arg, state))
             {
-                human = true;
-                continue;
-            }
-
-            if (arg == StatsOption)
-            {
-                stats = true;
-                continue;
-            }
-
-            if (arg == InlineSqlOption)
-            {
-                enableIds.Add(InlineSqlCheckId);
-                continue;
-            }
-
-            if (arg == CoverageOption)
-            {
-                enableIds.Add(CoverageCheckId);
                 continue;
             }
 
             if (arg == CheckOption)
             {
-                if (i + 1 >= args.Count)
+                var nextIndex = TryParseCheckValue(args, i, state.CheckIds, stderr);
+                if (nextIndex is null)
                 {
-                    stderr.WriteLine("Missing value for --check.");
-                    stderr.WriteLine(Usage);
                     return null;
                 }
 
-                checkIds.Add(args[++i]);
+                i = nextIndex.Value;
                 continue;
             }
 
@@ -91,15 +67,62 @@ internal static class Cli
                 return null;
             }
 
-            paths.Add(arg);
+            state.Paths.Add(arg);
         }
 
-        if (paths.Count == 0)
+        if (state.Paths.Count == 0)
         {
             stderr.WriteLine(Usage);
             return null;
         }
 
-        return new Options(human, stats, enableIds, checkIds, paths);
+        return new Options(state.Human, state.Stats, state.EnableIds, state.CheckIds, state.Paths);
+    }
+
+    private static bool TryHandleSimpleFlag(string arg, ParserState state)
+    {
+        switch (arg)
+        {
+            case HumanOption:
+                state.Human = true;
+                return true;
+            case StatsOption:
+                state.Stats = true;
+                return true;
+            case InlineSqlOption:
+                state.EnableIds.Add(InlineSqlCheckId);
+                return true;
+            case CoverageOption:
+                state.EnableIds.Add(CoverageCheckId);
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static int? TryParseCheckValue(IReadOnlyList<string> args, int i, ICollection<string> checkIds, TextWriter stderr)
+    {
+        if (i + 1 >= args.Count)
+        {
+            stderr.WriteLine("Missing value for --check.");
+            stderr.WriteLine(Usage);
+            return null;
+        }
+
+        checkIds.Add(args[i + 1]);
+        return i + 1;
+    }
+
+    private sealed class ParserState
+    {
+        public bool Human { get; set; }
+
+        public bool Stats { get; set; }
+
+        public List<string> EnableIds { get; } = [];
+
+        public List<string> CheckIds { get; } = [];
+
+        public List<string> Paths { get; } = [];
     }
 }

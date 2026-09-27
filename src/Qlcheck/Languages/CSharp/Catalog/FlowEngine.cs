@@ -5,19 +5,21 @@ namespace Qlcheck.Languages.CSharp.Catalog;
 
 internal static class FlowEngine
 {
-    public static readonly WalkRow[] Rows =
+    private const string MonitorType = "Monitor";
+
+    public static WalkRow[] Rows { get; } =
     [
         Row.Handle("invariant-loop-bound", CheckClass.Flow, StylePatterns.ForBoundChanges),
-        Row.Invoke("lock-released", CheckClass.Flow, "Enter", "Monitor"),
+        Row.Invoke("lock-released", CheckClass.Flow, "Enter", MonitorType),
         Row.Handle("loop-condition-reachable", CheckClass.Flow, StylePatterns.ForNeverTrue),
         Row.Handle("loop-counter-direction", CheckClass.Flow, StylePatterns.ForWrongWay),
         Row.Handle("loop-more-than-once", CheckClass.Flow, StylePatterns.ForOnce),
         Row.Handle("loop-must-change-counter", CheckClass.Flow, StylePatterns.ForNoCounter),
-        Row.Invoke("matching-lock-release", CheckClass.Flow, "Exit", "Monitor"),
+        Row.Invoke("matching-lock-release", CheckClass.Flow, "Exit", MonitorType),
         Row.Handle("no-infinite-loop", CheckClass.Flow, Patterns.Infinite),
         Row.Handle("null-dereference", CheckClass.Flow, Patterns.NullDeref),
         Row.Handle("reachable-branch", CheckClass.Flow, Patterns.Unreachable),
-        Row.Invoke("release-lock-same-method", CheckClass.Flow, "Enter", "Monitor"),
+        Row.Invoke("release-lock-same-method", CheckClass.Flow, "Enter", MonitorType),
     ];
 
     public static void Apply(WalkContext ctx, IReadOnlySet<string> selected)

@@ -6,8 +6,8 @@ internal static class LanguageDiscovery
 {
     private static readonly Type[] LanguageTypes =
         [.. typeof(ILanguage).Assembly.GetTypes()
-            .Where(t => t is { IsClass: true, IsAbstract: false } &&
-                        typeof(ILanguage).IsAssignableFrom(t))];
+            .Where(t => t is { IsClass: true, IsAbstract: false }
+                        && typeof(ILanguage).IsAssignableFrom(t))];
 
     public static IReadOnlyList<ILanguage> All()
     {

@@ -92,14 +92,6 @@ internal static class Patterns
         }
     }
 
-    public static void Copyright(WalkContext ctx, string id)
-    {
-        if (FileFacts.MissingCopyright(ctx.Tree))
-        {
-            ctx.Report(id, ctx.Tree.GetRoot());
-        }
-    }
-
     public static void Commented(WalkContext ctx, string id) => ReportComments(ctx, id, FileFacts.IsCodeComment);
 
     public static void EmptyComment(WalkContext ctx, string id) => ReportComments(ctx, id, FileFacts.IsEmptyComment);

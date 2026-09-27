@@ -1,4 +1,3 @@
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -7,14 +6,14 @@ namespace Qlcheck.Languages.CSharp.Checks.File;
 
 public sealed class InlineSqlCheck : IFileCheck
 {
-    public const string LayoutMessage =
+    private const string LayoutMessageValue =
         "Inline SQL must be a C# raw string literal with qlfmt layout.";
 
-    public const string UnformattableMessage = "Inline SQL is not a single string literal.";
+    private const string UnformattableMessageValue = "Inline SQL is not a single string literal.";
 
-    public const string FormatFailedMessage = "Inline SQL could not be formatted.";
+    private const string FormatFailedMessageValue = "Inline SQL could not be formatted.";
 
-    public const string CheckId = "inline-sql";
+    private const string CheckIdValue = "inline-sql";
 
     private const string CommandTextProperty = "CommandText";
 
@@ -28,7 +27,15 @@ public sealed class InlineSqlCheck : IFileCheck
 
     private const int RawStringExtraIndent = 4;
 
-    private const string RawStringDelimiter = "\"\"\"";
+    private const char QuoteChar = '"';
+
+    private const int TripleQuoteCount = 3;
+
+    private static readonly Func<string, bool, string> FormatSql = QlFmt.Sql.Format;
+
+    private static readonly string NewlineText = '\n'.ToString();
+
+    private static readonly string RawStringDelimiter = new(QuoteChar, TripleQuoteCount);
 
     private static readonly HashSet<string> DapperMethods = new(StringComparer.Ordinal)
     {
@@ -48,6 +55,14 @@ public sealed class InlineSqlCheck : IFileCheck
         "SqlCommand", "NpgsqlCommand", "SqliteCommand", "MySqlCommand", "DbCommand",
     };
 
+    public static string LayoutMessage => LayoutMessageValue;
+
+    public static string UnformattableMessage => UnformattableMessageValue;
+
+    public static string FormatFailedMessage => FormatFailedMessageValue;
+
+    public static string CheckId => CheckIdValue;
+
     public string Id => CheckId;
 
     public string Language => CSharpLanguage.LanguageId;
@@ -56,149 +71,55 @@ public sealed class InlineSqlCheck : IFileCheck
 
     public IReadOnlyList<Finding> Analyze(SourceFile file, SyntaxTree tree)
     {
-        var findings = new List<Finding>();
         var finder = new SqlExpressionFinder();
         finder.Visit(tree.GetRoot());
-        foreach (var expression in finder.Expressions)
-        {
-            if (TryCreateFinding(file.Path, tree, expression, out var finding))
-            {
-                findings.Add(finding);
-            }
-        }
-
-        return findings;
+        return finder.Expressions
+            .Select(expression => TryCreateFinding(file.Path, tree, expression))
+            .OfType<Finding>()
+            .ToList();
     }
 
-    private sealed class SqlExpressionFinder : CSharpSyntaxWalker
+    private static Finding? TryCreateFinding(string path, SyntaxTree tree, ExpressionSyntax expression)
     {
-        public List<ExpressionSyntax> Expressions { get; } = [];
-
-        public override void VisitInvocationExpression(InvocationExpressionSyntax node)
-        {
-            if (DapperMethods.Contains(GetInvokedName(node)))
-            {
-                var sql = GetSqlArgument(node);
-                if (sql is not null)
-                {
-                    Expressions.Add(sql);
-                }
-            }
-
-            base.VisitInvocationExpression(node);
-        }
-
-        public override void VisitAssignmentExpression(AssignmentExpressionSyntax node)
-        {
-            if (node.Left is MemberAccessExpressionSyntax member &&
-                member.Name.Identifier.Text == CommandTextProperty)
-            {
-                Expressions.Add(node.Right);
-            }
-
-            base.VisitAssignmentExpression(node);
-        }
-
-        public override void VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
-        {
-            if (CommandTypes.Contains(GetTypeName(node.Type)))
-            {
-                var args = node.ArgumentList?.Arguments;
-                if (args is { Count: > 0 })
-                {
-                    var named = args.Value.FirstOrDefault(a =>
-                        a.NameColon?.Name.Identifier.Text is CmdTextArgument or CommandTextArgument or CmdArgument);
-                    Expressions.Add((named ?? args.Value[0]).Expression);
-                }
-            }
-
-            base.VisitObjectCreationExpression(node);
-        }
-    }
-
-    private static string GetInvokedName(InvocationExpressionSyntax invocation)
-    {
-        return invocation.Expression switch
-        {
-            MemberAccessExpressionSyntax member => member.Name.Identifier.Text,
-            MemberBindingExpressionSyntax binding => binding.Name.Identifier.Text,
-            IdentifierNameSyntax id => id.Identifier.Text,
-            GenericNameSyntax generic => generic.Identifier.Text,
-            _ => string.Empty,
-        };
-    }
-
-    private static ExpressionSyntax? GetSqlArgument(InvocationExpressionSyntax invocation)
-    {
-        var args = invocation.ArgumentList.Arguments;
-        if (args.Count == 0)
+        var resolved = Resolve(expression);
+        if (resolved is UnresolvedSql)
         {
             return null;
         }
 
-        var named = args.FirstOrDefault(a => a.NameColon?.Name.Identifier.Text == SqlArgument);
-        return (named ?? args[0]).Expression;
-    }
-
-    private static string GetTypeName(TypeSyntax type)
-    {
-        return type switch
-        {
-            IdentifierNameSyntax id => id.Identifier.Text,
-            QualifiedNameSyntax q => q.Right.Identifier.Text,
-            _ => type.ToString(),
-        };
-    }
-
-    private static bool TryCreateFinding(
-        string path,
-        SyntaxTree tree,
-        ExpressionSyntax expression,
-        out Finding finding)
-    {
-        finding = null!;
-        var resolved = Resolve(expression);
-        if (resolved is UnresolvedSql)
-        {
-            return false;
-        }
-
         if (resolved is UnformattableSql unformattable)
         {
-            finding = Finding.At(CheckId, path, unformattable.Node, UnformattableMessage);
-            return true;
+            return Finding.At(CheckId, path, unformattable.Node, UnformattableMessage);
         }
 
         if (resolved is not LiteralSql literal)
         {
-            return false;
+            return null;
         }
 
         string formatted;
         try
         {
-            formatted = QlFmt.Sql.Format(literal.Value);
+            formatted = FormatSql(literal.Value, false);
         }
         catch (QlParse.SqlParseException ex)
         {
-            finding = Finding.At(
+            return Finding.At(
                 CheckId,
                 path,
                 literal.Node,
                 $"{FormatFailedMessage} {ex.Message} at {ex.Position}");
-            return true;
         }
 
         if (IsRawString(literal.Node) && ValuesEqual(literal.Value, formatted))
         {
-            return false;
+            return null;
         }
 
         var line = tree.GetText().Lines[literal.Node.GetLocation().GetLineSpan().StartLinePosition.Line];
         var contentIndent = line.ToString().TakeWhile(char.IsWhiteSpace).Count() + RawStringExtraIndent;
         var replacement = ToRawStringLiteral(formatted, contentIndent);
-        finding = Finding.At(CheckId, path, literal.Node, LayoutMessage, replacement);
-        return true;
+        return Finding.At(CheckId, path, literal.Node, LayoutMessage, replacement);
     }
 
     private static SqlTarget Resolve(ExpressionSyntax expression)
@@ -231,14 +152,25 @@ public sealed class InlineSqlCheck : IFileCheck
     {
         var name = id.Identifier.Text;
         var use = id.SpanStart;
-        ExpressionSyntax? lastWrite = null;
-        var lastPos = -1;
+        var tracker = new LastWriteTracker();
+        TrackLocalDeclarations(id, name, use, tracker);
+        TrackAssignments(id, name, use, tracker);
 
+        if (tracker.Expression is not { } lastWrite)
+        {
+            return new UnresolvedSql();
+        }
+
+        return Classify(Unwrap(lastWrite));
+    }
+
+    private static void TrackLocalDeclarations(IdentifierNameSyntax id, string name, int use, LastWriteTracker tracker)
+    {
         foreach (var declarator in id.Ancestors().SelectMany(a =>
                      a.ChildNodes().OfType<LocalDeclarationStatementSyntax>()
                          .SelectMany(d => d.Declaration.Variables)))
         {
-            if (declarator.Identifier.Text != name || declarator.SpanStart >= use)
+            if (declarator.Identifier.Text != name || declarator.SpanStart >= use || declarator.Initializer is null)
             {
                 continue;
             }
@@ -249,13 +181,12 @@ public sealed class InlineSqlCheck : IFileCheck
                 continue;
             }
 
-            if (declarator.SpanStart >= lastPos && declarator.Initializer is not null)
-            {
-                lastPos = declarator.SpanStart;
-                lastWrite = declarator.Initializer.Value;
-            }
+            tracker.Consider(declarator.SpanStart, declarator.Initializer.Value);
         }
+    }
 
+    private static void TrackAssignments(IdentifierNameSyntax id, string name, int use, LastWriteTracker tracker)
+    {
         var member = id.Ancestors().FirstOrDefault(a =>
             a is MethodDeclarationSyntax
                 or ConstructorDeclarationSyntax
@@ -263,42 +194,34 @@ public sealed class InlineSqlCheck : IFileCheck
                 or AnonymousFunctionExpressionSyntax
                 or AccessorDeclarationSyntax);
 
-        if (member is not null)
+        if (member is null)
         {
-            foreach (var assignment in member.DescendantNodes().OfType<AssignmentExpressionSyntax>())
+            return;
+        }
+
+        foreach (var assignment in member.DescendantNodes().OfType<AssignmentExpressionSyntax>())
+        {
+            if (assignment.SpanStart >= use
+                || assignment.Left is not IdentifierNameSyntax left
+                || left.Identifier.Text != name)
             {
-                if (assignment.SpanStart >= use)
-                {
-                    continue;
-                }
-
-                if (assignment.Left is IdentifierNameSyntax left &&
-                    left.Identifier.Text == name &&
-                    assignment.SpanStart >= lastPos)
-                {
-                    lastPos = assignment.SpanStart;
-                    lastWrite = assignment.Right;
-                }
+                continue;
             }
-        }
 
-        if (lastWrite is null)
+            tracker.Consider(assignment.SpanStart, assignment.Right);
+        }
+    }
+
+    private static SqlTarget Classify(ExpressionSyntax expression)
+    {
+        if (IsStringLiteral(expression, out var value))
         {
-            return new UnresolvedSql();
+            return new LiteralSql(expression, value);
         }
 
-        lastWrite = Unwrap(lastWrite);
-        if (IsStringLiteral(lastWrite, out var value))
-        {
-            return new LiteralSql(lastWrite, value);
-        }
-
-        if (lastWrite is InterpolatedStringExpressionSyntax or BinaryExpressionSyntax)
-        {
-            return new UnformattableSql(lastWrite);
-        }
-
-        return new UnresolvedSql();
+        return expression is InterpolatedStringExpressionSyntax or BinaryExpressionSyntax
+            ? new UnformattableSql(expression)
+            : new UnresolvedSql();
     }
 
     private static ExpressionSyntax Unwrap(ExpressionSyntax expression)
@@ -313,8 +236,8 @@ public sealed class InlineSqlCheck : IFileCheck
 
     private static bool IsStringLiteral(ExpressionSyntax expression, out string value)
     {
-        if (expression is LiteralExpressionSyntax literal &&
-            literal.IsKind(SyntaxKind.StringLiteralExpression))
+        if (expression is LiteralExpressionSyntax literal
+            && literal.IsKind(SyntaxKind.StringLiteralExpression))
         {
             value = literal.Token.ValueText;
             return true;
@@ -326,27 +249,118 @@ public sealed class InlineSqlCheck : IFileCheck
 
     private static bool IsRawString(ExpressionSyntax expression)
     {
-        return expression is LiteralExpressionSyntax literal &&
-               (literal.Token.IsKind(SyntaxKind.MultiLineRawStringLiteralToken) ||
-                literal.Token.IsKind(SyntaxKind.SingleLineRawStringLiteralToken));
+        return expression is LiteralExpressionSyntax literal
+               && (literal.Token.IsKind(SyntaxKind.MultiLineRawStringLiteralToken)
+                   || literal.Token.IsKind(SyntaxKind.SingleLineRawStringLiteralToken));
     }
 
     private static bool ValuesEqual(string left, string right) =>
-        left.ReplaceLineEndings("\n").TrimEnd() == right.ReplaceLineEndings("\n").TrimEnd();
+        left.ReplaceLineEndings(NewlineText).TrimEnd() == right.ReplaceLineEndings(NewlineText).TrimEnd();
 
     private static string ToRawStringLiteral(string sql, int contentIndent)
     {
         var indent = new string(' ', contentIndent);
-        var lines = sql.ReplaceLineEndings("\n").Split('\n');
-        var sb = new StringBuilder();
-        sb.Append(RawStringDelimiter).Append('\n');
-        foreach (var line in lines)
+        var lines = sql.ReplaceLineEndings(NewlineText).Split('\n');
+        var body = string.Concat(lines.Select(line => $"{indent}{line}{NewlineText}"));
+        return $"{RawStringDelimiter}{NewlineText}{body}{indent}{RawStringDelimiter}";
+    }
+
+    private sealed class LastWriteTracker
+    {
+        public int Position { get; private set; } = -1;
+
+        public ExpressionSyntax? Expression { get; private set; }
+
+        public void Consider(int position, ExpressionSyntax expression)
         {
-            sb.Append(indent).Append(line).Append('\n');
+            if (position < Position)
+            {
+                return;
+            }
+
+            Position = position;
+            Expression = expression;
+        }
+    }
+
+    private sealed class SqlExpressionFinder : CSharpSyntaxWalker
+    {
+        public List<ExpressionSyntax> Expressions { get; } = [];
+
+        public override void VisitInvocationExpression(InvocationExpressionSyntax node)
+        {
+            if (DapperMethods.Contains(GetInvokedName(node)))
+            {
+                var sql = GetSqlArgument(node);
+                if (sql is not null)
+                {
+                    Expressions.Add(sql);
+                }
+            }
+
+            base.VisitInvocationExpression(node);
         }
 
-        sb.Append(indent).Append(RawStringDelimiter);
-        return sb.ToString();
+        public override void VisitAssignmentExpression(AssignmentExpressionSyntax node)
+        {
+            if (node.Left is MemberAccessExpressionSyntax member
+                && member.Name.Identifier.Text == CommandTextProperty)
+            {
+                Expressions.Add(node.Right);
+            }
+
+            base.VisitAssignmentExpression(node);
+        }
+
+        public override void VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
+        {
+            if (CommandTypes.Contains(GetTypeName(node.Type)))
+            {
+                var args = node.ArgumentList?.Arguments;
+                if (args is { Count: > 0 })
+                {
+                    var named = args.Value.FirstOrDefault(a =>
+                        a.NameColon?.Name.Identifier.Text is CmdTextArgument or CommandTextArgument or CmdArgument);
+                    Expressions.Add((named ?? args.Value[0]).Expression);
+                }
+            }
+
+            base.VisitObjectCreationExpression(node);
+        }
+
+        private static string GetInvokedName(InvocationExpressionSyntax invocation)
+        {
+            return invocation.Expression switch
+            {
+                MemberAccessExpressionSyntax member => member.Name.Identifier.Text,
+                MemberBindingExpressionSyntax binding => binding.Name.Identifier.Text,
+                IdentifierNameSyntax id => id.Identifier.Text,
+                GenericNameSyntax generic => generic.Identifier.Text,
+                _ => string.Empty,
+            };
+        }
+
+        private static ExpressionSyntax? GetSqlArgument(InvocationExpressionSyntax invocation)
+        {
+            var args = invocation.ArgumentList.Arguments;
+            if (args.Count == 0)
+            {
+                return null;
+            }
+
+            var named = args.FirstOrDefault(a => a.NameColon?.Name.Identifier.Text == SqlArgument);
+            return (named ?? args[0]).Expression;
+        }
+
+        private static string GetTypeName(TypeSyntax type)
+        {
+            return type switch
+            {
+                IdentifierNameSyntax id => id.Identifier.Text,
+                QualifiedNameSyntax q => q.Right.Identifier.Text,
+                _ => type.ToString(),
+            };
+        }
     }
 
     private abstract record SqlTarget;

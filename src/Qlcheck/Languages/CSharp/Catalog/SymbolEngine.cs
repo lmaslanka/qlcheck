@@ -5,7 +5,19 @@ namespace Qlcheck.Languages.CSharp.Catalog;
 
 internal static class SymbolEngine
 {
-    public static readonly WalkRow[] Rows =
+    private const string DisposeMethod = "Dispose";
+
+    private const string IncludeMethod = "Include";
+
+    private const string ExportAttribute = "Export";
+
+    private const string EnterMethod = "Enter";
+
+    private const string LoggerType = "ILogger";
+
+    private const string UriType = "Uri";
+
+    public static WalkRow[] Rows { get; } =
     [
         Row.Invoke("assembly-version", CheckClass.Symbol, "AssemblyVersion"),
         Row.Handle("async-name-suffix", CheckClass.Symbol, Patterns.AsyncSuffix),
@@ -16,7 +28,7 @@ internal static class SymbolEngine
         Row.Invoke("begin-invoke-end-invoke", CheckClass.Symbol, "BeginInvoke"),
         Row.Invoke("blazor-query-param-type", CheckClass.Symbol, "SupplyParameterFromQuery"),
         Row.Invoke("caller-info-last", CheckClass.Symbol, "CallerMemberName"),
-        Row.Invoke("cartesian-explosion", CheckClass.Symbol, "Include"),
+        Row.Invoke("cartesian-explosion", CheckClass.Symbol, IncludeMethod),
         Row.Invoke("check-stream-read", CheckClass.Symbol, "Read"),
         Row.Invoke("client-evaluated-default", CheckClass.Symbol, "HasDefaultValue"),
         Row.Invoke("cls-compliant", CheckClass.Symbol, "CLSCompliant"),
@@ -33,13 +45,13 @@ internal static class SymbolEngine
         Row.Invoke("debugger-display-member", CheckClass.Symbol, "DebuggerDisplay"),
         Row.Invoke("default-parameter-value", CheckClass.Symbol, "DefaultValue"),
         Row.Invoke("default-value-type", CheckClass.Symbol, "HasDefaultValue"),
-        Row.Invoke("discarded-include", CheckClass.Symbol, "Include"),
-        Row.Invoke("disposable-finalizer", CheckClass.Symbol, "Dispose"),
-        Row.Invoke("disposable-members", CheckClass.Symbol, "Dispose"),
-        Row.Invoke("disposable-pattern", CheckClass.Symbol, "Dispose"),
+        Row.Invoke("discarded-include", CheckClass.Symbol, IncludeMethod),
+        Row.Invoke("disposable-finalizer", CheckClass.Symbol, DisposeMethod),
+        Row.Invoke("disposable-members", CheckClass.Symbol, DisposeMethod),
+        Row.Invoke("disposable-pattern", CheckClass.Symbol, DisposeMethod),
         Row.Handle("dispose-created", CheckClass.Symbol, Patterns.DisposeCreated),
-        Row.Invoke("dispose-implements-interface", CheckClass.Symbol, "Dispose"),
-        Row.Invoke("dispose-own-members", CheckClass.Symbol, "Dispose"),
+        Row.Invoke("dispose-implements-interface", CheckClass.Symbol, DisposeMethod),
+        Row.Invoke("dispose-own-members", CheckClass.Symbol, DisposeMethod),
         Row.Invoke("durable-entity-interface", CheckClass.Symbol, "SignalEntity"),
         Row.Invoke("dynamic-sql", CheckClass.Symbol, "FromSqlRaw"),
         Row.Handle("equals-and-hashcode", CheckClass.Symbol, QuietPatterns.EqualsNoNotEquals),
@@ -47,7 +59,7 @@ internal static class SymbolEngine
         Row.Invoke("equatable-value-type", CheckClass.Symbol, "IEquatable"),
         Row.Invoke("event-args", CheckClass.Symbol, "EventArgs"),
         Row.Invoke("event-handler-signature", CheckClass.Symbol, "EventHandler"),
-        Row.Invoke("export-implements-contract", CheckClass.Symbol, "Export"),
+        Row.Invoke("export-implements-contract", CheckClass.Symbol, ExportAttribute),
         Row.Invoke("field-used-as-local", CheckClass.Symbol, "field"),
         Row.Invoke("generic-collection", CheckClass.Symbol, "ICollection"),
         Row.Invoke("generic-event-handler", CheckClass.Symbol, "EventHandler"),
@@ -58,10 +70,10 @@ internal static class SymbolEngine
         Row.Invoke("js-invokable-public", CheckClass.Symbol, "JSInvokable"),
         Row.Invoke("jwt-strong-signature", CheckClass.Symbol, "Sign"),
         Row.Invoke("ldap-authenticated", CheckClass.Symbol, "Bind"),
-        Row.Invoke("lock-readonly-field", CheckClass.Symbol, "Enter"),
-        Row.Invoke("logger-generic-matches-type", CheckClass.Symbol, "ILogger"),
-        Row.Invoke("logger-matches-type", CheckClass.Symbol, "ILogger"),
-        Row.Invoke("logger-private-static", CheckClass.Symbol, "ILogger"),
+        Row.Invoke("lock-readonly-field", CheckClass.Symbol, EnterMethod),
+        Row.Invoke("logger-generic-matches-type", CheckClass.Symbol, LoggerType),
+        Row.Invoke("logger-matches-type", CheckClass.Symbol, LoggerType),
+        Row.Invoke("logger-private-static", CheckClass.Symbol, LoggerType),
         Row.Invoke("merge-include", CheckClass.Symbol, "ThenInclude"),
         Row.Invoke("migration-narrow-column", CheckClass.Symbol, "AlterColumn"),
         Row.Invoke("neutral-resources-language", CheckClass.Symbol, "NeutralResourcesLanguage"),
@@ -75,14 +87,14 @@ internal static class SymbolEngine
         Row.Invoke("no-custom-crypto", CheckClass.Symbol, "Create", "DES"),
         Row.Invoke("no-dangerous-get-handle", CheckClass.Symbol, "DangerousGetHandle"),
         Row.Invoke("no-datetime-primary-key", CheckClass.Symbol, "Key"),
-        Row.Invoke("no-double-dispose", CheckClass.Symbol, "Dispose"),
+        Row.Invoke("no-double-dispose", CheckClass.Symbol, DisposeMethod),
         Row.Invoke("no-exit", CheckClass.Symbol, "Exit"),
         Row.Invoke("no-explicit-caller-info", CheckClass.Symbol, "CallerMemberName"),
         Row.Invoke("no-gc-collect", CheckClass.Symbol, "Collect", "GC"),
         Row.Invoke("no-get-executing-assembly", CheckClass.Symbol, "GetExecutingAssembly"),
         Row.Invoke("no-insecure-random", CheckClass.Symbol, "Next", "Random"),
         Row.Handle("no-lock-local", CheckClass.Symbol, Patterns.LockLocal),
-        Row.Invoke("no-new-shared-part", CheckClass.Symbol, "Export"),
+        Row.Invoke("no-new-shared-part", CheckClass.Symbol, ExportAttribute),
         Row.Invoke("no-obsolete-base-type", CheckClass.Symbol, "ArrayList"),
         Row.Invoke("no-optional-ref", CheckClass.Symbol, "Optional"),
         Row.Invoke("no-path-resolution", CheckClass.Symbol, "Start"),
@@ -101,8 +113,8 @@ internal static class SymbolEngine
         Row.Invoke("no-type-on-type", CheckClass.Symbol, "GetType"),
         Row.Handle("no-virtual-field-event", CheckClass.Symbol, QuietPatterns.VirtualEvent),
         Row.Invoke("no-weak-hash", CheckClass.Symbol, "Create", "MD5"),
-        Row.Invoke("no-weak-lock", CheckClass.Symbol, "Enter"),
-        Row.Invoke("no-weak-lock-object", CheckClass.Symbol, "Enter"),
+        Row.Invoke("no-weak-lock", CheckClass.Symbol, EnterMethod),
+        Row.Invoke("no-weak-lock-object", CheckClass.Symbol, EnterMethod),
         Row.Invoke("no-weak-tls", CheckClass.Symbol, "Tls"),
         Row.Invoke("no-world-accessible-file", CheckClass.Symbol, "SetAccessControl"),
         Row.Invoke("no-xxe", CheckClass.Symbol, "LoadXml"),
@@ -113,7 +125,7 @@ internal static class SymbolEngine
         Row.Handle("override-does-more", CheckClass.Symbol, StylePatterns.NarrowOverride),
         Row.Handle("override-keeps-defaults", CheckClass.Symbol, StylePatterns.NarrowOverride),
         Row.Invoke("parameter-base-type", CheckClass.Symbol, "Stream"),
-        Row.Invoke("part-creation-policy", CheckClass.Symbol, "Export"),
+        Row.Invoke("part-creation-policy", CheckClass.Symbol, ExportAttribute),
         Row.Handle("pascal-case-member", CheckClass.Symbol, Patterns.PascalMember),
         Row.Handle("pascal-case-type", CheckClass.Symbol, Patterns.PascalType),
         Row.Invoke("password-salt", CheckClass.Symbol, "ComputeHash"),
@@ -122,7 +134,7 @@ internal static class SymbolEngine
         Row.Invoke("prefer-cancellation-token", CheckClass.Symbol, "None", "CancellationToken"),
         Row.Invoke("prefer-generic", CheckClass.Symbol, "ArrayList"),
         Row.Invoke("pure-returns-value", CheckClass.Symbol, "Pure"),
-        Row.Invoke("redundant-include", CheckClass.Symbol, "Include"),
+        Row.Invoke("redundant-include", CheckClass.Symbol, IncludeMethod),
         Row.Invoke("regex-timeout", CheckClass.Symbol, "Match", "Regex"),
         Row.Invoke("remove-obsolete", CheckClass.Symbol, "Obsolete"),
         Row.Invoke("request-size-limit", CheckClass.Symbol, "DisableRequestSizeLimit"),
@@ -157,11 +169,11 @@ internal static class SymbolEngine
         Row.Handle("unused-parameter", CheckClass.Symbol, Patterns.UnusedLocal),
         Row.Handle("unused-private-member", CheckClass.Symbol, Patterns.UnusedPrivate),
         Row.Handle("unused-return", CheckClass.Symbol, StylePatterns.StringToString),
-        Row.Invoke("uri-not-string-argument", CheckClass.Symbol, "Uri"),
-        Row.Invoke("uri-overload-calls-uri", CheckClass.Symbol, "Uri"),
-        Row.Invoke("uri-parameter-not-string", CheckClass.Symbol, "Uri"),
-        Row.Invoke("uri-property-not-string", CheckClass.Symbol, "Uri"),
-        Row.Invoke("uri-return-not-string", CheckClass.Symbol, "Uri"),
+        Row.Invoke("uri-not-string-argument", CheckClass.Symbol, UriType),
+        Row.Invoke("uri-overload-calls-uri", CheckClass.Symbol, UriType),
+        Row.Invoke("uri-parameter-not-string", CheckClass.Symbol, UriType),
+        Row.Invoke("uri-property-not-string", CheckClass.Symbol, UriType),
+        Row.Invoke("uri-return-not-string", CheckClass.Symbol, UriType),
         Row.Handle("use-equals-not-operator", CheckClass.Symbol, StylePatterns.EqualsWithoutComparison),
         Row.Invoke("use-lambda-parameter", CheckClass.Symbol, "GetOrAdd"),
         Row.Handle("use-return-value", CheckClass.Symbol, StylePatterns.StringToString),

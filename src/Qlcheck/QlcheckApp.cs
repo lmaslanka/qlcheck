@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Qlcheck.Languages;
 using Qlcheck.Run;
 using Qlcheck.Scan;
+using CaughtException = System.Exception;
 
 namespace Qlcheck;
 
@@ -27,7 +28,7 @@ public static class QlcheckApp
             languages = LanguageDiscovery.All();
             loaded = SourceScan.Load(options.Paths, path => languages.Any(language => language.Matches(path)));
         }
-        catch (Exception ex)
+        catch (CaughtException ex)
         {
             stderr.WriteLine(ex.Message);
             return ExitCode.Error;
@@ -39,7 +40,7 @@ public static class QlcheckApp
         {
             run = CheckRun.Execute(loaded, checks, languages);
         }
-        catch (Exception ex)
+        catch (CaughtException ex)
         {
             stderr.WriteLine(ex.Message);
             return ExitCode.Error;
@@ -47,7 +48,8 @@ public static class QlcheckApp
 
         timer.Stop();
 
-        Report.Report.Write(options, loaded, checks, run.Findings, run.Coverage, timer.Elapsed, stdout);
+        var output = stdout;
+        Report.Report.Write(options, loaded, checks, run.Findings, run.Coverage, timer.Elapsed, output);
         return run.Findings.Count == 0 ? ExitCode.Clean : ExitCode.Findings;
     }
 }

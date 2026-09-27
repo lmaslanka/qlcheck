@@ -6,11 +6,15 @@ namespace Qlcheck.Languages.CSharp.Checks.File;
 
 public sealed class SwitchPatternCheck : IFileCheck
 {
-    public const string CheckId = "switch-pattern";
+    private const string CheckIdValue = "switch-pattern";
 
     private const int MinSections = 2;
 
-    public const string Message = "This switch statement should be a pattern-matching switch expression.";
+    private const string MessageValue = "This switch statement should be a pattern-matching switch expression.";
+
+    public static string CheckId => CheckIdValue;
+
+    public static string Message => MessageValue;
 
     public string Id => CheckId;
 

@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -28,6 +27,8 @@ internal static class Report
 
     private const string SecondsFormat = "0.00";
 
+    private static readonly string NewlineText = '\n'.ToString();
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -49,7 +50,9 @@ internal static class Report
         {
             WriteHuman(findings, stdout);
         }
-        else if (!options.Stats)
+
+        var jsonOnly = !options.Human && !options.Stats;
+        if (jsonOnly)
         {
             stdout.WriteLine(JsonSerializer.Serialize(new Payload(findings, ToJson(coverage, loaded)), JsonOptions));
         }
@@ -76,7 +79,7 @@ internal static class Report
             if (finding.Replacement is not null)
             {
                 stdout.WriteLine();
-                foreach (var line in finding.Replacement.ReplaceLineEndings("\n").Split('\n'))
+                foreach (var line in finding.Replacement.ReplaceLineEndings(NewlineText).Split('\n'))
                 {
                     stdout.WriteLine($"  {line}");
                 }
@@ -94,7 +97,11 @@ internal static class Report
         TextWriter stdout)
     {
         var filesWithFindings = findings.Select(f => f.File).Distinct(StringComparer.OrdinalIgnoreCase).Count();
-        var lines = files.Sum(LineCount);
+        var lines = 0;
+        foreach (var file in files)
+        {
+            lines += LineCount(file);
+        }
         var byCheck = findings
             .GroupBy(f => f.Check, StringComparer.Ordinal)
             .Select(g => (
@@ -277,23 +284,8 @@ internal static class Report
         return methods;
     }
 
-    private static string MethodText(string? text, IReadOnlyList<int> lines)
-    {
-        var builder = new StringBuilder();
-        foreach (var line in lines)
-        {
-            if (builder.Length > 0)
-            {
-                builder.Append('\n');
-            }
-
-            builder.Append(line.ToString(CultureInfo.InvariantCulture));
-            builder.Append('|');
-            builder.Append(SourceLine(text, line));
-        }
-
-        return builder.ToString();
-    }
+    private static string MethodText(string? text, IReadOnlyList<int> lines) =>
+        string.Join('\n', lines.Select(line => $"{line.ToString(CultureInfo.InvariantCulture)}|{SourceLine(text, line)}"));
 
     private static string SourceLine(string? text, int line)
     {
