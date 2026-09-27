@@ -39,6 +39,22 @@ public class StringEmptyCheckTests
     }
 
     [Fact]
+    public void Skips_local_const()
+    {
+        var source = """
+            class C
+            {
+                void M()
+                {
+                    const string Name = "";
+                }
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
     public void Skips_attribute_and_switch_case()
     {
         var source = """

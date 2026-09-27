@@ -37,6 +37,17 @@ public class OneTypePerFileCheckTests
     }
 
     [Fact]
+    public void Ignores_generated_files()
+    {
+        var source = """
+            class A { }
+            record B { }
+            """;
+
+        Assert.Empty(Run(source, path: "Repo.g.cs"));
+    }
+
+    [Fact]
     public void Ignores_partials_of_the_same_type()
     {
         var source = """

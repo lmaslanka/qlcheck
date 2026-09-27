@@ -1,3 +1,1048 @@
 {
-  "findings": []
+  "findings": [
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/CSharpCompilations.cs:76:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/CSharpCompilations.cs",
+      "line": 76,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/CSharpCompilations.cs:77:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/CSharpCompilations.cs",
+      "line": 77,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/Catalog.cs:30:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Catalog.cs",
+      "line": 30,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/Catalog.cs:31:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Catalog.cs",
+      "line": 31,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/Catalog.cs:41:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Catalog.cs",
+      "line": 41,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/Catalog.cs:42:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Catalog.cs",
+      "line": 42,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/Match/MetricMatch.cs:162:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Match/MetricMatch.cs",
+      "line": 162,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/Match/MetricMatch.cs:163:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Match/MetricMatch.cs",
+      "line": 163,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/Match/MetricMatch.cs:186:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Match/MetricMatch.cs",
+      "line": 186,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/Match/MetricMatch.cs:187:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Match/MetricMatch.cs",
+      "line": 187,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/Match/MetricMatch.cs:247:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Match/MetricMatch.cs",
+      "line": 247,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/Match/MetricMatch.cs:248:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Match/MetricMatch.cs",
+      "line": 248,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/Match/TaintMatch.cs:48:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Match/TaintMatch.cs",
+      "line": 48,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/Match/TaintMatch.cs:49:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Match/TaintMatch.cs",
+      "line": 49,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/Patterns.cs:438:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Patterns.cs",
+      "line": 438,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/Patterns.cs:439:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Patterns.cs",
+      "line": 439,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/Patterns.cs:491:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Patterns.cs",
+      "line": 491,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/Patterns.cs:492:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Patterns.cs",
+      "line": 492,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/Patterns.cs:563:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Patterns.cs",
+      "line": 563,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/Patterns.cs:564:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Patterns.cs",
+      "line": 564,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/Patterns.cs:696:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Patterns.cs",
+      "line": 696,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/Patterns.cs:697:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Patterns.cs",
+      "line": 697,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/Patterns.cs:761:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Patterns.cs",
+      "line": 761,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/Queries/StmtFacts.cs:179:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Queries/StmtFacts.cs",
+      "line": 179,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs:201:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs",
+      "line": 201,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs:202:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs",
+      "line": 202,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs:211:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs",
+      "line": 211,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs:212:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs",
+      "line": 212,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs:243:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs",
+      "line": 243,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs:244:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs",
+      "line": 244,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs:258:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs",
+      "line": 258,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs:259:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs",
+      "line": 259,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs:287:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs",
+      "line": 287,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs:288:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs",
+      "line": 288,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs:337:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs",
+      "line": 337,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs:338:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs",
+      "line": 338,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs:386:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs",
+      "line": 386,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs:387:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs",
+      "line": 387,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs:465:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs",
+      "line": 465,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs:466:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs",
+      "line": 466,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs:496:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs",
+      "line": 496,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs:497:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs",
+      "line": 497,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs:502:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs",
+      "line": 502,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs:503:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs",
+      "line": 503,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs:519:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs",
+      "line": 519,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs:520:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs",
+      "line": 520,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/StylePatterns.cs:227:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/StylePatterns.cs",
+      "line": 227,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/StylePatterns.cs:228:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/StylePatterns.cs",
+      "line": 228,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/StylePatterns.cs:308:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/StylePatterns.cs",
+      "line": 308,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/StylePatterns.cs:309:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/StylePatterns.cs",
+      "line": 309,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/StylePatterns.cs:364:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/StylePatterns.cs",
+      "line": 364,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/StylePatterns.cs:365:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/StylePatterns.cs",
+      "line": 365,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/StylePatterns.cs:449:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/StylePatterns.cs",
+      "line": 449,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/StylePatterns.cs:450:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/StylePatterns.cs",
+      "line": 450,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/StylePatterns.cs:602:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/StylePatterns.cs",
+      "line": 602,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/StylePatterns.cs:603:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/StylePatterns.cs",
+      "line": 603,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/StylePatterns.cs:654:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/StylePatterns.cs",
+      "line": 654,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Catalog/StylePatterns.cs:655:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/StylePatterns.cs",
+      "line": 655,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Checks/Compilation/UnusedUsingCheck.cs:52:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Checks/Compilation/UnusedUsingCheck.cs",
+      "line": 52,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Checks/Compilation/UnusedUsingCheck.cs:53:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Checks/Compilation/UnusedUsingCheck.cs",
+      "line": 53,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Checks/Compilation/UnusedUsingCheck.cs:77:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Checks/Compilation/UnusedUsingCheck.cs",
+      "line": 77,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Checks/Compilation/UnusedUsingCheck.cs:78:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Checks/Compilation/UnusedUsingCheck.cs",
+      "line": 78,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Checks/Compilation/UnusedUsingCheck.cs:85:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Checks/Compilation/UnusedUsingCheck.cs",
+      "line": 85,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Checks/Compilation/UnusedUsingCheck.cs:86:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Checks/Compilation/UnusedUsingCheck.cs",
+      "line": 86,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Checks/File/InlineSqlCheck.cs:96:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Checks/File/InlineSqlCheck.cs",
+      "line": 96,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Checks/File/InlineSqlCheck.cs:97:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Checks/File/InlineSqlCheck.cs",
+      "line": 97,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Checks/File/InlineSqlCheck.cs:180:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Checks/File/InlineSqlCheck.cs",
+      "line": 180,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Checks/File/InlineSqlCheck.cs:181:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Checks/File/InlineSqlCheck.cs",
+      "line": 181,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Checks/File/MagicLiteralCheck.cs:188:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Checks/File/MagicLiteralCheck.cs",
+      "line": 188,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Checks/File/StringConcatCheck.cs:153:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Checks/File/StringConcatCheck.cs",
+      "line": 153,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Languages/CSharp/Checks/File/StringConcatCheck.cs:154:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Languages/CSharp/Checks/File/StringConcatCheck.cs",
+      "line": 154,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/QlcheckApp.cs:31:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/QlcheckApp.cs",
+      "line": 31,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/QlcheckApp.cs:32:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/QlcheckApp.cs",
+      "line": 32,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/QlcheckApp.cs:33:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/QlcheckApp.cs",
+      "line": 33,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/QlcheckApp.cs:34:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/QlcheckApp.cs",
+      "line": 34,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Report/Report.cs:199:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Report/Report.cs",
+      "line": 199,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Report/Report.cs:200:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Report/Report.cs",
+      "line": 200,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Report/Report.cs:201:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Report/Report.cs",
+      "line": 201,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Report/Report.cs:225:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Report/Report.cs",
+      "line": 225,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Report/Report.cs:226:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Report/Report.cs",
+      "line": 226,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Run/LanguageDiscovery.cs:22:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Run/LanguageDiscovery.cs",
+      "line": 22,
+      "column": 1,
+      "message": "Uncovered."
+    },
+    {
+      "id": "coverage:src/Qlcheck/Run/LanguageDiscovery.cs:23:1",
+      "check": "coverage",
+      "file": "src/Qlcheck/Run/LanguageDiscovery.cs",
+      "line": 23,
+      "column": 1,
+      "message": "Uncovered."
+    }
+  ],
+  "coverage": [
+    {
+      "file": "src/Qlcheck/Checks/ICheck.cs"
+    },
+    {
+      "file": "src/Qlcheck/Cli/Cli.cs"
+    },
+    {
+      "file": "src/Qlcheck/CoverageFile.cs"
+    },
+    {
+      "file": "src/Qlcheck/CoverageMethod.cs"
+    },
+    {
+      "file": "src/Qlcheck/ExitCode.cs"
+    },
+    {
+      "file": "src/Qlcheck/Finding.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/CSharpCompilations.cs",
+      "methods": [
+        {
+          "name": "Microsoft.CodeAnalysis.MetadataReference[] Qlcheck.Languages.CSharp.CSharpCompilations::LoadPlatform()",
+          "text": "76|        {\n77|            return [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)];"
+        }
+      ]
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/CSharpLanguage.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/CSharpTrees.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Catalog.cs",
+      "methods": [
+        {
+          "name": "System.Collections.Generic.IReadOnlyList`1<Qlcheck.Languages.CSharp.Catalog.CatalogCheck> Qlcheck.Languages.CSharp.Catalog.Catalog::Load()",
+          "text": "30|        {\n31|            throw new InvalidOperationException(EmptyResource);"
+        },
+        {
+          "name": "System.IO.Stream Qlcheck.Languages.CSharp.Catalog.Catalog::Open()",
+          "text": "41|        {\n42|            throw new InvalidOperationException(MissingResource);"
+        }
+      ]
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/CatalogCheck.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/CatalogRun.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/CatalogWalker.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/CheckClass.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/FlowEngine.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Match/AttributeMatch.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Match/CreateMatch.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Match/IdentMatch.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Match/InvokeMatch.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Match/KindMatch.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Match/MemberMatch.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Match/MetricMatch.cs",
+      "methods": [
+        {
+          "name": "System.Void Qlcheck.Languages.CSharp.Catalog.MetricMatch::DuplicateString(Qlcheck.Languages.CSharp.Catalog.WalkContext,System.String)",
+          "text": "162|            {\n163|                continue;"
+        },
+        {
+          "name": "System.Void Qlcheck.Languages.CSharp.Catalog.MetricMatch::SwitchCases(Qlcheck.Languages.CSharp.Catalog.WalkContext,System.String)",
+          "text": "186|            {\n187|                continue;"
+        },
+        {
+          "name": "System.Void Qlcheck.Languages.CSharp.Catalog.MetricMatch::ReportExpression(Qlcheck.Languages.CSharp.Catalog.WalkContext,System.String,Microsoft.CodeAnalysis.SyntaxNode)",
+          "text": "247|        {\n248|            return;"
+        }
+      ]
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Match/MetricNames.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Match/MetricScores.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Match/TaintMatch.cs",
+      "methods": [
+        {
+          "name": "System.Void Qlcheck.Languages.CSharp.Catalog.TaintMatch::ReportAssignments(Qlcheck.Languages.CSharp.Catalog.WalkContext,System.String,System.Collections.Generic.HashSet`1<System.String>)",
+          "text": "48|            {\n49|                continue;"
+        }
+      ]
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Match/TokenMatch.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Match/TriviaMatch.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/MetricEngine.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Patterns.cs",
+      "methods": [
+        {
+          "name": "System.Boolean Qlcheck.Languages.CSharp.Catalog.Patterns::IsNullDeref(Microsoft.CodeAnalysis.SyntaxNode)",
+          "text": "438|        {\n439|            return false;"
+        },
+        {
+          "name": "System.Boolean Qlcheck.Languages.CSharp.Catalog.Patterns::ArrayUsesParameter(Microsoft.CodeAnalysis.SyntaxNode)",
+          "text": "491|        {\n492|            return false;"
+        },
+        {
+          "name": "System.Boolean Qlcheck.Languages.CSharp.Catalog.Patterns::MissingElse(Microsoft.CodeAnalysis.SyntaxNode)",
+          "text": "563|        {\n564|            return false;"
+        },
+        {
+          "name": "System.Boolean Qlcheck.Languages.CSharp.Catalog.Patterns::BadTestSignature(Microsoft.CodeAnalysis.SyntaxNode)",
+          "text": "696|        {\n697|            return false;"
+        },
+        {
+          "name": "System.Int32 Qlcheck.Languages.CSharp.Catalog.Patterns::Offset(System.String,System.Int32)",
+          "text": "761|        return 0;"
+        }
+      ]
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Queries/CatchFacts.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Queries/FileFacts.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Queries/LocalFacts.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Queries/Names.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Queries/Shapes.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Queries/StmtFacts.cs",
+      "methods": [
+        {
+          "name": "Microsoft.CodeAnalysis.CSharp.Syntax.StatementSyntax Qlcheck.Languages.CSharp.Catalog.Queries.StmtFacts::OtherBody(Microsoft.CodeAnalysis.SyntaxNode)",
+          "text": "179|            _ => null,"
+        }
+      ]
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Queries/Symbols.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Queries/TypeFacts.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/QuietPatterns.cs",
+      "methods": [
+        {
+          "name": "System.Boolean Qlcheck.Languages.CSharp.Catalog.QuietPatterns::ChecksThenAssigns(Microsoft.CodeAnalysis.SyntaxNode)",
+          "text": "201|        {\n202|            return false;\n211|        {\n212|            return false;"
+        },
+        {
+          "name": "System.Boolean Qlcheck.Languages.CSharp.Catalog.QuietPatterns::NullAndType(Microsoft.CodeAnalysis.SyntaxNode)",
+          "text": "243|        {\n244|            return false;"
+        },
+        {
+          "name": "System.Boolean Qlcheck.Languages.CSharp.Catalog.QuietPatterns::GenericComparedToNull(Microsoft.CodeAnalysis.SyntaxNode)",
+          "text": "258|        {\n259|            return false;"
+        },
+        {
+          "name": "System.Boolean Qlcheck.Languages.CSharp.Catalog.QuietPatterns::InitsZero(Microsoft.CodeAnalysis.SyntaxNode)",
+          "text": "287|        {\n288|            return false;"
+        },
+        {
+          "name": "System.Boolean Qlcheck.Languages.CSharp.Catalog.QuietPatterns::AssignsIncrement(Microsoft.CodeAnalysis.SyntaxNode)",
+          "text": "337|        {\n338|            return false;"
+        },
+        {
+          "name": "System.Boolean Qlcheck.Languages.CSharp.Catalog.QuietPatterns::ReadonlyList(Microsoft.CodeAnalysis.SyntaxNode)",
+          "text": "386|        {\n387|            return false;"
+        },
+        {
+          "name": "System.Boolean Qlcheck.Languages.CSharp.Catalog.QuietPatterns::LiteralNeverWritten(Microsoft.CodeAnalysis.SyntaxNode)",
+          "text": "465|        {\n466|            return false;"
+        },
+        {
+          "name": "System.Boolean Qlcheck.Languages.CSharp.Catalog.QuietPatterns::UnusedTypeParam(Microsoft.CodeAnalysis.SyntaxNode)",
+          "text": "496|        {\n497|            return false;\n502|        {\n503|            return false;"
+        },
+        {
+          "name": "System.Boolean Qlcheck.Languages.CSharp.Catalog.QuietPatterns::StaticReadonlyWithLiteral(Microsoft.CodeAnalysis.SyntaxNode)",
+          "text": "519|        {\n520|            return false;"
+        }
+      ]
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Row.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/StylePatterns.cs",
+      "methods": [
+        {
+          "name": "System.Boolean Qlcheck.Languages.CSharp.Catalog.StylePatterns::CloseBraceNotAlone(Microsoft.CodeAnalysis.SyntaxNode)",
+          "text": "227|        {\n228|            return false;"
+        },
+        {
+          "name": "System.Boolean Qlcheck.Languages.CSharp.Catalog.StylePatterns::ThisObject(Microsoft.CodeAnalysis.SyntaxNode)",
+          "text": "308|        {\n309|            return false;"
+        },
+        {
+          "name": "System.Boolean Qlcheck.Languages.CSharp.Catalog.StylePatterns::IndexerNotIntOrString(Microsoft.CodeAnalysis.SyntaxNode)",
+          "text": "364|        {\n365|            return false;"
+        },
+        {
+          "name": "System.Boolean Qlcheck.Languages.CSharp.Catalog.StylePatterns::PublicOnNonPublicType(Microsoft.CodeAnalysis.SyntaxNode)",
+          "text": "449|        {\n450|            return false;"
+        },
+        {
+          "name": "System.Boolean Qlcheck.Languages.CSharp.Catalog.StylePatterns::ComparesBoolLiteral(Microsoft.CodeAnalysis.SyntaxNode)",
+          "text": "602|        {\n603|            return false;"
+        },
+        {
+          "name": "System.Boolean Qlcheck.Languages.CSharp.Catalog.StylePatterns::EventNotInvoked(Microsoft.CodeAnalysis.SyntaxNode)",
+          "text": "654|        {\n655|            return false;"
+        }
+      ]
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/SymbolEngine.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/SyntaxEngine.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/TaintEngine.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/Thresholds.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/WalkContext.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Catalog/WalkRow.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Checks/Compilation/ICompilationCheck.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Checks/Compilation/UnusedUsingCheck.cs",
+      "methods": [
+        {
+          "name": "System.Collections.Generic.IReadOnlyList`1<Qlcheck.Finding> Qlcheck.Languages.CSharp.Checks.Compilation.UnusedUsingCheck::AnalyzeCompilation(Microsoft.CodeAnalysis.Compilation,System.Collections.Generic.IReadOnlySet`1<System.String>)",
+          "text": "52|            {\n53|                continue;"
+        },
+        {
+          "name": "System.Boolean Qlcheck.Languages.CSharp.Checks.Compilation.UnusedUsingCheck::UsingResolved(Microsoft.CodeAnalysis.Compilation,System.Collections.Generic.Dictionary`2<Microsoft.CodeAnalysis.SyntaxTree,Microsoft.CodeAnalysis.SemanticModel>,Microsoft.CodeAnalysis.Diagnostic)",
+          "text": "77|        {\n78|            return false;\n85|        {\n86|            return false;"
+        }
+      ]
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Checks/File/IFileCheck.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Checks/File/InlineSqlCheck.cs",
+      "methods": [
+        {
+          "name": "Qlcheck.Finding Qlcheck.Languages.CSharp.Checks.File.InlineSqlCheck::TryCreateFinding(System.String,Microsoft.CodeAnalysis.SyntaxTree,Microsoft.CodeAnalysis.CSharp.Syntax.ExpressionSyntax)",
+          "text": "96|        {\n97|            return null;"
+        },
+        {
+          "name": "System.Void Qlcheck.Languages.CSharp.Checks.File.InlineSqlCheck::TrackLocalDeclarations(Microsoft.CodeAnalysis.CSharp.Syntax.IdentifierNameSyntax,System.String,System.Int32,Qlcheck.Languages.CSharp.Checks.File.InlineSqlCheck/LastWriteTracker)",
+          "text": "180|            {\n181|                continue;"
+        }
+      ]
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Checks/File/MagicLiteralCheck.cs",
+      "methods": [
+        {
+          "name": "System.Boolean Qlcheck.Languages.CSharp.Checks.File.MagicLiteralCheck::IsAllowedNumber(System.Object)",
+          "text": "188|            _ => false,"
+        }
+      ]
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Checks/File/OneTypePerFileCheck.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Checks/File/SqlText.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Checks/File/StringConcatCheck.cs",
+      "methods": [
+        {
+          "name": "System.Boolean Qlcheck.Languages.CSharp.Checks.File.StringConcatCheck::IsStringTypeName(Microsoft.CodeAnalysis.CSharp.Syntax.ExpressionSyntax)",
+          "text": "153|            QualifiedNameSyntax q => q.Right.Identifier.Text is StringTypeName,\n154|            _ => false,"
+        }
+      ]
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Checks/File/StringEmptyCheck.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/Checks/File/SwitchPatternCheck.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/CSharp/ProjectReferences.cs"
+    },
+    {
+      "file": "src/Qlcheck/Languages/ILanguage.cs"
+    },
+    {
+      "file": "src/Qlcheck/Program.cs"
+    },
+    {
+      "file": "src/Qlcheck/QlcheckApp.cs",
+      "methods": [
+        {
+          "name": "Qlcheck.ExitCode Qlcheck.QlcheckApp::Run(System.Collections.Generic.IReadOnlyList`1<System.String>,System.IO.TextWriter,System.IO.TextWriter)",
+          "text": "31|        catch (CaughtException ex)\n32|        {\n33|            stderr.WriteLine(ex.Message);\n34|            return ExitCode.Error;"
+        }
+      ]
+    },
+    {
+      "file": "src/Qlcheck/Report/Report.cs",
+      "methods": [
+        {
+          "name": "System.String Qlcheck.Report.Report::Box(System.String,System.Int32)",
+          "text": "199|        {\n200|            text = Truncate(text, inner - BoxPadding);\n201|        }"
+        },
+        {
+          "name": "System.String Qlcheck.Report.Report::Truncate(System.String,System.Int32)",
+          "text": "225|        {\n226|            return text;"
+        }
+      ]
+    },
+    {
+      "file": "src/Qlcheck/Run/CheckDiscovery.cs"
+    },
+    {
+      "file": "src/Qlcheck/Run/CheckRun.cs"
+    },
+    {
+      "file": "src/Qlcheck/Run/LanguageDiscovery.cs",
+      "methods": [
+        {
+          "name": "System.Collections.Generic.IReadOnlyList`1<Qlcheck.Languages.ILanguage> Qlcheck.Run.LanguageDiscovery::All()",
+          "text": "22|        {\n23|            throw new InvalidOperationException($\"Duplicate language '{duplicate.Key}'.\");"
+        }
+      ]
+    },
+    {
+      "file": "src/Qlcheck/RunResult.cs"
+    },
+    {
+      "file": "src/Qlcheck/Scan/IgnorePatterns.cs"
+    },
+    {
+      "file": "src/Qlcheck/Scan/SourceScan.cs"
+    },
+    {
+      "file": "src/Qlcheck/SourceFile.cs"
+    }
+  ]
 }

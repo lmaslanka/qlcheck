@@ -204,4 +204,228 @@ public class InlineSqlCheckTests
         Assert.Equal(InlineSqlCheck.LayoutMessage, finding.Message);
         Assert.Contains("coalesce", finding.Replacement, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void Ignores_sql_argument_that_cannot_be_resolved()
+    {
+        var source = """
+            class C
+            {
+                void M()
+                {
+                    connection.QueryAsync(GetSql());
+                }
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
+    public void Ignores_identifier_referenced_from_an_expression_bodied_property()
+    {
+        var source = """
+            class C
+            {
+                object P => connection.QueryAsync(sql);
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
+    public void Resolves_variable_written_through_a_plain_assignment()
+    {
+        var source = """
+            class C
+            {
+                void M()
+                {
+                    string sql;
+                    other = "ignored";
+                    sql = "select 1";
+                    connection.QueryAsync(sql);
+                }
+            }
+            """;
+
+        var finding = Assert.Single(Run(source));
+        Assert.Equal(InlineSqlCheck.LayoutMessage, finding.Message);
+    }
+
+    [Fact]
+    public void Reports_interpolated_sql_assigned_via_plain_assignment_as_unformattable()
+    {
+        var source = """
+            class C
+            {
+                void M()
+                {
+                    string sql;
+                    sql = $"SELECT {id}";
+                    connection.QueryAsync(sql);
+                }
+            }
+            """;
+
+        var finding = Assert.Single(Run(source));
+        Assert.Equal(InlineSqlCheck.UnformattableMessage, finding.Message);
+    }
+
+    [Fact]
+    public void Ignores_non_string_value_assigned_to_a_sql_looking_variable()
+    {
+        var source = """
+            class C
+            {
+                void M()
+                {
+                    object sql;
+                    sql = 42;
+                    connection.QueryAsync(sql);
+                }
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
+    public void Unwraps_parenthesized_sql_literal()
+    {
+        var source = """
+            class C
+            {
+                void M()
+                {
+                    connection.QueryAsync(("select 1"));
+                }
+            }
+            """;
+
+        var finding = Assert.Single(Run(source));
+        Assert.Equal(InlineSqlCheck.LayoutMessage, finding.Message);
+    }
+
+    [Fact]
+    public void Prefers_the_inner_shadowed_declaration_over_an_outer_one()
+    {
+        var source = """
+            class C
+            {
+                void M()
+                {
+                    var sql = "outer value";
+                    {
+                        var sql = "select 1";
+                        connection.QueryAsync(sql);
+                    }
+                }
+            }
+            """;
+
+        var finding = Assert.Single(Run(source));
+        Assert.Contains("SELECT", finding.Replacement);
+    }
+
+    [Fact]
+    public void Reports_sql_passed_to_a_command_constructor()
+    {
+        var source = """
+            class C
+            {
+                void M()
+                {
+                    var cmd = new SqlCommand("select 1");
+                }
+            }
+            """;
+
+        var finding = Assert.Single(Run(source));
+        Assert.Equal(InlineSqlCheck.LayoutMessage, finding.Message);
+    }
+
+    [Fact]
+    public void Recognizes_qualified_command_type_name()
+    {
+        var source = """
+            class C
+            {
+                void M()
+                {
+                    var cmd = new System.Data.SqlClient.SqlCommand("select 1");
+                }
+            }
+            """;
+
+        var finding = Assert.Single(Run(source));
+        Assert.Equal(InlineSqlCheck.LayoutMessage, finding.Message);
+    }
+
+    [Fact]
+    public void Ignores_generic_type_creation_which_falls_back_to_type_text()
+    {
+        var source = """
+            class C
+            {
+                void M()
+                {
+                    var list = new List<int>();
+                }
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
+    public void Ignores_invocation_whose_callee_is_not_a_recognizable_name()
+    {
+        var source = """
+            class C
+            {
+                void M()
+                {
+                    funcs[0]("select 1");
+                }
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
+    public void Recognizes_dapper_calls_through_conditional_unqualified_and_generic_invocations()
+    {
+        var source = """
+            class C
+            {
+                void M()
+                {
+                    connection?.QueryAsync("select 1");
+                    QueryAsync("select 2");
+                    QueryAsync<int>("select 3");
+                }
+            }
+            """;
+
+        Assert.Equal(3, Run(source).Count);
+    }
+
+    [Fact]
+    public void Ignores_dapper_calls_with_no_arguments()
+    {
+        var source = """
+            class C
+            {
+                void M()
+                {
+                    connection.QueryAsync();
+                }
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
 }

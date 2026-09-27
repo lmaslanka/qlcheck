@@ -9,14 +9,18 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <CoverletVersion>10.0.1</CoverletVersion>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
-    <PackageDownload Include="coverlet.console" Version="[10.0.1]" />
+    <PackageDownload Include="coverlet.console" Version="[$(CoverletVersion)]" />
   </ItemGroup>
 
   <Target Name="CopyCoverletConsole" AfterTargets="Build">
     <PropertyGroup>
-      <CoverletSource>$(NuGetPackageRoot)coverlet.console/10.0.1/tools/net10.0/any/</CoverletSource>
+      <CoverletSource>$(NuGetPackageRoot)coverlet.console/$(CoverletVersion)/tools/net10.0/any/</CoverletSource>
     </PropertyGroup>
     <ItemGroup>
       <CoverletFile Include="$(CoverletSource)**/*.*" />
@@ -25,6 +29,19 @@
       SourceFiles="@(CoverletFile)"
       DestinationFiles="@(CoverletFile->'$(OutputPath)coverlet/%(RecursiveDir)%(Filename)%(Extension)')"
       SkipUnchangedFiles="true" />
+  </Target>
+
+  <Target Name="AddCoverletConsoleToPublish" BeforeTargets="ComputeFilesToPublish">
+    <PropertyGroup>
+      <CoverletSource>$(NuGetPackageRoot)coverlet.console/$(CoverletVersion)/tools/net10.0/any/</CoverletSource>
+    </PropertyGroup>
+    <ItemGroup>
+      <CoverletFile Include="$(CoverletSource)**/*.*" />
+      <ResolvedFileToPublish Include="@(CoverletFile)">
+        <RelativePath>coverlet/%(RecursiveDir)%(Filename)%(Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+    </ItemGroup>
   </Target>
 
   <ItemGroup>

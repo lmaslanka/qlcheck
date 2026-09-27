@@ -93,6 +93,44 @@ public class CheckRunTests
                 [new CSharpLanguage()]));
     }
 
+    [Fact]
+    public void Skips_a_language_with_no_matching_files()
+    {
+        var file = new SourceScan.LoadedSource(CSharpFullPath, new SourceFile(CSharpPath, MagicSource));
+        var result = CheckRun.Execute(
+            [file],
+            [new BoundCheck(FakeLanguageId, FakeLanguageId)],
+            [new RecordingLanguage(FakeLanguageId, FakeExtension)]);
+
+        Assert.Empty(result.Findings);
+    }
+
+    [Fact]
+    public void Skips_a_language_with_no_assigned_checks()
+    {
+        var file = new SourceScan.LoadedSource(FakeFullPath, new SourceFile(FakePath, MagicSource));
+        var result = CheckRun.Execute(
+            [file],
+            [],
+            [new RecordingLanguage(FakeLanguageId, FakeExtension)]);
+
+        Assert.Empty(result.Findings);
+    }
+
+    [Fact]
+    public void Throws_when_a_check_matches_two_languages()
+    {
+        var file = new SourceScan.LoadedSource(FakeFullPath, new SourceFile(FakePath, MagicSource));
+        Assert.Throws<InvalidOperationException>(() =>
+            CheckRun.Execute(
+                [file],
+                [new BoundCheck(FakeLanguageId, FakeLanguageId)],
+                [
+                    new RecordingLanguage(FakeLanguageId, FakeExtension),
+                    new RecordingLanguage(FakeLanguageId, FakeExtension),
+                ]));
+    }
+
     private sealed class RecordingLanguage : ILanguage
     {
         private readonly string _extension;

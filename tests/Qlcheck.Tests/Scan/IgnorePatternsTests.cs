@@ -54,6 +54,58 @@ public class IgnorePatternsTests
         Assert.True(ignore.IsIgnored(SkipMe, isDirectory: true));
     }
 
+    [Fact]
+    public void IsIgnored_is_false_for_empty_or_dot_path()
+    {
+        var ignore = IgnorePatterns.Parse(["skipme/"]);
+
+        Assert.False(ignore.IsIgnored(string.Empty, isDirectory: false));
+        Assert.False(ignore.IsIgnored(".", isDirectory: false));
+    }
+
+    [Fact]
+    public void Parse_skips_a_pattern_that_becomes_empty_after_trimming()
+    {
+        var ignore = IgnorePatterns.Parse(["!/", "skipme/"]);
+
+        Assert.True(ignore.IsIgnored(SkipMe, isDirectory: true));
+    }
+
+    [Fact]
+    public void Globstar_prefix_matches_at_any_depth()
+    {
+        var ignore = IgnorePatterns.Parse(["**/build/"]);
+
+        Assert.True(ignore.IsIgnored("build", isDirectory: true));
+        Assert.True(ignore.IsIgnored("a/b/build", isDirectory: true));
+    }
+
+    [Fact]
+    public void Mid_pattern_globstar_matches_across_directories()
+    {
+        var ignore = IgnorePatterns.Parse(["src/**/test/"]);
+
+        Assert.True(ignore.IsIgnored("src/a/b/test", isDirectory: true));
+    }
+
+    [Fact]
+    public void Globstar_not_followed_by_a_slash_matches_like_a_plain_star()
+    {
+        var ignore = IgnorePatterns.Parse(["test**"]);
+
+        Assert.True(ignore.IsIgnored("testing", isDirectory: false));
+    }
+
+    [Fact]
+    public void Star_and_question_wildcards_match_single_segment_text()
+    {
+        var ignore = IgnorePatterns.Parse(["*.log", "file?.txt"]);
+
+        Assert.True(ignore.IsIgnored("debug.log", isDirectory: false));
+        Assert.True(ignore.IsIgnored("file1.txt", isDirectory: false));
+        Assert.False(ignore.IsIgnored("file12.txt", isDirectory: false));
+    }
+
     [Theory]
     [InlineData("bin")]
     [InlineData("obj")]

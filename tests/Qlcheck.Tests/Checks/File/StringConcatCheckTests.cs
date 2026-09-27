@@ -104,4 +104,172 @@ public class StringConcatCheckTests
 
         Assert.Empty(Run(source));
     }
+
+    [Fact]
+    public void Skips_sql_concatenation_via_concat_call()
+    {
+        var source = """
+            class C
+            {
+                string M(string dir) => string.Concat("SELECT * FROM t WHERE x = ", dir);
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
+    public void Skips_sql_concatenation_starting_with_an_interpolated_segment()
+    {
+        var source = """
+            class C
+            {
+                string M(string col, string suffix) => $"SELECT {col} " + suffix;
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
+    public void Reports_parenthesized_concatenation()
+    {
+        var source = """
+            class C
+            {
+                string M(string a) => ("x" + a);
+            }
+            """;
+
+        Assert.Single(Run(source));
+    }
+
+    [Fact]
+    public void Reports_concatenation_with_a_parenthesized_operand()
+    {
+        var source = """
+            class C
+            {
+                string M(string name) => ("Hello ") + name;
+            }
+            """;
+
+        Assert.Single(Run(source));
+    }
+
+    [Fact]
+    public void Ignores_unqualified_concat_call()
+    {
+        var source = """
+            class C
+            {
+                string M(string a, string b) => Concat(a, b);
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
+    public void Ignores_invocation_whose_callee_is_not_a_name()
+    {
+        var source = """
+            class C
+            {
+                string M(string a, string b) => funcs[0](a, b);
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
+    public void Reports_string_dot_net_type_concat_call()
+    {
+        var source = """
+            class C
+            {
+                string M(string name) => String.Concat("Hello ", name);
+            }
+            """;
+
+        Assert.Single(Run(source));
+    }
+
+    [Fact]
+    public void Reports_fully_qualified_string_concat_call()
+    {
+        var source = """
+            class C
+            {
+                string M(string name) => System.String.Concat("Hello ", name);
+            }
+            """;
+
+        Assert.Single(Run(source));
+    }
+
+    [Fact]
+    public void Skips_concatenation_inside_an_attribute()
+    {
+        var source = """
+            class C
+            {
+                [System.Obsolete("a" + "b")]
+                void M() { }
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
+    public void Skips_local_const_concatenation()
+    {
+        var source = """
+            class C
+            {
+                void M()
+                {
+                    const string x = "a" + "b";
+                }
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
+    public void Reports_concatenation_with_an_interpolated_segment_without_a_replacement()
+    {
+        var source = """
+            class C
+            {
+                string M(string a) => $"x{a}" + "y";
+            }
+            """;
+
+        var finding = Assert.Single(Run(source));
+        Assert.Null(finding.Replacement);
+    }
+
+    [Fact]
+    public void Escapes_special_characters_in_the_suggested_replacement()
+    {
+        var source = """
+            class C
+            {
+                string M(string name) => "line1\n\ttab\\quote\"brace{x}end\r" + name;
+            }
+            """;
+
+        var finding = Assert.Single(Run(source));
+        Assert.Contains("\\n", finding.Replacement);
+        Assert.Contains("\\t", finding.Replacement);
+        Assert.Contains("\\\\", finding.Replacement);
+        Assert.Contains("\\\"", finding.Replacement);
+        Assert.Contains("{{", finding.Replacement);
+        Assert.Contains("}}", finding.Replacement);
+        Assert.Contains("\\r", finding.Replacement);
+    }
 }

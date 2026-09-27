@@ -225,4 +225,128 @@ public class MagicLiteralCheckTests
         var finding = Assert.Single(Run(source));
         Assert.Equal(MagicLiteralCheck.NumberMessage(FortyTwo), finding.Message);
     }
+
+    [Fact]
+    public void Ignores_boolean_literal()
+    {
+        var source = """
+            class C
+            {
+                bool M() => true;
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
+    public void Skips_message_thrown_directly()
+    {
+        var source = """
+            class C
+            {
+                void M()
+                {
+                    throw "gone";
+                }
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
+    public void Skips_string_thrown_from_a_generic_exception_type()
+    {
+        var source = """
+            class MyException<T> : System.Exception { }
+            class C
+            {
+                void M()
+                {
+                    throw new MyException<int>("magicvalue");
+                }
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
+    public void Reports_number_argument()
+    {
+        var source = """
+            class C
+            {
+                void M()
+                {
+                    Foo(42);
+                }
+            }
+            """;
+
+        var finding = Assert.Single(Run(source));
+        Assert.Equal(MagicLiteralCheck.NumberMessage(FortyTwo), finding.Message);
+    }
+
+    [Fact]
+    public void Skips_local_const_number()
+    {
+        var source = """
+            class C
+            {
+                void M()
+                {
+                    const int x = 42;
+                }
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
+    public void Reports_number_in_a_for_loop_initializer()
+    {
+        var source = """
+            class C
+            {
+                void M()
+                {
+                    for (var i = 42; i < Bound; i++) { }
+                }
+            }
+            """;
+
+        var finding = Assert.Single(Run(source));
+        Assert.Equal(MagicLiteralCheck.NumberMessage(FortyTwo), finding.Message);
+    }
+
+    [Fact]
+    public void Reports_number_in_a_parameter_default_value()
+    {
+        var source = """
+            class C
+            {
+                void M(int x = 42) { }
+            }
+            """;
+
+        var finding = Assert.Single(Run(source));
+        Assert.Equal(MagicLiteralCheck.NumberMessage(FortyTwo), finding.Message);
+    }
+
+    [Fact]
+    public void Reports_magic_decimal_number()
+    {
+        var source = """
+            class C
+            {
+                decimal M() => 2.5m;
+            }
+            """;
+
+        var finding = Assert.Single(Run(source));
+        Assert.Equal(MagicLiteralCheck.NumberMessage("2.5m"), finding.Message);
+    }
 }

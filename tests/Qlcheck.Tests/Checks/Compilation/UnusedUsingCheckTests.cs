@@ -76,6 +76,25 @@ public class UnusedUsingCheckTests
     }
 
     [Fact]
+    public void Ignores_finding_not_in_the_included_files()
+    {
+        var source = """
+            using System.Text;
+
+            class C
+            {
+            }
+            """;
+        var file = new SourceFile("Repo.cs", source);
+        var compilation = CSharpCompilations.Create(CompilationName, [CSharpTrees.Parse(file)]);
+        var included = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Other.cs" };
+
+        var findings = new UnusedUsingCheck().AnalyzeCompilation(compilation, included);
+
+        Assert.Empty(findings);
+    }
+
+    [Fact]
     public void Ignores_using_when_file_has_unresolved_types()
     {
         var source = """
