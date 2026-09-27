@@ -189,8 +189,16 @@ internal static class Patterns
         }
     }
 
-    public static void UnusedPrivate(WalkContext ctx, string id) =>
-        Report(ctx, id, SyntaxKind.MethodDeclaration, LocalFacts.PrivateUnused);
+    public static void UnusedPrivate(WalkContext ctx, string id)
+    {
+        foreach (var node in ctx.Nodes(SyntaxKind.MethodDeclaration))
+        {
+            if (LocalFacts.PrivateUnused(node, ctx.Model))
+            {
+                ctx.Report(id, node);
+            }
+        }
+    }
 
     public static void NullDeref(WalkContext ctx, string id) => Report(ctx, id, SyntaxKind.IfStatement, IsNullDeref);
 

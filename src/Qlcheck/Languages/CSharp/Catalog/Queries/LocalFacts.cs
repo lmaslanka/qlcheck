@@ -45,7 +45,9 @@ internal static class LocalFacts
         return true;
     }
 
-    public static bool PrivateUnused(SyntaxNode node)
+    public static bool PrivateUnused(SyntaxNode node) => PrivateUnused(node, model: null);
+
+    public static bool PrivateUnused(SyntaxNode node, SemanticModel? model)
     {
         if (!Shapes.HasModifier(node, SyntaxKind.PrivateKeyword))
         {
@@ -65,15 +67,33 @@ internal static class LocalFacts
         }
 
         var uses = 0;
-        foreach (var token in type.DescendantTokens())
+        foreach (var typePart in ContainingTypeParts(type, model))
         {
-            if (token.IsKind(SyntaxKind.IdentifierToken) && token.Text == name)
+            foreach (var token in typePart.DescendantTokens())
             {
-                uses++;
+                if (token.IsKind(SyntaxKind.IdentifierToken) && token.Text == name)
+                {
+                    uses++;
+                }
             }
         }
 
         return uses == 1;
+    }
+
+    private static IEnumerable<SyntaxNode> ContainingTypeParts(SyntaxNode type, SemanticModel? model)
+    {
+        if (model is not null && model.GetDeclaredSymbol(type) is INamedTypeSymbol { DeclaringSyntaxReferences.Length: > 1 } symbol)
+        {
+            foreach (var reference in symbol.DeclaringSyntaxReferences)
+            {
+                yield return reference.GetSyntax();
+            }
+
+            yield break;
+        }
+
+        yield return type;
     }
 
     private static SyntaxNode? ContainingType(SyntaxNode node)

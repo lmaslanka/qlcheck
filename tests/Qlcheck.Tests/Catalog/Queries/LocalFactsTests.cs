@@ -53,6 +53,44 @@ public class LocalFactsTests
         Assert.False(LocalFacts.PrivateUnused(unit.Members[0]));
     }
 
+    [Fact]
+    public void PrivateUnused_is_false_when_used_from_another_partial_declaration()
+    {
+        var (node, model) = PartialMethod(
+            declaringPart: "public partial class Widget { private void Helper() { } }",
+            otherPart: "public partial class Widget { void M() { Helper(); } }",
+            methodName: "Helper");
+        Assert.False(LocalFacts.PrivateUnused(node, model));
+    }
+
+    [Fact]
+    public void PrivateUnused_is_true_when_unused_across_all_partial_declarations()
+    {
+        var (node, model) = PartialMethod(
+            declaringPart: "public partial class Widget { private void Helper() { } }",
+            otherPart: "public partial class Widget { void M() { } }",
+            methodName: "Helper");
+        Assert.True(LocalFacts.PrivateUnused(node, model));
+    }
+
+    private static (SyntaxNode Node, SemanticModel Model) PartialMethod(
+        string declaringPart,
+        string otherPart,
+        string methodName)
+    {
+        var declaringTree = CSharpSyntaxTree.ParseText(declaringPart);
+        var otherTree = CSharpSyntaxTree.ParseText(otherPart);
+        var compilation = CSharpCompilation.Create(
+            "PartialTest",
+            [declaringTree, otherTree],
+            [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)]);
+        var model = compilation.GetSemanticModel(declaringTree);
+        var node = declaringTree.GetRoot().DescendantNodes()
+            .OfType<MethodDeclarationSyntax>()
+            .First(m => m.Identifier.Text == methodName);
+        return (node, model);
+    }
+
     private static ExpressionSyntax Expression(string expression)
     {
         var source = $"class C {{ void M() {{ var _ = {expression}; }} }}";
