@@ -86,4 +86,22 @@ public class QuietPatternsTests
         QuietPatterns.LocalCouldBeConst(ctx, MatchFixtures.Id);
         Assert.Empty(ctx.Findings);
     }
+
+    [Fact]
+    public void LocalCouldBeConst_ignores_variable_written_via_ref_argument()
+    {
+        var ctx = MatchFixtures.Context(
+            "class C { void M() { var changed = 0; System.Threading.Interlocked.Increment(ref changed); } }");
+        QuietPatterns.LocalCouldBeConst(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void LocalCouldBeConst_ignores_variable_written_via_out_argument()
+    {
+        var ctx = MatchFixtures.Context(
+            "class C { void M() { var ok = false; bool.TryParse(\"true\", out ok); } }");
+        QuietPatterns.LocalCouldBeConst(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
 }

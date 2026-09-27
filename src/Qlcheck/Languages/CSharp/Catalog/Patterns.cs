@@ -44,6 +44,14 @@ internal static class Patterns
 
     private const string LongName = "long";
 
+    private const string FormatMethodName = "Format";
+
+    private const string WriteLineMethodName = "WriteLine";
+
+    private const string ConsoleTypeName = "Console";
+
+    private const string MainMethodName = "Main";
+
     public static void EmptyMethod(WalkContext ctx, string id) =>
         Report(ctx, id, SyntaxKind.MethodDeclaration, Shapes.IsEmptyMethod);
 
@@ -200,6 +208,54 @@ internal static class Patterns
         }
     }
 
+    public static void FormatStringCall(WalkContext ctx, string id)
+    {
+        foreach (var node in ctx.Nodes(SyntaxKind.InvocationExpression))
+        {
+            if (Names.Invocation(node) == FormatMethodName && IsStringFormatCall(ctx, node))
+            {
+                ctx.Report(id, node);
+            }
+        }
+    }
+
+    public static void ConcatInLoop(WalkContext ctx, string id)
+    {
+        foreach (var node in ctx.Nodes(SyntaxKind.AddAssignmentExpression))
+        {
+            if (node is AssignmentExpressionSyntax assignment
+                && StmtFacts.InsideLoop(assignment)
+                && IsStringTyped(ctx, assignment.Left))
+            {
+                ctx.Report(id, assignment);
+            }
+        }
+    }
+
+    public static void PreferNameof(WalkContext ctx, string id)
+    {
+        foreach (var node in ctx.Nodes(SyntaxKind.StringLiteralExpression))
+        {
+            if (node is LiteralExpressionSyntax literal && MatchesEnclosingParameter(literal))
+            {
+                ctx.Report(id, node);
+            }
+        }
+    }
+
+    public static void ConsoleWriteLine(WalkContext ctx, string id)
+    {
+        foreach (var node in ctx.Nodes(SyntaxKind.InvocationExpression))
+        {
+            if (Names.Invocation(node) == WriteLineMethodName
+                && Names.InvocationType(node) == ConsoleTypeName
+                && !IsEntryPointOutput(node))
+            {
+                ctx.Report(id, node);
+            }
+        }
+    }
+
     public static void NullDeref(WalkContext ctx, string id) => Report(ctx, id, SyntaxKind.IfStatement, IsNullDeref);
 
     public static void LoopBound(WalkContext ctx, string id) => Report(ctx, id, SyntaxKind.ForStatement, ForUsesParameter);
@@ -271,7 +327,7 @@ internal static class Patterns
     {
         foreach (var node in ctx.Nodes(SyntaxKind.StringLiteralExpression))
         {
-            if (node is LiteralExpressionSyntax literal && literal.Token.Text.Contains('\\'))
+            if (node is LiteralExpressionSyntax literal && HasRawControlCharacter(literal))
             {
                 ctx.Report(id, node);
             }
@@ -429,6 +485,55 @@ internal static class Patterns
     private static bool IsCreatedDisposable(WalkContext ctx, SyntaxNode node) =>
         Symbols.IsDisposable(ctx, node) || Names.Creation(node) == MemoryStreamName;
 
+    private static bool IsStringFormatCall(WalkContext ctx, SyntaxNode node) =>
+        Symbols.SymbolOf(ctx, node) is IMethodSymbol { ContainingType.SpecialType: SpecialType.System_String };
+
+    private static bool IsStringTyped(WalkContext ctx, SyntaxNode node) =>
+        Symbols.TypeOf(ctx, node)?.SpecialType == SpecialType.System_String;
+
+    private static bool HasRawControlCharacter(LiteralExpressionSyntax literal)
+    {
+        foreach (var ch in literal.Token.Text)
+        {
+            if (char.IsControl(ch))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsEntryPointOutput(SyntaxNode node)
+    {
+        if (Shapes.Enclosing(node, SyntaxKind.GlobalStatement) is not null)
+        {
+            return true;
+        }
+
+        return Shapes.Enclosing(node, SyntaxKind.MethodDeclaration) is MethodDeclarationSyntax method
+            && method.Identifier.Text == MainMethodName;
+    }
+
+    private static bool MatchesEnclosingParameter(LiteralExpressionSyntax literal)
+    {
+        if (Shapes.Enclosing(literal, SyntaxKind.MethodDeclaration) is not MethodDeclarationSyntax method)
+        {
+            return false;
+        }
+
+        var text = literal.Token.ValueText;
+        foreach (var parameter in method.ParameterList.Parameters)
+        {
+            if (parameter.Identifier.Text == text)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static bool IsUsing(SyntaxNode node)
     {
         if (Shapes.NestedIn(node, SyntaxKind.UsingStatement))
@@ -475,6 +580,12 @@ internal static class Patterns
     private static bool ForUsesParameter(SyntaxNode node)
     {
         if (node is not ForStatementSyntax statement || statement.Condition is null)
+        {
+            return false;
+        }
+
+        if (Shapes.Enclosing(statement, SyntaxKind.MethodDeclaration) is MethodDeclarationSyntax method
+            && Shapes.HasModifier(method, SyntaxKind.PrivateKeyword))
         {
             return false;
         }

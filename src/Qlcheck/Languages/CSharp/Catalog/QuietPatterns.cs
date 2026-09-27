@@ -485,9 +485,21 @@ internal static class QuietPatterns
             {
                 return false;
             }
+
+            if (child is ArgumentSyntax argument && IsRefOrOutWrite(argument, name))
+            {
+                return false;
+            }
         }
 
         return true;
+    }
+
+    private static bool IsRefOrOutWrite(ArgumentSyntax argument, string name)
+    {
+        var isRefOrOut = argument.RefKindKeyword.IsKind(SyntaxKind.RefKeyword)
+            || argument.RefKindKeyword.IsKind(SyntaxKind.OutKeyword);
+        return isRefOrOut && Names.Simple(argument.Expression) == name;
     }
 
     private static bool UnusedTypeParam(SyntaxNode node)

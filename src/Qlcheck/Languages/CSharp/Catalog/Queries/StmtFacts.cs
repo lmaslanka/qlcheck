@@ -20,6 +20,27 @@ internal static class StmtFacts
         SyntaxKind.FixedStatement,
     ];
 
+    private static readonly HashSet<SyntaxKind> LoopKinds =
+    [
+        SyntaxKind.ForStatement,
+        SyntaxKind.ForEachStatement,
+        SyntaxKind.WhileStatement,
+        SyntaxKind.DoStatement,
+    ];
+
+    public static bool InsideLoop(SyntaxNode node)
+    {
+        for (var current = node.Parent; current is not null; current = current.Parent)
+        {
+            if (LoopKinds.Contains(current.Kind()))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static bool NeedsBraces(SyntaxNode node)
     {
         if (!Control.Contains(node.Kind()))

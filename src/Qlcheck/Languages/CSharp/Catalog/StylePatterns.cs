@@ -479,7 +479,24 @@ internal static class StylePatterns
     private static bool OnlyPrivateCtors(SyntaxNode node)
     {
         var ctors = node.ChildNodes().Where(child => child.IsKind(SyntaxKind.ConstructorDeclaration)).ToList();
-        return ctors.Count > 0 && ctors.All(ctor => Shapes.HasModifier(ctor, SyntaxKind.PrivateKeyword));
+        if (ctors.Count == 0 || !ctors.All(ctor => Shapes.HasModifier(ctor, SyntaxKind.PrivateKeyword)))
+        {
+            return false;
+        }
+
+        return !HasSelfFactory(node);
+    }
+
+    private static bool HasSelfFactory(SyntaxNode node)
+    {
+        if (node is not ClassDeclarationSyntax type)
+        {
+            return false;
+        }
+
+        var name = type.Identifier.Text;
+        return node.DescendantNodes().OfType<ObjectCreationExpressionSyntax>()
+            .Any(creation => Names.Creation(creation) == name);
     }
 
     private static bool PrivateOverride(SyntaxNode node) =>

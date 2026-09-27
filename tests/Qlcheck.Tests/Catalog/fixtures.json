@@ -470,8 +470,8 @@
     "path": "Repo.cs"
   },
   "explicit-whitespace": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            var text = \"a\\nb\";\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            var text = \"ab\";\n        }\n    }\n}\n",
+    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            var text = \"\u001b[36m\";\n        }\n    }\n}\n",
+    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            var text = \"\\u001b[36m\";\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "export-implements-contract": {
@@ -550,13 +550,13 @@
     "path": "Repo.cs"
   },
   "format-string-args": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Format();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            var text = string.Format(\"{0}\", 1);\n        }\n    }\n}\n",
+    "good": "namespace Sample\n{\n    class C\n    {\n        static string Format(string sql)\n        {\n            return sql;\n        }\n\n        void M()\n        {\n            Format(\"select 1\");\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "format-string-valid": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Format();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            var text = string.Format(\"{0}\", 1);\n        }\n    }\n}\n",
+    "good": "namespace Sample\n{\n    class C\n    {\n        static string Format(string sql)\n        {\n            return sql;\n        }\n\n        void M()\n        {\n            Format(\"select 1\");\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "function-length": {
@@ -781,7 +781,7 @@
   },
   "loop-bound-injection": {
     "bad": "namespace Sample\n{\n    class C\n    {\n        void M(int input)\n        {\n            for (var i = 0; i < input; i++)\n            {\n            }\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M(int input)\n        {\n            for (var i = 0; i < 1; i++)\n            {\n            }\n        }\n    }\n}\n",
+    "good": "namespace Sample\n{\n    class C\n    {\n        private void M(int depth)\n        {\n            for (var i = 0; i < depth; i++)\n            {\n            }\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "loop-condition-reachable": {
@@ -985,8 +985,8 @@
     "path": "Repo.cs"
   },
   "no-console-log": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Console.WriteLine();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            System.Console.WriteLine();\n        }\n    }\n}\n",
+    "good": "System.Console.WriteLine(\"usage: qlfmt <file>\");\n",
     "path": "Repo.cs"
   },
   "no-constant-return": {
@@ -1361,7 +1361,7 @@
   },
   "no-private-only-constructors": {
     "bad": "class Holder\n{\n    private Holder()\n    {\n    }\n}\n",
-    "good": "class Holder\n{\n    public Holder()\n    {\n        return;\n    }\n}\n",
+    "good": "class Holder\n{\n    private Holder()\n    {\n    }\n\n    public static Holder Create()\n    {\n        return new Holder();\n    }\n}\n",
     "path": "Repo.cs"
   },
   "no-public-const": {
@@ -1825,8 +1825,8 @@
     "path": "Repo.cs"
   },
   "prefer-nameof": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            nameof();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "namespace Sample\n{\n    class C\n    {\n        void M(string value)\n        {\n            throw new System.ArgumentNullException(\"value\");\n        }\n    }\n}\n",
+    "good": "namespace Sample\n{\n    class C\n    {\n        void M(string value)\n        {\n            throw new System.ArgumentNullException(nameof(value));\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "prefer-params": {
@@ -2390,8 +2390,8 @@
     "path": "Repo.cs"
   },
   "use-stringbuilder": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Append();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "namespace Sample\n{\n    class C\n    {\n        void M(string[] words)\n        {\n            var text = string.Empty;\n            foreach (var word in words)\n            {\n                text += word;\n            }\n        }\n    }\n}\n",
+    "good": "namespace Sample\n{\n    class C\n    {\n        void M(string[] words)\n        {\n            var text = new System.Text.StringBuilder();\n            foreach (var word in words)\n            {\n                text.Append(word);\n            }\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "use-unix-epoch": {
