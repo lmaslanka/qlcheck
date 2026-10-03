@@ -117,6 +117,14 @@ internal static class Row
             Apply = ctx => TaintMatch.Report(ctx, id, sinks),
         };
 
+    public static WalkRow TaintOn(string id, CheckClass group, string[] receiverTypes, params string[] sinks) =>
+        new()
+        {
+            Id = id,
+            Class = group,
+            Apply = ctx => TaintMatch.ReportOnTypes(ctx, id, receiverTypes, sinks),
+        };
+
     public static WalkRow Handle(string id, CheckClass group, Action<WalkContext, string> apply) =>
         new()
         {

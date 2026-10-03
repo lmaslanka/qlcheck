@@ -26,7 +26,11 @@ internal static class ProjectReferences
 
     private const string PackageType = "package";
 
+    private const string ProjectType = "project";
+
     private const string DllSuffix = ".dll";
+
+    private const string BinDirName = "bin";
 
     public static IReadOnlyList<MetadataReference> Load(string csproj)
     {
@@ -49,7 +53,8 @@ internal static class ProjectReferences
 
     private static void AddAssets(string csproj, List<MetadataReference> refs)
     {
-        var assets = Path.Combine(Path.GetDirectoryName(csproj) ?? string.Empty, ObjDir, AssetsFile);
+        var csprojDir = Path.GetDirectoryName(csproj) ?? string.Empty;
+        var assets = Path.Combine(csprojDir, ObjDir, AssetsFile);
         if (!File.Exists(assets))
         {
             return;
@@ -57,29 +62,30 @@ internal static class ProjectReferences
 
         using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(assets));
         var root = doc.RootElement;
-        if (!root.TryGetProperty(PackageFolders, out var folders) || !root.TryGetProperty(Libraries, out var libraries))
+        if (!root.TryGetProperty(Libraries, out var libraries))
         {
             return;
         }
 
-        var folder = FirstName(folders);
-        if (folder.Length == 0 || !root.TryGetProperty(Targets, out var targets))
+        var folder = root.TryGetProperty(PackageFolders, out var folders) ? FirstName(folders) : string.Empty;
+        if (!root.TryGetProperty(Targets, out var targets))
         {
             return;
         }
 
-        AddTargetLibs(refs, targets, libraries, folder);
+        AddTargetLibs(refs, targets, libraries, folder, csprojDir);
     }
 
     private static void AddTargetLibs(
         List<MetadataReference> refs,
         System.Text.Json.JsonElement targets,
         System.Text.Json.JsonElement libraries,
-        string folder)
+        string folder,
+        string csprojDir)
     {
         foreach (var target in targets.EnumerateObject())
         {
-            AddLibs(refs, target.Value, libraries, folder);
+            AddLibs(refs, target.Value, libraries, folder, csprojDir);
         }
     }
 
@@ -87,7 +93,8 @@ internal static class ProjectReferences
         List<MetadataReference> refs,
         System.Text.Json.JsonElement libs,
         System.Text.Json.JsonElement libraries,
-        string folder)
+        string folder,
+        string csprojDir)
     {
         foreach (var lib in libs.EnumerateObject())
         {
@@ -96,12 +103,15 @@ internal static class ProjectReferences
                 continue;
             }
 
-            if (!IsPackage(library) || !lib.Value.TryGetProperty(CompileName, out var compile))
+            var type = TypeOf(library);
+            if (type == PackageType && folder.Length > 0 && lib.Value.TryGetProperty(CompileName, out var compile))
             {
-                continue;
+                AddCompile(refs, compile, folder, LibraryPath(library));
             }
-
-            AddCompile(refs, compile, folder, LibraryPath(library));
+            else if (type == ProjectType)
+            {
+                AddProjectOutput(refs, csprojDir, LibraryPath(library));
+            }
         }
     }
 
@@ -122,8 +132,36 @@ internal static class ProjectReferences
         }
     }
 
-    private static bool IsPackage(System.Text.Json.JsonElement library) =>
-        library.TryGetProperty(TypeName, out var type) && type.GetString() == PackageType;
+    // A ProjectReference has no prebuilt package folder entry: its "compile" asset is the other
+    // project's own output assembly, found under that project's `bin` directory rather than the
+    // NuGet package cache.
+    private static void AddProjectOutput(List<MetadataReference> refs, string csprojDir, string relativeProjectPath)
+    {
+        if (relativeProjectPath.Length == 0)
+        {
+            return;
+        }
+
+        var referencedCsproj = Path.GetFullPath(Path.Combine(csprojDir, relativeProjectPath));
+        var projectDir = Path.GetDirectoryName(referencedCsproj);
+        var binDir = projectDir is null ? null : Path.Combine(projectDir, BinDirName);
+        if (binDir is null || !Directory.Exists(binDir))
+        {
+            return;
+        }
+
+        var assemblyName = Path.GetFileNameWithoutExtension(referencedCsproj);
+        var dll = Directory.EnumerateFiles(binDir, assemblyName + DllSuffix, SearchOption.AllDirectories)
+            .OrderByDescending(File.GetLastWriteTimeUtc)
+            .FirstOrDefault();
+        if (dll is not null)
+        {
+            AddFile(refs, dll);
+        }
+    }
+
+    private static string TypeOf(System.Text.Json.JsonElement library) =>
+        library.TryGetProperty(TypeName, out var type) ? type.GetString() ?? string.Empty : string.Empty;
 
     private static string LibraryPath(System.Text.Json.JsonElement library) =>
         library.TryGetProperty(PathName, out var path) ? path.GetString() ?? string.Empty : string.Empty;

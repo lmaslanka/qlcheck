@@ -34,7 +34,7 @@ internal static class CheckRun
             coverage.AddRange(result.Coverage);
         }
 
-        return new RunResult(findings, coverage);
+        return new RunResult(Suppressions.Filter(findings, loaded), coverage);
     }
 
     private static void EnsureOwned(IReadOnlyList<ICheck> checks, IReadOnlyList<ILanguage> languages)

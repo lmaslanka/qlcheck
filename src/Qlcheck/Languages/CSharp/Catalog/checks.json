@@ -236,6 +236,10 @@
     "message": "Cookies should have the `secure` flag."
   },
   {
+    "id": "coverage",
+    "message": "Report lines not covered by tests."
+  },
+  {
     "id": "coverage-exclusion-reason",
     "message": "`ExcludeFromCodeCoverage` attributes should include a justification."
   },
@@ -249,7 +253,7 @@
   },
   {
     "id": "datetime-kind",
-    "message": "Always set the `DateTimeKind` when creating new `DateTime` instances."
+    "message": "Before reaching for a DateTimeKind, confirm DateTime is the right type: use DateOnly for a calendar date with no meaningful time (birthdates, due dates, holidays); use TimeOnly for a time of day with no meaningful date (opening hours, recurring schedule times), both need .NET 6+; use DateTimeOffset for a specific instant (timestamps, created/modified/expiration times), the preferred type for any instant. Fall back to DateTime with an explicit DateTimeKind only when none of those fit, e.g. the value crosses an API, database column, or public-contract boundary you don't control, or is a future wall-clock time whose UTC instant isn't fixed yet (then use Unspecified and say why). When DateTime is required, use Utc for instants, Unspecified only for intentional wall-clock values, and avoid Local in server code."
   },
   {
     "id": "datetime-utc",
@@ -560,6 +564,10 @@
     "message": "An inheritance chain is deeper than 5. Flatten it."
   },
   {
+    "id": "inline-sql",
+    "message": "Inline SQL must be a C# raw string literal with qlfmt layout."
+  },
+  {
     "id": "integer-division-to-float",
     "message": "Results of integer division should not be assigned to floating point variables."
   },
@@ -585,7 +593,7 @@
   },
   {
     "id": "jwt-strong-signature",
-    "message": "JWT should be signed and verified with strong cipher algorithms."
+    "message": "JWT signing/verification detected. Do not silently change or approve the algorithm yourself: report it to the user and ask whether the cipher is currently considered strong. If the user confirms it is fine, add `// qlcheck-ignore: jwt-strong-signature checked-on:<YYYY-MM-DD>` on this line or the line above to suppress this finding for one year, after which it resurfaces for re-evaluation."
   },
   {
     "id": "ldap-authenticated",
@@ -670,6 +678,10 @@
   {
     "id": "loop-must-change-counter",
     "message": "`for` loop increment clauses should modify the loops' counters."
+  },
+  {
+    "id": "magic-literal",
+    "message": "Magic literal should be a named constant."
   },
   {
     "id": "matching-lock-release",
@@ -1348,6 +1360,10 @@
     "message": "Statements should be on separate lines."
   },
   {
+    "id": "one-type-per-file",
+    "message": "Each file should declare only one top-level type."
+  },
+  {
     "id": "one-variable-per-line",
     "message": "Multiple variables should not be declared on the same line."
   },
@@ -1760,8 +1776,16 @@
     "message": "Static fields should appear in the order they must be initialized."
   },
   {
+    "id": "string-concat",
+    "message": "String concatenation should be string interpolation."
+  },
+  {
     "id": "string-culture",
     "message": "Culture should be specified for `string` operations."
+  },
+  {
+    "id": "string-empty",
+    "message": "Use string.Empty instead of \"\"."
   },
   {
     "id": "strong-crypto-key",
@@ -1782,6 +1806,10 @@
   {
     "id": "switch-default",
     "message": "`switch/Select` statements should contain a `default/Case Else` clauses."
+  },
+  {
+    "id": "switch-pattern",
+    "message": "This switch statement should be a pattern-matching switch expression."
   },
   {
     "id": "switch-too-many-cases",
@@ -1902,6 +1930,10 @@
   {
     "id": "unused-type-parameter",
     "message": "Unused type parameters should be removed."
+  },
+  {
+    "id": "unused-using",
+    "message": "Remove unused using directive."
   },
   {
     "id": "uri-not-string-argument",

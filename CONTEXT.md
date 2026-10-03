@@ -24,3 +24,9 @@ A numeric or string literal that should be a named const or enum member.
 
 **String concatenation**:
 Joining strings with `+` or `string.Concat`. Use interpolation instead.
+
+**Suppression comment**:
+A `// qlcheck-ignore: <rule-id> checked-on:<YYYY-MM-DD>` comment on the flagged line or the line
+above it. Silences that one Finding for one year from `checked-on`, then it resurfaces. Use it
+only after a human has made the judgment call a Check's message asked for (e.g.
+`jwt-strong-signature`) — never add it unilaterally to make a Finding disappear.

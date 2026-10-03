@@ -1,12 +1,16 @@
+using Qlcheck.Languages.CSharp.Catalog;
+
 namespace Qlcheck.Tests;
 
-public class OneTypePerFileCheckTests
+public class OneTypePerFilePatternTests
 {
     private const int ExtraTypeCount = 2;
+
     private static IReadOnlyList<Finding> Run(string source, string path = "Repo.cs")
     {
-        var file = new SourceFile(path, source);
-        return new OneTypePerFileCheck().Analyze(file, CSharpTrees.Parse(file));
+        var ctx = MatchFixtures.Context(source, path: path);
+        OneTypePerFilePattern.Apply(ctx, MatchFixtures.Id);
+        return ctx.Findings;
     }
 
     [Fact]
@@ -18,7 +22,7 @@ public class OneTypePerFileCheckTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.Equal(OneTypePerFileCheck.CheckId, finding.Check);
+        Assert.Equal(MatchFixtures.Id, finding.Check);
         Assert.Equal("Move 'B' into its own file.", finding.Message);
     }
 

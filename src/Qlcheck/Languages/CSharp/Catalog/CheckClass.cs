@@ -8,5 +8,7 @@ internal enum CheckClass
     Symbol,
     Flow,
     Taint,
+    Compilation,
+    Process,
     Architecture,
 }

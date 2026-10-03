@@ -25,7 +25,11 @@ internal static class TaintEngine
         Row.Taint("reflected-xss", CheckClass.Taint, "Write"),
         Row.Taint("reflection-injection", CheckClass.Taint, "GetType"),
         Row.Taint("regex-dos", CheckClass.Taint, "Regex"),
-        Row.Taint("sql-injection", CheckClass.Taint, "Execute"),
+        Row.TaintOn(
+            "sql-injection",
+            CheckClass.Taint,
+            ["SqlCommand", "NpgsqlCommand", "SqliteCommand", "MySqlCommand", "DbCommand"],
+            "Execute", "ExecuteAsync", "ExecuteReader", "ExecuteReaderAsync", "ExecuteScalar", "ExecuteScalarAsync"),
         Row.Taint("ssrf", CheckClass.Taint, "GetAsync"),
         Row.Taint("ssrf-traversal", CheckClass.Taint, "SendAsync"),
         Row.Taint("untrusted-environment-variable", CheckClass.Taint, "SetEnvironmentVariable"),

@@ -1,14 +1,13 @@
+// Copyright (c) qlcheck contributors.
 using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace Qlcheck.Languages.CSharp.Checks.File;
+namespace Qlcheck.Languages.CSharp.Catalog;
 
-public sealed class MagicLiteralCheck : IFileCheck
+internal static class MagicLiteralPattern
 {
-    private const string CheckIdValue = "magic-literal";
-
     private const string ExceptionSuffix = "Exception";
 
     private const int TruncateLimit = 40;
@@ -17,37 +16,30 @@ public sealed class MagicLiteralCheck : IFileCheck
 
     private const string Ellipsis = "...";
 
-    public static string CheckId => CheckIdValue;
+    public static void Apply(WalkContext ctx, string id)
+    {
+        foreach (var literal in ctx.Tree.GetRoot().DescendantNodes().OfType<LiteralExpressionSyntax>())
+        {
+            var kind = literal.Kind();
+            var message = kind switch
+            {
+                SyntaxKind.NumericLiteralExpression => TryNumberMessage(literal),
+                SyntaxKind.StringLiteralExpression => TryStringMessage(literal),
+                _ => null,
+            };
 
-    public string Id => CheckId;
-
-    public string Language => CSharpLanguage.LanguageId;
+            if (message is not null)
+            {
+                ctx.ReportCustom(id, literal, message);
+            }
+        }
+    }
 
     public static string NumberMessage(string literal) =>
         $"Magic number {literal} should be a named const or enum member.";
 
     public static string StringMessage(string literal) =>
         $"Magic string \"{literal}\" should be a named const.";
-
-    public IReadOnlyList<Finding> Analyze(SourceFile file, SyntaxTree tree) =>
-        tree.GetRoot().DescendantNodes()
-            .OfType<LiteralExpressionSyntax>()
-            .Select(literal => TryCreateFinding(file.Path, literal))
-            .OfType<Finding>()
-            .ToList();
-
-    private static Finding? TryCreateFinding(string path, LiteralExpressionSyntax literal)
-    {
-        var kind = literal.Kind();
-        var message = kind switch
-        {
-            SyntaxKind.NumericLiteralExpression => TryNumberMessage(literal),
-            SyntaxKind.StringLiteralExpression => TryStringMessage(literal),
-            _ => null,
-        };
-
-        return message is null ? null : Finding.At(CheckId, path, literal, message);
-    }
 
     private static string? TryNumberMessage(LiteralExpressionSyntax literal)
     {

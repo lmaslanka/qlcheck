@@ -84,6 +84,24 @@ public class StmtFactsTests
     }
 
     [Fact]
+    public void SelfAssignment_is_true_for_a_bare_statement()
+    {
+        var node = FirstNode<AssignmentExpressionSyntax>(
+            "class C { void M(int value) { value = value; } }");
+        Assert.True(StmtFacts.SelfAssignment(node));
+    }
+
+    [Fact]
+    public void SelfAssignment_is_false_inside_an_object_initializer()
+    {
+        var node = FirstNode<AssignmentExpressionSyntax>(
+            "class Target { public int Id { get; set; } } "
+            + "class C { public int Id { get; set; } "
+            + "Target M() => new Target { Id = Id }; }");
+        Assert.False(StmtFacts.SelfAssignment(node));
+    }
+
+    [Fact]
     public void IdenticalOperands_is_false_for_non_binary_node()
     {
         Assert.False(StmtFacts.IdenticalOperands(Expression("1")));

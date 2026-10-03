@@ -18,4 +18,20 @@ public class CatalogWalkerTests
     {
         Assert.False(CatalogWalker.TryClass("not-a-real-check", out _));
     }
+
+    [Fact]
+    public void TryClass_returns_compilation_for_unused_using()
+    {
+        Assert.True(CatalogWalker.TryClass("unused-using", out var group));
+        Assert.Equal(CheckClass.Compilation, group);
+        Assert.Contains("unused-using", CatalogWalker.ImplementedIds);
+    }
+
+    [Fact]
+    public void TryClass_returns_process_for_coverage()
+    {
+        Assert.True(CatalogWalker.TryClass("coverage", out var group));
+        Assert.Equal(CheckClass.Process, group);
+        Assert.Contains("coverage", CatalogWalker.ImplementedIds);
+    }
 }

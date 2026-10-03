@@ -69,6 +69,11 @@ internal static class StmtFacts
             return false;
         }
 
+        if (assignment.Parent is InitializerExpressionSyntax)
+        {
+            return false;
+        }
+
         return assignment.Left.ToString() == assignment.Right.ToString();
     }
 

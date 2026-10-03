@@ -52,11 +52,21 @@ internal static class Patterns
 
     private const string MainMethodName = "Main";
 
+    private const string TheoryName = "Theory";
+
+    private const string TaskTypeName = "Task";
+
+    private const string VerifyMethodName = "Verify";
+
+    private const string ListTypeName = "List";
+
+    private const string GetMethodName = "Get";
+
     public static void EmptyMethod(WalkContext ctx, string id) =>
         Report(ctx, id, SyntaxKind.MethodDeclaration, Shapes.IsEmptyMethod);
 
     public static void EmptyClass(WalkContext ctx, string id) =>
-        Report(ctx, id, SyntaxKind.ClassDeclaration, IsEmptyType);
+        Report(ctx, id, SyntaxKind.ClassDeclaration, IsEmptyClass);
 
     public static void EmptyInterface(WalkContext ctx, string id) =>
         Report(ctx, id, SyntaxKind.InterfaceDeclaration, IsEmptyType);
@@ -125,7 +135,7 @@ internal static class Patterns
         Report(ctx, id, SyntaxKind.MethodDeclaration, TypeFacts.IsAsyncVoid);
 
     public static void PublicField(WalkContext ctx, string id) =>
-        Report(ctx, id, SyntaxKind.FieldDeclaration, TypeFacts.IsPublicField);
+        Report(ctx, id, SyntaxKind.FieldDeclaration, node => TypeFacts.IsPublicField(ctx, node));
 
     public static void FieldPrivate(WalkContext ctx, string id) =>
         Report(ctx, id, SyntaxKind.FieldDeclaration, TypeFacts.FieldNotPrivate);
@@ -176,11 +186,136 @@ internal static class Patterns
     {
         foreach (var node in ctx.Nodes(SyntaxKind.ObjectCreationExpression))
         {
-            if (IsCreatedDisposable(ctx, node) && !IsUsing(node))
+            if (IsCreatedDisposable(ctx, node) && !IsUsing(node) && !EscapesOwnership(node))
             {
                 ctx.Report(id, node);
             }
         }
+    }
+
+    public static void ListInPublicApi(WalkContext ctx, string id)
+    {
+        foreach (var node in ctx.Nodes(SyntaxKind.MethodDeclaration))
+        {
+            if (node is not MethodDeclarationSyntax method || !Shapes.HasModifier(method, SyntaxKind.PublicKeyword))
+            {
+                continue;
+            }
+
+            var hasListType = Names.TypeText(method.ReturnType) == ListTypeName
+                || method.ParameterList.Parameters.Any(parameter =>
+                    parameter.Type is not null && Names.TypeText(parameter.Type) == ListTypeName);
+            if (hasListType)
+            {
+                ctx.Report(id, method);
+            }
+        }
+
+        foreach (var node in ctx.Nodes(SyntaxKind.PropertyDeclaration))
+        {
+            if (node is PropertyDeclarationSyntax property
+                && Shapes.HasModifier(property, SyntaxKind.PublicKeyword)
+                && Names.TypeText(property.Type) == ListTypeName)
+            {
+                ctx.Report(id, property);
+            }
+        }
+    }
+
+    public static void NestedGenericSignature(WalkContext ctx, string id)
+    {
+        foreach (var node in ctx.Nodes(SyntaxKind.MethodDeclaration))
+        {
+            if (node is not MethodDeclarationSyntax method)
+            {
+                continue;
+            }
+
+            var types = method.ParameterList.Parameters
+                .Select(parameter => parameter.Type)
+                .Append(method.ReturnType)
+                .OfType<TypeSyntax>();
+            if (types.Any(HasNestedGeneric))
+            {
+                ctx.Report(id, method);
+            }
+        }
+    }
+
+    private static bool HasNestedGeneric(TypeSyntax type)
+    {
+        var generic = AsGenericName(type);
+        if (generic is null)
+        {
+            return false;
+        }
+
+        // `Task<T>`/`ValueTask<T>`/`ActionResult<T>` are transparent async/framework wrappers, not a
+        // "nesting" level in their own right: `Task<ActionResult<IReadOnlyList<T>>>` is the ordinary
+        // shape of an async ASP.NET Core collection-returning action, not a nested-generic smell.
+        if (generic.Identifier.Text is "Task" or "ValueTask" or "ActionResult" && generic.TypeArgumentList.Arguments.Count == 1)
+        {
+            return HasNestedGeneric(generic.TypeArgumentList.Arguments[0]);
+        }
+
+        return generic.TypeArgumentList.Arguments.Any(argument => AsGenericName(argument) is not null);
+    }
+
+    private static GenericNameSyntax? AsGenericName(TypeSyntax type) =>
+        type switch
+        {
+            GenericNameSyntax generic => generic,
+            QualifiedNameSyntax qualified => AsGenericName(qualified.Right),
+            _ => null,
+        };
+
+    public static void ParameterlessGetInvocation(WalkContext ctx, string id)
+    {
+        foreach (var node in ctx.Nodes(SyntaxKind.InvocationExpression))
+        {
+            if (node is InvocationExpressionSyntax invocation
+                && Names.Invocation(invocation) == GetMethodName
+                && invocation.ArgumentList.Arguments.Count == 0)
+            {
+                ctx.Report(id, invocation);
+            }
+        }
+    }
+
+    public static void TaskReturnsNull(WalkContext ctx, string id)
+    {
+        foreach (var node in ctx.Nodes(SyntaxKind.MethodDeclaration))
+        {
+            if (node is not MethodDeclarationSyntax method
+                || Shapes.HasModifier(method, SyntaxKind.AsyncKeyword)
+                || Names.TypeText(method.ReturnType) != TaskTypeName)
+            {
+                continue;
+            }
+
+            if (ReturnsNullLiteral(method))
+            {
+                ctx.Report(id, method);
+            }
+        }
+    }
+
+    private static bool ReturnsNullLiteral(MethodDeclarationSyntax method)
+    {
+        if (method.ExpressionBody?.Expression is LiteralExpressionSyntax expression
+            && expression.IsKind(SyntaxKind.NullLiteralExpression))
+        {
+            return true;
+        }
+
+        if (method.Body is null)
+        {
+            return false;
+        }
+
+        return method.Body.DescendantNodes().OfType<ReturnStatementSyntax>()
+            .Any(statement => statement.Expression is LiteralExpressionSyntax literal
+                && literal.IsKind(SyntaxKind.NullLiteralExpression));
     }
 
     public static void UnusedLocal(WalkContext ctx, string id)
@@ -294,7 +429,34 @@ internal static class Patterns
     public static void IdenticalBranch(WalkContext ctx, string id) =>
         Report(ctx, id, SyntaxKind.IfStatement, SameBranch);
 
-    public static void OneStatement(WalkContext ctx, string id) => ReportLines(ctx, id, HasTwoStatements);
+    public static void DateTimeMissingKind(WalkContext ctx, string id)
+    {
+        foreach (var node in ctx.Nodes(SyntaxKind.ObjectCreationExpression))
+        {
+            if (node is ObjectCreationExpressionSyntax creation
+                && Names.Creation(creation) == DateTimeTypeName
+                && !HasDateTimeKindArgument(creation))
+            {
+                ctx.Report(id, creation);
+            }
+        }
+    }
+
+    public static void OneStatement(WalkContext ctx, string id)
+    {
+        var semicolons = ctx.Tree.GetRoot().DescendantTokens()
+            .Where(token => token.IsKind(SyntaxKind.SemicolonToken) && !IsExcludedSemicolon(token));
+        foreach (var group in semicolons.GroupBy(token => token.GetLocation().GetLineSpan().StartLinePosition.Line))
+        {
+            if (group.Count() > 1)
+            {
+                ctx.Report(id, group.First().GetLocation());
+            }
+        }
+    }
+
+    private static bool IsExcludedSemicolon(SyntaxToken token) =>
+        token.Parent is ForStatementSyntax or AccessorDeclarationSyntax;
 
     public static void AbstractCtor(WalkContext ctx, string id) =>
         Report(ctx, id, SyntaxKind.ConstructorDeclaration, PublicCtorOnAbstract);
@@ -336,6 +498,61 @@ internal static class Patterns
 
     public static void BaseController(WalkContext ctx, string id) => BaseNamed(ctx, id, ControllerName);
 
+    public static void ControllerMixedResponsibility(WalkContext ctx, string id)
+    {
+        foreach (var node in ctx.Nodes(SyntaxKind.InvocationExpression))
+        {
+            if (Names.Invocation(node) != ControllerName)
+            {
+                continue;
+            }
+
+            if (Shapes.Enclosing(node, SyntaxKind.ClassDeclaration) is ClassDeclarationSyntax type
+                && !TypeFacts.EndsWith(type, ControllerName))
+            {
+                continue;
+            }
+
+            ctx.Report(id, node);
+        }
+    }
+
+    private const string ModelStateName = "ModelState";
+
+    private const string IsValidName = "IsValid";
+
+    private const string ApiControllerAttributeName = "ApiController";
+
+    public static void ModelStateChecked(WalkContext ctx, string id)
+    {
+        foreach (var node in ctx.Nodes(SyntaxKind.MethodDeclaration))
+        {
+            if (node is not MethodDeclarationSyntax method
+                || method.Body is null
+                || !Shapes.HasModifier(method, SyntaxKind.PublicKeyword))
+            {
+                continue;
+            }
+
+            if (Shapes.Enclosing(method, SyntaxKind.ClassDeclaration) is not ClassDeclarationSyntax type
+                || !TypeFacts.EndsWith(type, ControllerName)
+                || HasAttribute(type, ApiControllerAttributeName))
+            {
+                continue;
+            }
+
+            var checksModelState = method.Body.DescendantNodes()
+                .OfType<MemberAccessExpressionSyntax>()
+                .Any(member => member.Name.Identifier.Text == IsValidName
+                    && Names.Simple(member.Expression) == ModelStateName);
+
+            if (!checksModelState)
+            {
+                ctx.Report(id, method);
+            }
+        }
+    }
+
     public static void EnumNameSuffix(WalkContext ctx, string id)
     {
         Suffix(ctx, id, FlagsSuffix);
@@ -356,6 +573,11 @@ internal static class Patterns
     {
         foreach (var node in ctx.Nodes(SyntaxKind.CatchClause))
         {
+            if (node is CatchClauseSyntax { Filter: not null })
+            {
+                continue;
+            }
+
             if (CatchFacts.CatchType(node) == name)
             {
                 ctx.Report(id, node);
@@ -453,20 +675,10 @@ internal static class Patterns
         }
     }
 
-    private static void ReportLines(WalkContext ctx, string id, Func<string, bool> match)
-    {
-        var line = 0;
-        foreach (var text in ctx.Text.Split('\n'))
-        {
-            line++;
-            if (match(text))
-            {
-                ctx.Report(id, ctx.Tree.GetRoot().FindToken(Offset(ctx.Text, line)).GetLocation());
-            }
-        }
-    }
-
     private static bool IsEmptyType(SyntaxNode node) => Shapes.MemberCount(node) == 0;
+
+    private static bool IsEmptyClass(SyntaxNode node) =>
+        IsEmptyType(node) && !TypeFacts.BaseType(node).EndsWith(ExceptionName, StringComparison.Ordinal);
 
     private static bool IsEmptyBody(SyntaxNode node)
     {
@@ -491,10 +703,16 @@ internal static class Patterns
     private static bool IsStringTyped(WalkContext ctx, SyntaxNode node) =>
         Symbols.TypeOf(ctx, node)?.SpecialType == SpecialType.System_String;
 
+
     private static bool HasRawControlCharacter(LiteralExpressionSyntax literal)
     {
         foreach (var ch in literal.Token.Text)
         {
+            if (ch is '\r' or '\n')
+            {
+                continue;
+            }
+
             if (char.IsControl(ch))
             {
                 return true;
@@ -542,7 +760,77 @@ internal static class Patterns
         }
 
         var local = Shapes.Enclosing(node, SyntaxKind.LocalDeclarationStatement);
-        return local is not null && Shapes.HasModifier(local, SyntaxKind.UsingKeyword);
+        return local is LocalDeclarationStatementSyntax statement
+            && statement.UsingKeyword.IsKind(SyntaxKind.UsingKeyword);
+    }
+
+    private static bool EscapesOwnership(SyntaxNode node)
+    {
+        if (node.Parent is ReturnStatementSyntax
+            || node.Parent is ArrowExpressionClauseSyntax
+            || node.Parent is SimpleLambdaExpressionSyntax
+            || node.Parent is ParenthesizedLambdaExpressionSyntax)
+        {
+            return true;
+        }
+
+        if (node.Parent is ArgumentSyntax { Parent: ArgumentListSyntax { Parent: ObjectCreationExpressionSyntax } })
+        {
+            return true;
+        }
+
+        if (node.Parent is AssignmentExpressionSyntax assignment && assignment.Right == node)
+        {
+            return assignment.Left is MemberAccessExpressionSyntax
+                || assignment.Parent is InitializerExpressionSyntax;
+        }
+
+        if (node.Parent is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator })
+        {
+            if (declarator.Parent?.Parent is FieldDeclarationSyntax)
+            {
+                return true;
+            }
+
+            return EscapesLater(declarator);
+        }
+
+        return false;
+    }
+
+    private static bool EscapesLater(VariableDeclaratorSyntax declarator)
+    {
+        var name = declarator.Identifier.Text;
+        var scope = EnclosingFunctionBody(declarator);
+        if (scope is null)
+        {
+            return false;
+        }
+
+        if (scope.DescendantNodes().OfType<ReturnStatementSyntax>()
+            .Any(statement => statement.Expression is IdentifierNameSyntax identifier && identifier.Identifier.Text == name))
+        {
+            return true;
+        }
+
+        return scope.DescendantNodes().OfType<ArgumentSyntax>()
+            .Any(argument => argument.Expression is IdentifierNameSyntax identifier
+                && identifier.Identifier.Text == name
+                && argument.Parent?.Parent is ObjectCreationExpressionSyntax);
+    }
+
+    private static SyntaxNode? EnclosingFunctionBody(SyntaxNode node)
+    {
+        for (var current = node.Parent; current is not null; current = current.Parent)
+        {
+            if (current is MethodDeclarationSyntax or ConstructorDeclarationSyntax
+                or LocalFunctionStatementSyntax or AccessorDeclarationSyntax)
+            {
+                return current;
+            }
+        }
+
+        return null;
     }
 
     private static bool IsNullDeref(SyntaxNode node)
@@ -585,7 +873,7 @@ internal static class Patterns
         }
 
         if (Shapes.Enclosing(statement, SyntaxKind.MethodDeclaration) is MethodDeclarationSyntax method
-            && Shapes.HasModifier(method, SyntaxKind.PrivateKeyword))
+            && (Shapes.HasModifier(method, SyntaxKind.PrivateKeyword) || Shapes.HasModifier(method, SyntaxKind.InternalKeyword)))
         {
             return false;
         }
@@ -706,36 +994,6 @@ internal static class Patterns
         return statement.Statement.ToString() == statement.Else.Statement.ToString();
     }
 
-    private const string ForPrefix = "for (";
-
-    private const string GetAccessor = "get;";
-
-    private const string SetAccessor = "set;";
-
-    private static bool HasTwoStatements(string line)
-    {
-        if (line.Contains(ForPrefix, StringComparison.Ordinal) || line.Contains(GetAccessor, StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        if (line.Contains(SetAccessor, StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        var semis = 0;
-        for (var i = 0; i < line.Length; i++)
-        {
-            if (line[i] == ';' && (i == 0 || line[i - 1] != '\''))
-            {
-                semis++;
-            }
-        }
-
-        return semis > 1;
-    }
-
     private static bool PublicCtorOnAbstract(SyntaxNode node)
     {
         if (!Shapes.HasModifier(node, SyntaxKind.PublicKeyword))
@@ -749,7 +1007,8 @@ internal static class Patterns
 
     private static bool ProtectedOnSealed(SyntaxNode node)
     {
-        if (!Shapes.HasModifier(node, SyntaxKind.ProtectedKeyword))
+        if (!Shapes.HasModifier(node, SyntaxKind.ProtectedKeyword)
+            || Shapes.HasModifier(node, SyntaxKind.OverrideKeyword))
         {
             return false;
         }
@@ -757,6 +1016,15 @@ internal static class Patterns
         var type = Shapes.Enclosing(node, SyntaxKind.ClassDeclaration);
         return type is not null && Shapes.HasModifier(type, SyntaxKind.SealedKeyword);
     }
+
+    private const string DateTimeTypeName = "DateTime";
+
+    private const string DateTimeKindTypeName = "DateTimeKind";
+
+    private static bool HasDateTimeKindArgument(ObjectCreationExpressionSyntax creation) =>
+        creation.ArgumentList?.Arguments.Any(argument =>
+            argument.Expression is MemberAccessExpressionSyntax
+            && Names.MemberType(argument.Expression) == DateTimeKindTypeName) ?? false;
 
     private static bool BodyThrows(SyntaxNode node)
     {
@@ -772,7 +1040,14 @@ internal static class Patterns
         }
 
         var body = Shapes.Body(node);
-        return body is not null && !body.ToString().Contains(AssertName, StringComparison.Ordinal);
+        if (body is null)
+        {
+            return false;
+        }
+
+        var text = body.ToString();
+        return !text.Contains(AssertName, StringComparison.Ordinal)
+            && !text.Contains(VerifyMethodName, StringComparison.Ordinal);
     }
 
     private static bool IsIgnore(SyntaxNode node)
@@ -816,7 +1091,20 @@ internal static class Patterns
             return false;
         }
 
-        return Names.TypeText(method.ReturnType) != VoidName || Shapes.ParameterCount(method) > 0;
+        if (Shapes.ParameterCount(method) > 0)
+        {
+            return true;
+        }
+
+        var returnText = Names.TypeText(method.ReturnType);
+        var isAsync = Shapes.HasModifier(method, SyntaxKind.AsyncKeyword);
+
+        if (isAsync)
+        {
+            return returnText == VoidName;
+        }
+
+        return returnText != VoidName && returnText != TaskTypeName;
     }
 
     private static bool MissingAsyncSuffix(SyntaxNode node)
@@ -824,6 +1112,19 @@ internal static class Patterns
         if (!Shapes.HasModifier(node, SyntaxKind.AsyncKeyword))
         {
             return false;
+        }
+
+        if (node is MethodDeclarationSyntax method)
+        {
+            if (method.Identifier.Text == MainMethodName)
+            {
+                return false;
+            }
+
+            if (HasAttribute(method, FactName) || HasAttribute(method, TestName) || HasAttribute(method, TheoryName))
+            {
+                return false;
+            }
         }
 
         var name = Names.Declared(node);
@@ -861,22 +1162,4 @@ internal static class Patterns
         return false;
     }
 
-    private static int Offset(string text, int line)
-    {
-        var current = 1;
-        for (var i = 0; i < text.Length; i++)
-        {
-            if (current == line)
-            {
-                return i;
-            }
-
-            if (text[i] == '\n')
-            {
-                current++;
-            }
-        }
-
-        return 0;
-    }
 }

@@ -86,15 +86,146 @@ internal static class MetricScores
     public static int Cyclomatic(SyntaxNode node)
     {
         var score = BaseComplexity;
+
+        // A "flat" switch expression -- one whose arms are plain dispatch, with no further
+        // branching inside any arm -- is a lookup table, not a nest of decisions: its whole
+        // complexity is the one branch on `action`, not one branch per case. Count it once
+        // instead of once per arm, same as a dictionary lookup would be.
+        var flatArms = new HashSet<SyntaxNode>();
+        foreach (var switchExpression in node.DescendantNodes().OfType<SwitchExpressionSyntax>())
+        {
+            if (!IsFlatSwitchExpression(switchExpression))
+            {
+                continue;
+            }
+
+            score++;
+            foreach (var arm in switchExpression.Arms)
+            {
+                flatArms.Add(arm);
+            }
+        }
+
+        // Likewise, an object/anonymous-object initializer that is nothing but a flat list of
+        // `Member = value ?? fallback` projections is a mapping table laid out as fields instead
+        // of switch arms: each `??` is an independent default fill, not a branch that combines
+        // with the others. Count the whole initializer once instead of once per member.
+        foreach (var initializer in FlatCoalesceInitializers(node))
+        {
+            score++;
+            foreach (var coalesce in initializer)
+            {
+                flatArms.Add(coalesce);
+            }
+        }
+
         foreach (var child in node.DescendantNodes())
         {
+            if (flatArms.Contains(child))
+            {
+                continue;
+            }
+
             if (Decisions.Contains(child.Kind()))
             {
                 score++;
             }
         }
 
-        return score + BoolOps(node);
+        return score + BoolOps(node, flatArms);
+    }
+
+    private const int MinFlatCoalesceCount = 2;
+
+    private static IEnumerable<List<SyntaxNode>> FlatCoalesceInitializers(SyntaxNode node)
+    {
+        foreach (var creation in node.DescendantNodes())
+        {
+            var values = InitializerValues(creation);
+            if (values is null)
+            {
+                continue;
+            }
+
+            var coalesces = values
+                .SelectMany(value => value.DescendantNodesAndSelf().Where(d => d.IsKind(SyntaxKind.CoalesceExpression)))
+                .ToList();
+            if (coalesces.Count < MinFlatCoalesceCount)
+            {
+                continue;
+            }
+
+            if (values.Any(value => value.DescendantNodesAndSelf().Any(d => Structures.Contains(d.Kind()))))
+            {
+                continue;
+            }
+
+            yield return coalesces;
+        }
+    }
+
+    private static List<ExpressionSyntax>? InitializerValues(SyntaxNode node) =>
+        node switch
+        {
+            AnonymousObjectCreationExpressionSyntax anonymous =>
+                anonymous.Initializers.Select(declarator => declarator.Expression).ToList(),
+            InitializerExpressionSyntax { RawKind: (int)SyntaxKind.ObjectInitializerExpression } initializer =>
+                initializer.Expressions.OfType<AssignmentExpressionSyntax>().Select(assignment => assignment.Right).ToList(),
+            _ => null,
+        };
+
+    // Only genuine control flow inside an arm disqualifies the switch from being a flat dispatch
+    // table. A `??` or a simple `cond ? a : b` picking between two values is still one-line value
+    // selection, not nested branching layered on top of the table -- and it still adds its own
+    // point to the score below via the ordinary per-node count, so it is not left uncounted.
+    private static readonly HashSet<SyntaxKind> ArmDisqualifyingNesting =
+    [
+        SyntaxKind.IfStatement,
+        SyntaxKind.WhileStatement,
+        SyntaxKind.ForStatement,
+        SyntaxKind.ForEachStatement,
+        SyntaxKind.DoStatement,
+        SyntaxKind.SwitchStatement,
+        SyntaxKind.CatchClause,
+        SyntaxKind.SwitchExpressionArm,
+    ];
+
+    private static bool IsFlatSwitchExpression(SwitchExpressionSyntax switchExpression) =>
+        switchExpression.Arms.All(arm => !arm.DescendantNodes().Any(descendant =>
+            ArmDisqualifyingNesting.Contains(descendant.Kind())));
+
+    // Boolean operators inside a flat switch-expression arm are part of that one routing rule
+    // (e.g. `EventCode.X => a != null && b == c`), not separate decisions layered on top of it.
+    private static int BoolOps(SyntaxNode node, HashSet<SyntaxNode> excludedArms)
+    {
+        if (excludedArms.Count == 0)
+        {
+            return BoolOps(node);
+        }
+
+        var count = 0;
+        foreach (var token in node.DescendantTokens())
+        {
+            if (IsBoolOp(token) && !IsWithinAny(token.Parent, excludedArms))
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private static bool IsWithinAny(SyntaxNode? node, HashSet<SyntaxNode> ancestors)
+    {
+        for (var current = node; current is not null; current = current.Parent)
+        {
+            if (ancestors.Contains(current))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static int Cognitive(SyntaxNode node) => WalkCognitive(node, 0);

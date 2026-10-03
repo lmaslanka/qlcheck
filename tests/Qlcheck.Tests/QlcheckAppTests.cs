@@ -70,7 +70,7 @@ public class QlcheckAppTests : IDisposable
 
         Assert.Equal(ExitCode.Findings, code);
         var text = stdout.ToString();
-        Assert.Contains(MagicLiteralCheck.CheckId, text);
+        Assert.Contains("magic-literal", text);
         Assert.DoesNotContain(FindingsProperty, text);
     }
 
@@ -89,11 +89,11 @@ public class QlcheckAppTests : IDisposable
             """);
 
         var stdout = new StringWriter();
-        var code = QlcheckApp.Run(["--check", MagicLiteralCheck.CheckId, file], stdout, new StringWriter());
+        var code = QlcheckApp.Run(["--check", "magic-literal", file], stdout, new StringWriter());
 
         Assert.Equal(ExitCode.Clean, code);
         Assert.Contains(FindingsProperty, stdout.ToString());
-        Assert.DoesNotContain(MagicLiteralCheck.CheckId, stdout.ToString());
+        Assert.DoesNotContain("magic-literal", stdout.ToString());
     }
 
     [Fact]
@@ -172,7 +172,7 @@ public class QlcheckAppTests : IDisposable
         var code = QlcheckApp.Run([file], stdout, new StringWriter());
 
         Assert.NotEqual(ExitCode.Error, code);
-        Assert.DoesNotContain(InlineSqlCheck.CheckId, stdout.ToString());
+        Assert.DoesNotContain("inline-sql", stdout.ToString());
     }
 
     [Fact]
@@ -186,7 +186,7 @@ public class QlcheckAppTests : IDisposable
         Assert.Equal(ExitCode.Findings, code);
         var text = stdout.ToString();
         Assert.Contains("\"check\": \"inline-sql\"", text);
-        Assert.DoesNotContain(MagicLiteralCheck.CheckId, text);
+        Assert.DoesNotContain("magic-literal", text);
     }
 
     [Fact]
@@ -198,7 +198,7 @@ public class QlcheckAppTests : IDisposable
         var code = QlcheckApp.Run(["--check", "magic-literal", "--inline-sql", file], stdout, new StringWriter());
 
         Assert.Equal(ExitCode.Clean, code);
-        Assert.DoesNotContain(InlineSqlCheck.CheckId, stdout.ToString());
+        Assert.DoesNotContain("inline-sql", stdout.ToString());
     }
 
     [Fact]
@@ -229,7 +229,7 @@ public class QlcheckAppTests : IDisposable
         Assert.Matches(FindingsCountPattern, text);
         Assert.Matches(@"Files with findings\s+2", text);
         Assert.Matches(@"Clean files\s+0", text);
-        Assert.Contains(MagicLiteralCheck.CheckId, text);
+        Assert.Contains("magic-literal", text);
         Assert.Contains(DirtyPath, text);
         Assert.Contains(DurationLabel, text);
     }
@@ -241,7 +241,7 @@ public class QlcheckAppTests : IDisposable
         Write("Clean.cs", "class C {}\n");
 
         var stdout = new StringWriter();
-        var code = QlcheckApp.Run(["--check", MagicLiteralCheck.CheckId, _dir], stdout, new StringWriter());
+        var code = QlcheckApp.Run(["--check", "magic-literal", _dir], stdout, new StringWriter());
 
         Assert.Equal(ExitCode.Clean, code);
         Assert.DoesNotContain("Notes.txt", stdout.ToString());
@@ -266,7 +266,7 @@ public class QlcheckAppTests : IDisposable
         var code = QlcheckApp.Run([_dir], stdout, new StringWriter());
 
         Assert.Equal(ExitCode.Findings, code);
-        Assert.Contains(MagicLiteralCheck.CheckId, stdout.ToString());
+        Assert.Contains("magic-literal", stdout.ToString());
     }
 
     [Fact]

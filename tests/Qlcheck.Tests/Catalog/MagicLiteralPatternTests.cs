@@ -1,14 +1,18 @@
+using Qlcheck.Languages.CSharp.Catalog;
+
 namespace Qlcheck.Tests;
 
-public class MagicLiteralCheckTests
+public class MagicLiteralPatternTests
 {
     private const string FortyTwo = "42";
 
     private const string Pending = "pending";
-    private static IReadOnlyList<Finding> Run(string source, string path = "Repo.cs")
+
+    private static IReadOnlyList<Finding> Run(string source)
     {
-        var file = new SourceFile(path, source);
-        return new MagicLiteralCheck().Analyze(file, CSharpTrees.Parse(file));
+        var ctx = MatchFixtures.Context(source);
+        MagicLiteralPattern.Apply(ctx, MatchFixtures.Id);
+        return ctx.Findings;
     }
 
     [Fact]
@@ -25,8 +29,8 @@ public class MagicLiteralCheckTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.Equal(MagicLiteralCheck.CheckId, finding.Check);
-        Assert.Equal(MagicLiteralCheck.NumberMessage(FortyTwo), finding.Message);
+        Assert.Equal(MatchFixtures.Id, finding.Check);
+        Assert.Equal(MagicLiteralPattern.NumberMessage(FortyTwo), finding.Message);
         Assert.Null(finding.Replacement);
     }
 
@@ -74,8 +78,8 @@ public class MagicLiteralCheckTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.Equal(MagicLiteralCheck.CheckId, finding.Check);
-        Assert.Equal(MagicLiteralCheck.StringMessage(Pending), finding.Message);
+        Assert.Equal(MatchFixtures.Id, finding.Check);
+        Assert.Equal(MagicLiteralPattern.StringMessage(Pending), finding.Message);
     }
 
     [Fact]
@@ -209,7 +213,7 @@ public class MagicLiteralCheckTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.Equal(MagicLiteralCheck.StringMessage(Pending), finding.Message);
+        Assert.Equal(MagicLiteralPattern.StringMessage(Pending), finding.Message);
     }
 
     [Fact]
@@ -223,7 +227,7 @@ public class MagicLiteralCheckTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.Equal(MagicLiteralCheck.NumberMessage(FortyTwo), finding.Message);
+        Assert.Equal(MagicLiteralPattern.NumberMessage(FortyTwo), finding.Message);
     }
 
     [Fact]
@@ -286,7 +290,7 @@ public class MagicLiteralCheckTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.Equal(MagicLiteralCheck.NumberMessage(FortyTwo), finding.Message);
+        Assert.Equal(MagicLiteralPattern.NumberMessage(FortyTwo), finding.Message);
     }
 
     [Fact]
@@ -319,7 +323,7 @@ public class MagicLiteralCheckTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.Equal(MagicLiteralCheck.NumberMessage(FortyTwo), finding.Message);
+        Assert.Equal(MagicLiteralPattern.NumberMessage(FortyTwo), finding.Message);
     }
 
     [Fact]
@@ -333,7 +337,7 @@ public class MagicLiteralCheckTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.Equal(MagicLiteralCheck.NumberMessage(FortyTwo), finding.Message);
+        Assert.Equal(MagicLiteralPattern.NumberMessage(FortyTwo), finding.Message);
     }
 
     [Fact]
@@ -347,6 +351,6 @@ public class MagicLiteralCheckTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.Equal(MagicLiteralCheck.NumberMessage("2.5m"), finding.Message);
+        Assert.Equal(MagicLiteralPattern.NumberMessage("2.5m"), finding.Message);
     }
 }

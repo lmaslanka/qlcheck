@@ -2,7 +2,7 @@ using Qlcheck.Scan;
 
 namespace Qlcheck.Languages.CSharp.Checks.Coverage;
 
-internal sealed class CoverageCheck : ICoverageCheck
+internal sealed class CoverageCheck
 {
     public const string CheckId = "coverage";
 
@@ -15,12 +15,6 @@ internal sealed class CoverageCheck : ICoverageCheck
     private const string GeneratedSuffix = ".g.cs";
 
     private const string DesignerSuffix = ".Designer.cs";
-
-    public string Id => CheckId;
-
-    public string Language => CSharpLanguage.LanguageId;
-
-    public bool EnabledByDefault => false;
 
     public CoverageAnalysis Analyze(IReadOnlyList<SourceScan.LoadedSource> files)
     {

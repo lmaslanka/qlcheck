@@ -1,19 +1,21 @@
+using Qlcheck.Languages.CSharp.Catalog;
+
 namespace Qlcheck.Tests;
 
 public class CheckDiscoveryTests
 {
     [Fact]
-    public void Discovers_inline_sql_check()
+    public void Discovers_migrated_file_checks_as_catalog_rows()
     {
         var checks = CheckDiscovery.All();
-        Assert.Contains(checks, c => c.Id == InlineSqlCheck.CheckId && c is InlineSqlCheck);
-        Assert.Contains(checks, c => c.Id == MagicLiteralCheck.CheckId && c is MagicLiteralCheck);
-        Assert.Contains(checks, c => c.Id == StringConcatCheck.CheckId && c is StringConcatCheck);
-        Assert.Contains(checks, c => c.Id == StringEmptyCheck.CheckId && c is StringEmptyCheck);
-        Assert.Contains(checks, c => c.Id == SwitchPatternCheck.CheckId && c is SwitchPatternCheck);
-        Assert.Contains(checks, c => c.Id == UnusedUsingCheck.CheckId && c is UnusedUsingCheck);
-        Assert.Contains(checks, c => c.Id == OneTypePerFileCheck.CheckId && c is OneTypePerFileCheck);
-        Assert.Contains(checks, c => c.Id == CoverageCheck.CheckId && c is CoverageCheck && !c.EnabledByDefault);
+        Assert.Contains(checks, c => c.Id == "inline-sql" && c is CatalogCheck && !c.EnabledByDefault);
+        Assert.Contains(checks, c => c.Id == "magic-literal" && c is CatalogCheck && c.EnabledByDefault);
+        Assert.Contains(checks, c => c.Id == "string-concat" && c is CatalogCheck && c.EnabledByDefault);
+        Assert.Contains(checks, c => c.Id == "string-empty" && c is CatalogCheck && c.EnabledByDefault);
+        Assert.Contains(checks, c => c.Id == "switch-pattern" && c is CatalogCheck && c.EnabledByDefault);
+        Assert.Contains(checks, c => c.Id == "one-type-per-file" && c is CatalogCheck && c.EnabledByDefault);
+        Assert.Contains(checks, c => c.Id == "unused-using" && c is CatalogCheck && c.EnabledByDefault);
+        Assert.Contains(checks, c => c.Id == CoverageCheck.CheckId && c is CatalogCheck && !c.EnabledByDefault);
     }
 
     [Fact]

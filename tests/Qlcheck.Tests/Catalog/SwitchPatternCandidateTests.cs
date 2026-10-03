@@ -1,11 +1,14 @@
+using Qlcheck.Languages.CSharp.Catalog;
+
 namespace Qlcheck.Tests;
 
-public class SwitchPatternCheckTests
+public class SwitchPatternCandidateTests
 {
-    private static IReadOnlyList<Finding> Run(string source, string path = "Repo.cs")
+    private static IReadOnlyList<Finding> Run(string source)
     {
-        var file = new SourceFile(path, source);
-        return new SwitchPatternCheck().Analyze(file, CSharpTrees.Parse(file));
+        var ctx = MatchFixtures.Context(source);
+        SwitchPatternCandidate.Apply(ctx, MatchFixtures.Id);
+        return ctx.Findings;
     }
 
     [Fact]
@@ -30,8 +33,7 @@ public class SwitchPatternCheckTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.Equal(SwitchPatternCheck.CheckId, finding.Check);
-        Assert.Equal(SwitchPatternCheck.Message, finding.Message);
+        Assert.Equal(MatchFixtures.Id, finding.Check);
         Assert.Null(finding.Replacement);
     }
 

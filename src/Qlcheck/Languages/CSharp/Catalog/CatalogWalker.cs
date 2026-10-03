@@ -15,10 +15,16 @@ internal static class CatalogWalker
     ];
 
     private static readonly HashSet<string> Implemented =
-        Rows.Select(row => row.Id).ToHashSet(StringComparer.Ordinal);
+        Rows.Select(row => row.Id)
+            .Concat(CompilationEngine.Rows.Select(row => row.Id))
+            .Concat(RunEngine.Rows.Keys)
+            .ToHashSet(StringComparer.Ordinal);
 
     private static readonly Dictionary<string, CheckClass> Classes =
-        Rows.ToDictionary(row => row.Id, row => row.Class, StringComparer.Ordinal);
+        Rows.Select(row => (row.Id, row.Class))
+            .Concat(CompilationEngine.Rows.Select(row => (row.Id, row.Class)))
+            .Concat(RunEngine.Rows.Select(kv => (Id: kv.Key, Class: kv.Value)))
+            .ToDictionary(row => row.Id, row => row.Class, StringComparer.Ordinal);
 
     public static bool IsImplemented(string id) => Implemented.Contains(id);
 

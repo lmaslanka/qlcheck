@@ -1,12 +1,16 @@
+using Qlcheck.Languages.CSharp.Catalog;
+
 namespace Qlcheck.Tests;
 
-public class StringConcatCheckTests
+public class StringConcatPatternTests
 {
     private const string NestedReplacement = "$\"x{a}{b}\"";
-    private static IReadOnlyList<Finding> Run(string source, string path = "Repo.cs")
+
+    private static IReadOnlyList<Finding> Run(string source)
     {
-        var file = new SourceFile(path, source);
-        return new StringConcatCheck().Analyze(file, CSharpTrees.Parse(file));
+        var ctx = MatchFixtures.Context(source);
+        StringConcatPattern.Apply(ctx, MatchFixtures.Id);
+        return ctx.Findings;
     }
 
     [Fact]
@@ -20,8 +24,7 @@ public class StringConcatCheckTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.Equal(StringConcatCheck.CheckId, finding.Check);
-        Assert.Equal(StringConcatCheck.Message, finding.Message);
+        Assert.Equal(MatchFixtures.Id, finding.Check);
         Assert.Equal("$\"Hello {name}\"", finding.Replacement);
     }
 
@@ -75,8 +78,7 @@ public class StringConcatCheckTests
             }
             """;
 
-        var finding = Assert.Single(Run(source));
-        Assert.Equal(StringConcatCheck.Message, finding.Message);
+        Assert.Single(Run(source));
     }
 
     [Fact]

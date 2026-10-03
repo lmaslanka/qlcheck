@@ -1,6 +1,8 @@
+using Qlcheck.Languages.CSharp.Catalog;
+
 namespace Qlcheck.Tests;
 
-public class InlineSqlCheckTests
+public class InlineSqlPatternTests
 {
     private const int SqlLine = 5;
 
@@ -10,8 +12,9 @@ public class InlineSqlCheckTests
 
     private static IReadOnlyList<Finding> Run(string source, string path = "Repo.cs")
     {
-        var file = new SourceFile(path, source);
-        return new InlineSqlCheck().Analyze(file, CSharpTrees.Parse(file));
+        var ctx = MatchFixtures.Context(source, path: path);
+        InlineSqlPattern.Apply(ctx, MatchFixtures.Id);
+        return ctx.Findings;
     }
 
     [Fact]
@@ -34,11 +37,11 @@ public class InlineSqlCheckTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.Equal(InlineSqlCheck.CheckId, finding.Check);
+        Assert.Equal(MatchFixtures.Id, finding.Check);
         Assert.Equal("Repo.cs", finding.File);
         Assert.Equal(SqlLine, finding.Line);
         Assert.Equal(SqlColumn, finding.Column);
-        Assert.Equal(InlineSqlCheck.LayoutMessage, finding.Message);
+        Assert.Equal(InlineSqlPattern.LayoutMessage, finding.Message);
         Assert.Equal(
             "\"\"\"\n" +
             "            SELECT\n" +
@@ -83,7 +86,7 @@ public class InlineSqlCheckTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.Equal(InlineSqlCheck.UnformattableMessage, finding.Message);
+        Assert.Equal(InlineSqlPattern.UnformattableMessage, finding.Message);
         Assert.Null(finding.Replacement);
     }
 
@@ -101,7 +104,7 @@ public class InlineSqlCheckTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.Equal(InlineSqlCheck.UnformattableMessage, finding.Message);
+        Assert.Equal(InlineSqlPattern.UnformattableMessage, finding.Message);
         Assert.Null(finding.Replacement);
     }
 
@@ -119,7 +122,7 @@ public class InlineSqlCheckTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.Equal(InlineSqlCheck.LayoutMessage, finding.Message);
+        Assert.Equal(InlineSqlPattern.LayoutMessage, finding.Message);
         Assert.Contains("SELECT", finding.Replacement);
         Assert.Contains(LiteralOne, finding.Replacement);
     }
@@ -161,7 +164,7 @@ public class InlineSqlCheckTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.StartsWith(InlineSqlCheck.FormatFailedMessage, finding.Message);
+        Assert.StartsWith(InlineSqlPattern.FormatFailedMessage, finding.Message);
         Assert.Null(finding.Replacement);
     }
 
@@ -180,7 +183,7 @@ public class InlineSqlCheckTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.Equal(InlineSqlCheck.LayoutMessage, finding.Message);
+        Assert.Equal(InlineSqlPattern.LayoutMessage, finding.Message);
         foreach (var line in QlFmt.Sql.Format(sql).ReplaceLineEndings("\n").Split('\n'))
         {
             Assert.Contains(line, finding.Replacement);
@@ -201,7 +204,7 @@ public class InlineSqlCheckTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.Equal(InlineSqlCheck.LayoutMessage, finding.Message);
+        Assert.Equal(InlineSqlPattern.LayoutMessage, finding.Message);
         Assert.Contains("coalesce", finding.Replacement, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -251,7 +254,7 @@ public class InlineSqlCheckTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.Equal(InlineSqlCheck.LayoutMessage, finding.Message);
+        Assert.Equal(InlineSqlPattern.LayoutMessage, finding.Message);
     }
 
     [Fact]
@@ -270,7 +273,7 @@ public class InlineSqlCheckTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.Equal(InlineSqlCheck.UnformattableMessage, finding.Message);
+        Assert.Equal(InlineSqlPattern.UnformattableMessage, finding.Message);
     }
 
     [Fact]
@@ -305,7 +308,7 @@ public class InlineSqlCheckTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.Equal(InlineSqlCheck.LayoutMessage, finding.Message);
+        Assert.Equal(InlineSqlPattern.LayoutMessage, finding.Message);
     }
 
     [Fact]
@@ -343,7 +346,7 @@ public class InlineSqlCheckTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.Equal(InlineSqlCheck.LayoutMessage, finding.Message);
+        Assert.Equal(InlineSqlPattern.LayoutMessage, finding.Message);
     }
 
     [Fact]
@@ -360,7 +363,7 @@ public class InlineSqlCheckTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.Equal(InlineSqlCheck.LayoutMessage, finding.Message);
+        Assert.Equal(InlineSqlPattern.LayoutMessage, finding.Message);
     }
 
     [Fact]

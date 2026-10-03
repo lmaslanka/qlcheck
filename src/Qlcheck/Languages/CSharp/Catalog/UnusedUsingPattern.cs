@@ -1,14 +1,11 @@
+// Copyright (c) qlcheck contributors.
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace Qlcheck.Languages.CSharp.Checks.Compilation;
+namespace Qlcheck.Languages.CSharp.Catalog;
 
-public sealed class UnusedUsingCheck : ICompilationCheck
+internal static class UnusedUsingPattern
 {
-    private const string CheckIdValue = "unused-using";
-
-    private const string MessageValue = "Remove unused using directive.";
-
     private const string UnusedUsingDiagnostic = "CS8019";
 
     private static readonly HashSet<string> UnresolvedDiagnosticIds = new(StringComparer.Ordinal)
@@ -16,26 +13,16 @@ public sealed class UnusedUsingCheck : ICompilationCheck
         "CS0103", "CS0246", "CS1061",
     };
 
-    public static string CheckId => CheckIdValue;
-
-    public static string Message => MessageValue;
-
-    public string Id => CheckId;
-
-    public string Language => CSharpLanguage.LanguageId;
-
-    public IReadOnlyList<Finding> AnalyzeCompilation(
-        Microsoft.CodeAnalysis.Compilation compilation,
-        IReadOnlySet<string> includedFiles)
+    public static void Apply(CompilationContext ctx, string id)
     {
-        var findings = new List<Finding>();
         var models = new Dictionary<SyntaxTree, SemanticModel>();
-        var diagnostics = compilation.GetDiagnostics();
+        var diagnostics = ctx.Compilation.GetDiagnostics();
         var unresolvedTrees = diagnostics
             .Where(d => UnresolvedDiagnosticIds.Contains(d.Id))
             .Select(d => d.Location.SourceTree)
             .Where(t => t is not null)
             .ToHashSet();
+
         foreach (var diagnostic in diagnostics)
         {
             if (diagnostic.Id != UnusedUsingDiagnostic || diagnostic.Location.SourceTree is null)
@@ -48,27 +35,25 @@ public sealed class UnusedUsingCheck : ICompilationCheck
                 continue;
             }
 
-            if (!UsingResolved(compilation, models, diagnostic))
+            if (!UsingResolved(ctx.Compilation, models, diagnostic))
             {
                 continue;
             }
 
             var path = diagnostic.Location.SourceTree.FilePath.Replace('\\', '/');
-            if (includedFiles.Count > 0
-                && !includedFiles.Contains(path)
-                && !includedFiles.Contains(diagnostic.Location.SourceTree.FilePath))
+            if (ctx.IncludedFiles.Count > 0
+                && !ctx.IncludedFiles.Contains(path)
+                && !ctx.IncludedFiles.Contains(diagnostic.Location.SourceTree.FilePath))
             {
                 continue;
             }
 
-            findings.Add(Finding.At(CheckId, path, diagnostic.Location, Message, string.Empty));
+            ctx.Report(id, path, diagnostic.Location, string.Empty);
         }
-
-        return findings;
     }
 
     private static bool UsingResolved(
-        Microsoft.CodeAnalysis.Compilation compilation,
+        Compilation compilation,
         Dictionary<SyntaxTree, SemanticModel> models,
         Diagnostic diagnostic)
     {

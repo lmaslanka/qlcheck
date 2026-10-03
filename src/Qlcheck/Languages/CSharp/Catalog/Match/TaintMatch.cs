@@ -18,6 +18,29 @@ internal static class TaintMatch
         ReportAssignments(ctx, id, sinkSet);
     }
 
+    public static void ReportOnTypes(WalkContext ctx, string id, string[] receiverTypes, string[] sinks)
+    {
+        var types = new HashSet<string>(receiverTypes, StringComparer.Ordinal);
+        var sinkSet = new HashSet<string>(sinks, StringComparer.Ordinal);
+        foreach (var node in ctx.Nodes(SyntaxKind.InvocationExpression))
+        {
+            if (node is not InvocationExpressionSyntax invocation
+                || !sinkSet.Contains(Names.Invocation(invocation))
+                || invocation.Expression is not MemberAccessExpressionSyntax member)
+            {
+                continue;
+            }
+
+            var receiverType = Symbols.TypeOf(ctx, member.Expression);
+            if (receiverType is null || !types.Contains(receiverType.Name))
+            {
+                continue;
+            }
+
+            ReportIfTainted(ctx, id, invocation, invocation.ArgumentList);
+        }
+    }
+
     private static void ReportInvocations(WalkContext ctx, string id, HashSet<string> sinks)
     {
         foreach (var node in ctx.Nodes(SyntaxKind.InvocationExpression))
@@ -124,10 +147,14 @@ internal static class TaintMatch
         {
             if (parameter.Identifier.Text == identifier.Identifier.Text)
             {
-                return true;
+                return IsStringTyped(parameter.Type);
             }
         }
 
         return false;
     }
+
+    private static bool IsStringTyped(TypeSyntax? type) =>
+        type is PredefinedTypeSyntax predefined && predefined.Keyword.IsKind(SyntaxKind.StringKeyword)
+        || type is NullableTypeSyntax nullable && IsStringTyped(nullable.ElementType);
 }

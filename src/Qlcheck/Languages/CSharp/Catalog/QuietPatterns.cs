@@ -18,8 +18,6 @@ internal static class QuietPatterns
 
     private const string NotEqualsOp = "!=";
 
-    private const string ReadOnlyWord = "readonly";
-
     private const string ListName = "List";
 
     private const string HashSetName = "HashSet";
@@ -88,8 +86,16 @@ internal static class QuietPatterns
     public static void RefParam(WalkContext ctx, string id) =>
         Flag(ctx, id, SyntaxKind.Parameter, HasRef);
 
-    public static void ReturnUsing(WalkContext ctx, string id) =>
-        Flag(ctx, id, SyntaxKind.ReturnStatement, InsideUsing);
+    public static void ReturnUsing(WalkContext ctx, string id)
+    {
+        foreach (var node in ctx.Nodes(SyntaxKind.ReturnStatement))
+        {
+            if (node is ReturnStatementSyntax statement && ReturnsUsingResource(ctx, statement))
+            {
+                ctx.Report(id, node);
+            }
+        }
+    }
 
     public static void ThisEscapes(WalkContext ctx, string id) =>
         Flag(ctx, id, SyntaxKind.ConstructorDeclaration, PassesThis);
@@ -127,8 +133,16 @@ internal static class QuietPatterns
     public static void OptionalNotPassed(WalkContext ctx, string id) =>
         Flag(ctx, id, SyntaxKind.ConstructorDeclaration, BaseSkipsOptional);
 
-    public static void ReadonlyAssign(WalkContext ctx, string id) =>
-        Flag(ctx, id, SyntaxKind.SimpleAssignmentExpression, AssignsReadonlyMember);
+    public static void ReadonlyAssign(WalkContext ctx, string id)
+    {
+        foreach (var node in ctx.Nodes(SyntaxKind.SimpleAssignmentExpression))
+        {
+            if (node is AssignmentExpressionSyntax assignment && AssignsReadonlyValueMember(ctx, assignment))
+            {
+                ctx.Report(id, node);
+            }
+        }
+    }
 
     public static void ReadonlyMutable(WalkContext ctx, string id) =>
         Flag(ctx, id, SyntaxKind.FieldDeclaration, ReadonlyList);
@@ -277,8 +291,33 @@ internal static class QuietPatterns
 
     private static bool CtorEmpty(SyntaxNode node)
     {
-        var body = Shapes.Body(node);
-        return body is not null && Shapes.IsEmptyBlock(body) && Shapes.HasModifier(node, SyntaxKind.PublicKeyword);
+        if (node is not ConstructorDeclarationSyntax ctor || !Shapes.HasModifier(ctor, SyntaxKind.PublicKeyword))
+        {
+            return false;
+        }
+
+        if (ctor.ParameterList.Parameters.Count > 0)
+        {
+            return false;
+        }
+
+        if (ctor.Initializer is not null && ctor.Initializer.ArgumentList.Arguments.Count > 0)
+        {
+            return false;
+        }
+
+        if (ctor.Body is null || !Shapes.IsEmptyBlock(ctor.Body))
+        {
+            return false;
+        }
+
+        if (Shapes.Enclosing(ctor, SyntaxKind.ClassDeclaration) is ClassDeclarationSyntax type
+            && type.Members.OfType<ConstructorDeclarationSyntax>().Count(other => !Shapes.HasModifier(other, SyntaxKind.StaticKeyword)) > 1)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     private static bool InitsZero(SyntaxNode node)
@@ -318,7 +357,51 @@ internal static class QuietPatterns
     private static bool HasRef(SyntaxNode node) =>
         node is ParameterSyntax parameter && parameter.Modifiers.Any(SyntaxKind.RefKeyword);
 
-    private static bool InsideUsing(SyntaxNode node) => Shapes.NestedIn(node, SyntaxKind.UsingStatement);
+    private const string DisposableInterfaceName = "IDisposable";
+
+    private static bool ReturnsUsingResource(WalkContext ctx, ReturnStatementSyntax statement)
+    {
+        if (statement.Expression is null)
+        {
+            return false;
+        }
+
+        if (Shapes.Enclosing(statement, SyntaxKind.UsingStatement) is not UsingStatementSyntax usingStatement)
+        {
+            return false;
+        }
+
+        var names = UsingResourceNames(usingStatement);
+        if (names.Count == 0 || !ReturnReferencesName(statement.Expression, names))
+        {
+            return false;
+        }
+
+        return Symbols.Implements(Symbols.TypeOf(ctx, statement.Expression), DisposableInterfaceName);
+    }
+
+    private static IReadOnlyCollection<string> UsingResourceNames(UsingStatementSyntax usingStatement)
+    {
+        if (usingStatement.Declaration is not null)
+        {
+            return usingStatement.Declaration.Variables.Select(variable => variable.Identifier.Text).ToList();
+        }
+
+        if (usingStatement.Expression is IdentifierNameSyntax identifier)
+        {
+            return [identifier.Identifier.Text];
+        }
+
+        return [];
+    }
+
+    private static bool ReturnReferencesName(ExpressionSyntax expression, IReadOnlyCollection<string> names) =>
+        expression switch
+        {
+            IdentifierNameSyntax identifier => names.Contains(identifier.Identifier.Text),
+            MemberAccessExpressionSyntax member => ReturnReferencesName(member.Expression, names),
+            _ => false,
+        };
 
     private static bool PassesThis(SyntaxNode node) => node.ToString().Contains(ThisCall, StringComparison.Ordinal);
 
@@ -364,15 +447,22 @@ internal static class QuietPatterns
             && ctor.Initializer.ArgumentList.Arguments.Count < ctor.ParameterList.Parameters.Count;
     }
 
-    private static bool AssignsReadonlyMember(SyntaxNode node)
+    private static bool AssignsReadonlyValueMember(WalkContext ctx, AssignmentExpressionSyntax assignment)
     {
-        if (node is not AssignmentExpressionSyntax assignment || assignment.Left is not MemberAccessExpressionSyntax)
+        if (assignment.Left is not MemberAccessExpressionSyntax member)
         {
             return false;
         }
 
-        var type = Shapes.Enclosing(node, SyntaxKind.ClassDeclaration);
-        return type is not null && type.ToString().Contains(ReadOnlyWord, StringComparison.Ordinal);
+        if (Symbols.SymbolOf(ctx, member.Expression) is not IFieldSymbol field || !field.IsReadOnly)
+        {
+            return false;
+        }
+
+        // A readonly field whose type is not provably a reference type (a value type, or a type
+        // parameter not constrained to `class`/a reference type) makes the compiler take a
+        // defensive copy before calling a member on it, so a write through it is silently lost.
+        return !field.Type.IsReferenceType;
     }
 
     private static bool ReadonlyList(SyntaxNode node)
@@ -418,7 +508,19 @@ internal static class QuietPatterns
     private static bool FunctionHasField(SyntaxNode node)
     {
         var type = Shapes.Enclosing(node, SyntaxKind.ClassDeclaration);
-        return type is not null && type.DescendantNodes().Any(child => Names.Attribute(child) == FunctionAttribute);
+        return type is not null && IsAzureFunctionType(type);
+    }
+
+    private const string IsolatedFunctionAttribute = "Function";
+
+    public static bool IsAzureFunctionType(SyntaxNode type) =>
+        type.DescendantNodes().OfType<AttributeSyntax>()
+            .Any(attribute => Names.Attribute(attribute) is FunctionAttribute or IsolatedFunctionAttribute);
+
+    public static bool IsAzureFunctionMember(SyntaxNode node)
+    {
+        var type = Shapes.Enclosing(node, SyntaxKind.ClassDeclaration);
+        return type is not null && IsAzureFunctionType(type);
     }
 
     private static bool StaticUsesLater(SyntaxNode node)

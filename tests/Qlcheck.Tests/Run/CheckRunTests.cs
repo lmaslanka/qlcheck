@@ -1,5 +1,6 @@
 using Qlcheck.Checks;
 using Qlcheck.Languages;
+using Qlcheck.Languages.CSharp.Catalog;
 
 namespace Qlcheck.Tests;
 
@@ -40,21 +41,31 @@ public class CheckRunTests
     [Fact]
     public void Runs_a_check_only_on_its_language()
     {
-        var findings = CheckRun.Execute(
-            [
-                new SourceScan.LoadedSource(CSharpFullPath, new SourceFile(CSharpPath, MagicSource)),
-                new SourceScan.LoadedSource(FakeFullPath, new SourceFile(FakePath, MagicSource)),
-            ],
-            [new MagicLiteralCheck(), new BoundCheck(FakeLanguageId, FakeLanguageId)],
-            [
-                new CSharpLanguage(),
-                new RecordingLanguage(FakeLanguageId, FakeExtension),
-            ]);
+        var dir = Directory.CreateTempSubdirectory("qlcheck_checkrun_");
+        try
+        {
+            var magicLiteral = Catalog.Checks.Single(c => c.Id == "magic-literal");
+            var csharpFullPath = Path.Combine(dir.FullName, CSharpPath);
+            var findings = CheckRun.Execute(
+                [
+                    new SourceScan.LoadedSource(csharpFullPath, new SourceFile(CSharpPath, MagicSource)),
+                    new SourceScan.LoadedSource(FakeFullPath, new SourceFile(FakePath, MagicSource)),
+                ],
+                [magicLiteral, new BoundCheck(FakeLanguageId, FakeLanguageId)],
+                [
+                    new CSharpLanguage(),
+                    new RecordingLanguage(FakeLanguageId, FakeExtension),
+                ]);
 
-        Assert.Contains(findings.Findings, finding => finding.Check == MagicLiteralCheck.CheckId && finding.File == CSharpPath);
-        Assert.DoesNotContain(findings.Findings, finding => finding.Check == MagicLiteralCheck.CheckId && finding.File == FakePath);
-        Assert.Contains(findings.Findings, finding => finding.Check == FakeLanguageId && finding.File == FakePath);
-        Assert.DoesNotContain(findings.Findings, finding => finding.Check == FakeLanguageId && finding.File == CSharpPath);
+            Assert.Contains(findings.Findings, finding => finding.Check == magicLiteral.Id && finding.File == CSharpPath);
+            Assert.DoesNotContain(findings.Findings, finding => finding.Check == magicLiteral.Id && finding.File == FakePath);
+            Assert.Contains(findings.Findings, finding => finding.Check == FakeLanguageId && finding.File == FakePath);
+            Assert.DoesNotContain(findings.Findings, finding => finding.Check == FakeLanguageId && finding.File == CSharpPath);
+        }
+        finally
+        {
+            dir.Delete(recursive: true);
+        }
     }
 
     [Fact]

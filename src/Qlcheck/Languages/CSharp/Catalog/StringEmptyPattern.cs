@@ -1,39 +1,25 @@
+// Copyright (c) qlcheck contributors.
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace Qlcheck.Languages.CSharp.Checks.File;
+namespace Qlcheck.Languages.CSharp.Catalog;
 
-public sealed class StringEmptyCheck : IFileCheck
+internal static class StringEmptyPattern
 {
-    private const string CheckIdValue = "string-empty";
+    private const string ReplacementValue = "string.Empty";
 
-    private const char QuoteChar = '"';
-
-    public static string CheckId => CheckIdValue;
-
-    public static string Message => $"Use string.Empty instead of {QuoteChar}{QuoteChar}.";
-
-    public string Id => CheckId;
-
-    public string Language => CSharpLanguage.LanguageId;
-
-    public IReadOnlyList<Finding> Analyze(SourceFile file, SyntaxTree tree)
+    public static void Apply(WalkContext ctx, string id)
     {
-        var findings = new List<Finding>();
-        foreach (var literal in tree.GetRoot().DescendantNodes().OfType<LiteralExpressionSyntax>())
+        foreach (var literal in ctx.Nodes(SyntaxKind.StringLiteralExpression).OfType<LiteralExpressionSyntax>())
         {
-            if (!literal.IsKind(SyntaxKind.StringLiteralExpression)
-                || literal.Token.ValueText.Length != 0
-                || IsConstantContext(literal))
+            if (literal.Token.ValueText.Length != 0 || IsConstantContext(literal))
             {
                 continue;
             }
 
-            findings.Add(Finding.At(CheckId, file.Path, literal, Message, "string.Empty"));
+            ctx.ReportWith(id, literal, ReplacementValue);
         }
-
-        return findings;
     }
 
     private static bool IsConstantContext(LiteralExpressionSyntax literal)

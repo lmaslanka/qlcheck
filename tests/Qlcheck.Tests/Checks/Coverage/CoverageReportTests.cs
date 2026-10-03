@@ -1,7 +1,12 @@
+using Qlcheck.Checks;
+using Qlcheck.Languages.CSharp.Catalog;
+
 namespace Qlcheck.Tests;
 
 public class CoverageReportTests
 {
+    private static ICheck Coverage => Catalog.Checks.Single(c => c.Id == CoverageCheck.CheckId);
+
     private const string DisplayPath = "src/Foo.cs";
 
     private const string FullPath = "/tmp/Foo.cs";
@@ -29,7 +34,7 @@ public class CoverageReportTests
         Qlcheck.Report.Report.Write(
             new Qlcheck.Cli.Cli.Options(false, false, [], [], [DisplayPath]),
             [loaded],
-            [new CoverageCheck()],
+            [Coverage],
             [finding],
             [coverage],
             TimeSpan.Zero,
@@ -52,7 +57,7 @@ public class CoverageReportTests
         Qlcheck.Report.Report.Write(
             new Qlcheck.Cli.Cli.Options(false, false, [], [], [DisplayPath]),
             [loaded],
-            [new CoverageCheck()],
+            [Coverage],
             [],
             [coverage],
             TimeSpan.Zero,
@@ -73,7 +78,7 @@ public class CoverageReportTests
         Qlcheck.Report.Report.Write(
             new Qlcheck.Cli.Cli.Options(true, false, [], [], [DisplayPath]),
             [],
-            [new CoverageCheck()],
+            [Coverage],
             [finding],
             [new CoverageFile(DisplayPath, true, [])],
             TimeSpan.Zero,

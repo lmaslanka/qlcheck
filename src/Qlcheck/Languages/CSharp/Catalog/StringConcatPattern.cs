@@ -1,10 +1,11 @@
+// Copyright (c) qlcheck contributors.
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace Qlcheck.Languages.CSharp.Checks.File;
+namespace Qlcheck.Languages.CSharp.Catalog;
 
-public sealed class StringConcatCheck : IFileCheck
+internal static class StringConcatPattern
 {
     private const string ConcatMethod = "Concat";
 
@@ -20,39 +21,34 @@ public sealed class StringConcatCheck : IFileCheck
 
     private const char QuoteChar = '"';
 
-    private const string CheckIdValue = "string-concat";
-
-    public static string CheckId => CheckIdValue;
-
-    public static string Message => "String concatenation should be string interpolation.";
-
-    public string Id => CheckId;
-
-    public string Language => CSharpLanguage.LanguageId;
-
-    public IReadOnlyList<Finding> Analyze(SourceFile file, SyntaxTree tree) =>
-        tree.GetRoot().DescendantNodes()
-            .Select(node => TryFinding(file, node))
-            .OfType<Finding>()
-            .ToList();
-
-    private static Finding? TryFinding(SourceFile file, SyntaxNode node) =>
-        node switch
+    public static void Apply(WalkContext ctx, string id)
+    {
+        foreach (var node in ctx.Tree.GetRoot().DescendantNodes())
         {
-            BinaryExpressionSyntax binary
-                when binary.IsKind(SyntaxKind.AddExpression)
-                     && IsStringConcat(binary)
-                     && IsOutermost(binary)
-                     && !IsIgnoredContext(binary)
-                     && !IsSqlConcat(binary)
-                => Finding.At(CheckId, file.Path, binary, Message, TryInterpolation(binary)),
-            InvocationExpressionSyntax invocation
-                when IsStringConcatCall(invocation)
-                     && !IsIgnoredContext(invocation)
-                     && !IsSqlConcatCall(invocation)
-                => Finding.At(CheckId, file.Path, invocation, Message),
-            _ => null,
-        };
+            if (node is BinaryExpressionSyntax binary && IsConcatCandidate(binary))
+            {
+                ctx.ReportWith(id, binary, TryInterpolation(binary));
+                continue;
+            }
+
+            if (node is InvocationExpressionSyntax invocation && IsConcatCallCandidate(invocation))
+            {
+                ctx.ReportWith(id, invocation, null);
+            }
+        }
+    }
+
+    private static bool IsConcatCandidate(BinaryExpressionSyntax binary) =>
+        binary.IsKind(SyntaxKind.AddExpression)
+        && IsStringConcat(binary)
+        && IsOutermost(binary)
+        && !IsIgnoredContext(binary)
+        && !IsSqlConcat(binary);
+
+    private static bool IsConcatCallCandidate(InvocationExpressionSyntax invocation) =>
+        IsStringConcatCall(invocation)
+        && !IsIgnoredContext(invocation)
+        && !IsSqlConcatCall(invocation);
 
     private static bool IsSqlConcat(BinaryExpressionSyntax binary)
     {

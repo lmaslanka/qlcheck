@@ -60,7 +60,7 @@ internal static class StylePatterns
         ReportTokens(ctx, id, EndsCondition);
 
     public static void PublicConst(WalkContext ctx, string id) =>
-        Report(ctx, id, SyntaxKind.FieldDeclaration, PublicAndConst);
+        Report(ctx, id, SyntaxKind.FieldDeclaration, node => PublicAndConst(ctx, node));
 
     public static void VirtualFromCtor(WalkContext ctx, string id) =>
         Report(ctx, id, SyntaxKind.ConstructorDeclaration, CallsVirtual);
@@ -155,8 +155,16 @@ internal static class StylePatterns
     public static void RedundantReturn(WalkContext ctx, string id) =>
         Report(ctx, id, SyntaxKind.ReturnStatement, ReturnAtEnd);
 
-    public static void BoolCompare(WalkContext ctx, string id) =>
-        Report(ctx, id, SyntaxKind.EqualsExpression, ComparesBoolLiteral);
+    public static void BoolCompare(WalkContext ctx, string id)
+    {
+        foreach (var node in ctx.Nodes(SyntaxKind.EqualsExpression))
+        {
+            if (node is BinaryExpressionSyntax binary && ComparesBoolLiteral(ctx, binary))
+            {
+                ctx.Report(id, node);
+            }
+        }
+    }
 
     public static void SelfArg(WalkContext ctx, string id) =>
         Report(ctx, id, SyntaxKind.InvocationExpression, PassesReceiver);
@@ -243,8 +251,21 @@ internal static class StylePatterns
         return line.TrimEnd().EndsWith(token.Text, StringComparison.Ordinal);
     }
 
-    private static bool PublicAndConst(SyntaxNode node) =>
-        Shapes.HasModifier(node, SyntaxKind.PublicKeyword) && Shapes.HasModifier(node, SyntaxKind.ConstKeyword);
+    private static bool PublicAndConst(WalkContext ctx, SyntaxNode node)
+    {
+        if (!Shapes.HasModifier(node, SyntaxKind.PublicKeyword) || !Shapes.HasModifier(node, SyntaxKind.ConstKeyword))
+        {
+            return false;
+        }
+
+        if (node is FieldDeclarationSyntax field && ConstantUsage.IsRequiredElsewhere(ctx, field))
+        {
+            return false;
+        }
+
+        var enclosingClass = Shapes.Enclosing(node, SyntaxKind.ClassDeclaration);
+        return enclosingClass is null || !Shapes.IsStaticConstantsHolderClass(enclosingClass);
+    }
 
     private static bool CallsVirtual(SyntaxNode node)
     {
@@ -335,8 +356,46 @@ internal static class StylePatterns
         }
 
         var ctor = type.ChildNodes().FirstOrDefault(child => child.IsKind(SyntaxKind.ConstructorDeclaration));
-        return ctor is not null && ctor.ToString().Contains($"{name} =", StringComparison.Ordinal);
+        if (ctor is null || !ctor.ToString().Contains($"{name} =", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return type.ChildNodes()
+            .Where(child => !child.IsKind(SyntaxKind.ConstructorDeclaration))
+            .All(other => !WritesField(other, name));
     }
+
+    private static bool WritesField(SyntaxNode scope, string name)
+    {
+        foreach (var node in scope.DescendantNodesAndSelf())
+        {
+            var target = node switch
+            {
+                AssignmentExpressionSyntax assignment => assignment.Left,
+                PostfixUnaryExpressionSyntax postfix => postfix.Operand,
+                PrefixUnaryExpressionSyntax prefix when IsIncrementOrDecrement(prefix.OperatorToken) => prefix.Operand,
+                _ => null,
+            };
+
+            if (target is not null && TargetsField(target, name))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TargetsField(ExpressionSyntax expression, string name) => expression switch
+    {
+        IdentifierNameSyntax identifier => identifier.Identifier.Text == name,
+        MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax } access => access.Name.Identifier.Text == name,
+        _ => false,
+    };
+
+    private static bool IsIncrementOrDecrement(SyntaxToken operatorToken) =>
+        operatorToken.IsKind(SyntaxKind.PlusPlusToken) || operatorToken.IsKind(SyntaxKind.MinusMinusToken);
 
     private static bool DuplicateIf(SyntaxNode node)
     {
@@ -589,6 +648,15 @@ internal static class StylePatterns
             return false;
         }
 
+        var hasInstanceState = node.ChildNodes().OfType<FieldDeclarationSyntax>()
+                .Any(field => !Shapes.HasModifier(field, SyntaxKind.StaticKeyword))
+            || node.ChildNodes().OfType<PropertyDeclarationSyntax>()
+                .Any(property => !Shapes.HasModifier(property, SyntaxKind.StaticKeyword));
+        if (hasInstanceState)
+        {
+            return false;
+        }
+
         return node.ChildNodes().Any(child =>
             child.IsKind(SyntaxKind.ConstructorDeclaration) && Shapes.HasModifier(child, SyntaxKind.PublicKeyword));
     }
@@ -613,15 +681,23 @@ internal static class StylePatterns
         return block.Parent is MethodDeclarationSyntax && node is ReturnStatementSyntax ret && ret.Expression is null;
     }
 
-    private static bool ComparesBoolLiteral(SyntaxNode node)
+    private static bool ComparesBoolLiteral(WalkContext ctx, BinaryExpressionSyntax binary)
     {
-        if (node is not BinaryExpressionSyntax binary)
+        ExpressionSyntax? other = IsBool(binary.Left) ? binary.Right : IsBool(binary.Right) ? binary.Left : null;
+        if (other is null)
         {
             return false;
         }
 
-        return IsBool(binary.Left) || IsBool(binary.Right);
+        // `nullableBool == true` is the only way to test a `bool?` without an unsupported `is true`
+        // pattern (CS8122 inside an expression tree, e.g. a Moq `It.Is<>` lambda), so it is not
+        // redundant/invertible/gratuitous the way comparing a plain `bool` would be.
+        return !IsNullableBoolean(Symbols.TypeOf(ctx, other));
     }
+
+    private static bool IsNullableBoolean(ITypeSymbol? type) =>
+        type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } named
+        && named.TypeArguments is [{ SpecialType: SpecialType.System_Boolean }];
 
     private static bool IsBool(ExpressionSyntax expression) =>
         expression.IsKind(SyntaxKind.TrueLiteralExpression) || expression.IsKind(SyntaxKind.FalseLiteralExpression);
@@ -662,7 +738,22 @@ internal static class StylePatterns
             return false;
         }
 
-        return block.Statements.Count == 1 && block.Statements[0].ToString().Contains(AddCall, StringComparison.Ordinal);
+        if (block.Statements.Count != 1)
+        {
+            return false;
+        }
+
+        var only = block.Statements[0];
+
+        // An `await` inside the loop body means the LINQ-shaped rewrite would need
+        // `Task.WhenAll`/`Select`, which runs each iteration concurrently instead of
+        // sequentially -- a behaviour change, not a simplification.
+        if (only.DescendantNodesAndSelf().Any(descendant => descendant.IsKind(SyntaxKind.AwaitExpression)))
+        {
+            return false;
+        }
+
+        return only.ToString().Contains(AddCall, StringComparison.Ordinal);
     }
 
     private static bool EventNotInvoked(SyntaxNode node)

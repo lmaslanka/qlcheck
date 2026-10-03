@@ -40,13 +40,13 @@
     "path": "Repo.cs"
   },
   "assert-argument-order": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            AreEqual();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class Assert\n{\n    public static void AreEqual(object expected, object actual) { }\n}\n\nclass C\n{\n    void M(int actual)\n    {\n        Assert.AreEqual(actual, 5);\n    }\n}\n",
+    "good": "class Assert\n{\n    public static void AreEqual(object expected, object actual) { }\n}\n\nclass C\n{\n    void M(int actual)\n    {\n        Assert.AreEqual(5, actual);\n    }\n}\n",
     "path": "Repo.cs"
   },
   "assert-no-side-effect": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Assert();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class Debug\n{\n    public static void Assert(bool condition) { }\n}\n\nclass C\n{\n    bool Compute() => true;\n    void M()\n    {\n        Debug.Assert(Compute());\n    }\n}\n",
+    "good": "class Debug\n{\n    public static void Assert(bool condition) { }\n}\n\nclass C\n{\n    bool flag;\n    void M()\n    {\n        Debug.Assert(flag);\n    }\n}\n",
     "path": "Repo.cs"
   },
   "async-name-suffix": {
@@ -75,8 +75,8 @@
     "path": "Repo.cs"
   },
   "azure-function-logs-failure": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            LogError();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "interface ILogger { void LogError(string message); }\n\nclass Holder\n{\n    [FunctionName(\"Run\")]\n    public void Run(ILogger logger)\n    {\n        try\n        {\n            DoWork();\n        }\n        catch (System.Exception)\n        {\n            throw;\n        }\n    }\n\n    void DoWork() { }\n}\n",
+    "good": "interface ILogger { void LogError(string message); }\n\nclass Holder\n{\n    [FunctionName(\"Run\")]\n    public void Run(ILogger logger)\n    {\n        try\n        {\n            DoWork();\n        }\n        catch (System.Exception ex)\n        {\n            logger.LogError(ex.Message);\n        }\n    }\n\n    void DoWork() { }\n}\n",
     "path": "Repo.cs"
   },
   "begin-invoke-end-invoke": {
@@ -105,8 +105,8 @@
     "path": "Repo.cs"
   },
   "cartesian-explosion": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Include();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "using System.Linq;\n\nstatic class Ext\n{\n    public static IQueryable<T> Include<T>(this IQueryable<T> source, string path) => source;\n}\n\nclass C\n{\n    void M(IQueryable<int> query)\n    {\n        var q = query.Include(\"A\").Include(\"B\");\n    }\n}\n",
+    "good": "using System.Linq;\n\nstatic class Ext\n{\n    public static IQueryable<T> Include<T>(this IQueryable<T> source, string path) => source;\n}\n\nclass C\n{\n    void M(IQueryable<int> query)\n    {\n        var q = query.Include(\"A\");\n    }\n}\n",
     "path": "Repo.cs"
   },
   "case-length": {
@@ -120,13 +120,13 @@
     "path": "Repo.cs"
   },
   "check-model-state": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            IsValid();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class WidgetController\n{\n    public bool Create()\n    {\n        return true;\n    }\n}\n",
+    "good": "class ModelStateDictionary { public bool IsValid => true; }\n\nclass WidgetController\n{\n    ModelStateDictionary ModelState { get; } = new ModelStateDictionary();\n\n    public bool Create()\n    {\n        return ModelState.IsValid;\n    }\n}\n",
     "path": "Repo.cs"
   },
   "check-stream-read": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Read();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    void M(System.IO.Stream stream, byte[] buffer)\n    {\n        stream.Read(buffer, 0, buffer.Length);\n    }\n}\n",
+    "good": "class C\n{\n    int M(System.IO.Stream stream, byte[] buffer) => stream.Read(buffer, 0, buffer.Length);\n}\n",
     "path": "Repo.cs"
   },
   "class-coupling": {
@@ -185,8 +185,8 @@
     "path": "Repo.cs"
   },
   "complete-assertion": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Assert();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class Debug\n{\n    public static void Assert(bool condition) { }\n    public static void Assert(bool condition, string message) { }\n}\n\nclass C\n{\n    bool flag;\n    void M()\n    {\n        Debug.Assert(flag);\n    }\n}\n",
+    "good": "class Debug\n{\n    public static void Assert(bool condition) { }\n    public static void Assert(bool condition, string message) { }\n}\n\nclass C\n{\n    bool flag;\n    void M()\n    {\n        Debug.Assert(flag, \"must hold\");\n    }\n}\n",
     "path": "Repo.cs"
   },
   "concise-declaration": {
@@ -215,8 +215,8 @@
     "path": "Repo.cs"
   },
   "constant-log-template": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Information();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "interface ILogger { void Information(string template, params object[] args); void Log(string message); void LogError(string message); }\n\nclass C\n{\n    void M(ILogger logger, string name)\n    {\n        logger.Information(\"Hello \" + name);\n    }\n}\n",
+    "good": "interface ILogger { void Information(string template, params object[] args); void Log(string message); void LogError(string message); }\n\nclass C\n{\n    void M(ILogger logger, string name)\n    {\n        logger.Information(\"Hello {Name}\", name);\n    }\n}\n",
     "path": "Repo.cs"
   },
   "constructor-argument-exists": {
@@ -230,8 +230,8 @@
     "path": "Repo.cs"
   },
   "consume-valuetask": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            AsTask();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    System.Threading.Tasks.Task M(System.Threading.Tasks.ValueTask vt) => vt.AsTask();\n}\n",
+    "good": "class Wrapper { public Wrapper AsTask() => this; }\nclass C\n{\n    void M(Wrapper w) { w.AsTask(); }\n}\n",
     "path": "Repo.cs"
   },
   "controller-base": {
@@ -245,8 +245,8 @@
     "path": "Repo.cs"
   },
   "controller-single-responsibility": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Controller();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class WidgetController\n{\n    void M()\n    {\n        Controller();\n    }\n\n    void Controller() { }\n}\n",
+    "good": "class WidgetControllerTests\n{\n    void M()\n    {\n        Controller();\n    }\n\n    void Controller() { }\n}\n",
     "path": "Repo.cs"
   },
   "cookie-httponly": {
@@ -275,8 +275,8 @@
     "path": "Repo.cs"
   },
   "datetime-kind": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            SpecifyKind();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "namespace Sample\n{\n    class C\n    {\n        DateTime M() => new DateTime(2024, 1, 1);\n    }\n}\n",
+    "good": "namespace Sample\n{\n    class C\n    {\n        DateTime M() => new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);\n    }\n}\n",
     "path": "Repo.cs"
   },
   "datetime-utc": {
@@ -315,23 +315,23 @@
     "path": "Repo.cs"
   },
   "discarded-include": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Include();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "using System.Linq;\n\nstatic class Ext\n{\n    public static IQueryable<T> Include<T>(this IQueryable<T> source, string path) => source;\n}\n\nclass C\n{\n    void M(IQueryable<int> query)\n    {\n        query.Include(\"A\");\n    }\n}\n",
+    "good": "using System.Linq;\n\nstatic class Ext\n{\n    public static IQueryable<T> Include<T>(this IQueryable<T> source, string path) => source;\n}\n\nclass C\n{\n    void M(IQueryable<int> query)\n    {\n        query = query.Include(\"A\");\n    }\n}\n",
     "path": "Repo.cs"
   },
   "disposable-finalizer": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Dispose();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C : System.IDisposable\n{\n    System.IntPtr handle;\n\n    public void Dispose() { System.GC.SuppressFinalize(this); }\n}\n",
+    "good": "class C : System.IDisposable\n{\n    System.IntPtr handle;\n\n    ~C() { }\n\n    public void Dispose() { System.GC.SuppressFinalize(this); }\n}\n",
     "path": "Repo.cs"
   },
   "disposable-members": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Dispose();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    System.IO.MemoryStream stream = new System.IO.MemoryStream();\n}\n",
+    "good": "class C : System.IDisposable\n{\n    System.IO.MemoryStream stream = new System.IO.MemoryStream();\n    public void Dispose() { stream.Dispose(); System.GC.SuppressFinalize(this); }\n}\n",
     "path": "Repo.cs"
   },
   "disposable-pattern": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Dispose();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C : System.IDisposable\n{\n    public void Dispose() { }\n}\n",
+    "good": "class C : System.IDisposable\n{\n    public void Dispose() { System.GC.SuppressFinalize(this); }\n}\n",
     "path": "Repo.cs"
   },
   "dispose-created": {
@@ -340,13 +340,13 @@
     "path": "Repo.cs"
   },
   "dispose-implements-interface": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Dispose();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    public void Dispose() { }\n}\n",
+    "good": "class C : System.IDisposable\n{\n    public void Dispose() { System.GC.SuppressFinalize(this); }\n}\n",
     "path": "Repo.cs"
   },
   "dispose-own-members": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Dispose();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C : System.IDisposable\n{\n    System.IO.MemoryStream stream = new System.IO.MemoryStream();\n    public void Dispose() { System.GC.SuppressFinalize(this); }\n}\n",
+    "good": "class C : System.IDisposable\n{\n    System.IO.MemoryStream stream = new System.IO.MemoryStream();\n    public void Dispose() { stream.Dispose(); System.GC.SuppressFinalize(this); }\n}\n",
     "path": "Repo.cs"
   },
   "duplicate-string": {
@@ -475,8 +475,8 @@
     "path": "Repo.cs"
   },
   "export-implements-contract": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Export();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "interface IWidget { }\n\n[System.ComponentModel.Composition.Export(typeof(IWidget))]\nclass Holder\n{\n}\n",
+    "good": "interface IWidget { }\n\n[System.ComponentModel.Composition.Export(typeof(IWidget))]\nclass Holder : IWidget\n{\n}\n",
     "path": "Repo.cs"
   },
   "expression-complexity": {
@@ -605,8 +605,8 @@
     "path": "Repo.cs"
   },
   "http-client-factory": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            CreateClient();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "interface IHttpClientFactory\n{\n    object CreateClient();\n}\n\nclass C\n{\n    void M(IHttpClientFactory factory)\n    {\n        factory.CreateClient();\n    }\n}\n",
+    "good": "class Builder\n{\n    public Builder CreateClient() => this;\n}\n\nclass C\n{\n    void M(Builder b)\n    {\n        b.CreateClient();\n    }\n}\n",
     "path": "Repo.cs"
   },
   "http-verb-attribute": {
@@ -664,6 +664,11 @@
     "good": "namespace Sample\n{\n    class A0 { }\n    class A1 : A0 { }\n}\n",
     "path": "Repo.cs"
   },
+  "inline-sql": {
+    "bad": "class C\n{\n    void M()\n    {\n        connection.QueryAsync(\"select 1\");\n    }\n}\n",
+    "good": "class C\n{\n    void M()\n    {\n        Console.WriteLine(\"select 1\");\n    }\n}\n",
+    "path": "Repo.cs"
+  },
   "integer-division-to-float": {
     "bad": "class Holder\n{\n    void M(int a, int b)\n    {\n        float n = a / b;\n    }\n}\n",
     "good": "class Holder\n{\n    void M(int a, int b)\n    {\n        int n = a / b;\n    }\n}\n",
@@ -695,13 +700,13 @@
     "path": "Repo.cs"
   },
   "jwt-strong-signature": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Sign();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "namespace Sample\n{\n    class SigningCredentials\n    {\n        public SigningCredentials(object key, string algorithm) { }\n    }\n\n    class C\n    {\n        void M(object key)\n        {\n            var creds = new SigningCredentials(key, \"HS256\");\n        }\n    }\n}\n",
+    "good": "namespace Sample\n{\n    class HmacSigner\n    {\n        public byte[] Sign(byte[] payload) => payload;\n    }\n\n    class C\n    {\n        void M(HmacSigner signer, byte[] payload)\n        {\n            signer.Sign(payload);\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "ldap-authenticated": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Bind();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class DirectoryEntry\n{\n    public void Bind() { }\n}\n\nclass C\n{\n    void M(DirectoryEntry entry) => entry.Bind();\n}\n",
+    "good": "class Rope { public void Bind() { } }\nclass C\n{\n    void M(Rope r) => r.Bind();\n}\n",
     "path": "Repo.cs"
   },
   "ldap-injection": {
@@ -715,8 +720,8 @@
     "path": "Repo.cs"
   },
   "lock-readonly-field": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Enter();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    object _lock = new object();\n    void M()\n    {\n        System.Threading.Monitor.Enter(_lock);\n    }\n}\n",
+    "good": "class C\n{\n    readonly object _lock = new object();\n    void M()\n    {\n        System.Threading.Monitor.Enter(_lock);\n    }\n}\n",
     "path": "Repo.cs"
   },
   "lock-released": {
@@ -725,13 +730,13 @@
     "path": "Repo.cs"
   },
   "log-argument-position": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Information();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "interface ILogger { void Information(string template, params object[] args); void Log(string message); void LogError(string message); }\n\nclass C\n{\n    void M(ILogger logger, string name)\n    {\n        logger.Information(\"Hello {Name}\", name, name);\n    }\n}\n",
+    "good": "interface ILogger { void Information(string template, params object[] args); void Log(string message); void LogError(string message); }\n\nclass C\n{\n    void M(ILogger logger, string name)\n    {\n        logger.Information(\"Hello {Name}\", name);\n    }\n}\n",
     "path": "Repo.cs"
   },
   "log-caught-exception": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Log();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "interface ILogger { void Information(string template, params object[] args); void Log(string message); void LogError(string message); }\n\nclass C\n{\n    void M(ILogger logger)\n    {\n        try { } catch (System.Exception ex) { logger.Log(\"failed\"); }\n    }\n}\n",
+    "good": "interface ILogger { void Information(string template, params object[] args); void Log(string message); void LogError(string message); }\n\nclass C\n{\n    void M(ILogger logger)\n    {\n        try { } catch (System.Exception ex) { logger.Log(ex.Message); }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "log-injection": {
@@ -740,23 +745,23 @@
     "path": "Repo.cs"
   },
   "log-or-rethrow": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Log();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "interface ILogger { void Information(string template, params object[] args); void Log(string message); void LogError(string message); }\n\nclass C\n{\n    void M(ILogger logger)\n    {\n        try { } catch (System.Exception ex) { logger.Log(ex.Message); throw; }\n    }\n}\n",
+    "good": "interface ILogger { void Information(string template, params object[] args); void Log(string message); void LogError(string message); }\n\nclass C\n{\n    void M(ILogger logger)\n    {\n        try { } catch (System.Exception ex) { logger.Log(ex.Message); }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "log-placeholder-order": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Information();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "interface ILogger { void Information(string template, params object[] args); void Log(string message); void LogError(string message); }\n\nclass C\n{\n    void M(ILogger logger, string a, string b)\n    {\n        logger.Information(\"{1} {0}\", a, b);\n    }\n}\n",
+    "good": "interface ILogger { void Information(string template, params object[] args); void Log(string message); void LogError(string message); }\n\nclass C\n{\n    void M(ILogger logger, string a, string b)\n    {\n        logger.Information(\"{0} {1}\", a, b);\n    }\n}\n",
     "path": "Repo.cs"
   },
   "log-placeholder-pascal-case": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Information();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "interface ILogger { void Information(string template, params object[] args); void Log(string message); void LogError(string message); }\n\nclass C\n{\n    void M(ILogger logger, string name)\n    {\n        logger.Information(\"Hello {userName}\", name);\n    }\n}\n",
+    "good": "interface ILogger { void Information(string template, params object[] args); void Log(string message); void LogError(string message); }\n\nclass C\n{\n    void M(ILogger logger, string name)\n    {\n        logger.Information(\"Hello {UserName}\", name);\n    }\n}\n",
     "path": "Repo.cs"
   },
   "log-template-syntax": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Information();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "interface ILogger { void Information(string template, params object[] args); void Log(string message); void LogError(string message); }\n\nclass C\n{\n    void M(ILogger logger, string name)\n    {\n        logger.Information(\"Hello {Name\", name);\n    }\n}\n",
+    "good": "interface ILogger { void Information(string template, params object[] args); void Log(string message); void LogError(string message); }\n\nclass C\n{\n    void M(ILogger logger, string name)\n    {\n        logger.Information(\"Hello {Name}\", name);\n    }\n}\n",
     "path": "Repo.cs"
   },
   "logger-generic-matches-type": {
@@ -802,6 +807,11 @@
   "loop-must-change-counter": {
     "bad": "class Holder\n{\n    void M(int n)\n    {\n        for (var i = 0; i < n; j++)\n        {\n        }\n    }\n}\n",
     "good": "class Holder\n{\n    void M(int n)\n    {\n        for (var i = 0; i < n; i++)\n        {\n        }\n    }\n}\n",
+    "path": "Repo.cs"
+  },
+  "magic-literal": {
+    "bad": "class C\n{\n    int M()\n    {\n        return 42;\n    }\n}\n",
+    "good": "class C\n{\n    const int Max = 42;\n    int M()\n    {\n        return Max;\n    }\n}\n",
     "path": "Repo.cs"
   },
   "matching-lock-release": {
@@ -930,18 +940,18 @@
     "path": "Repo.cs"
   },
   "no-blocking-async": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            GetResult();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    int M(System.Runtime.CompilerServices.TaskAwaiter<int> awaiter) => awaiter.GetResult();\n}\n",
+    "good": "class Widget { public int GetResult() => 0; }\nclass C\n{\n    int M(Widget w) => w.GetResult();\n}\n",
     "path": "Repo.cs"
   },
   "no-blocking-async-function": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Wait();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    void M(System.Threading.Tasks.Task task) => task.Wait();\n}\n",
+    "good": "class Timer { public void Wait() { } }\nclass C\n{\n    void M(Timer t) => t.Wait();\n}\n",
     "path": "Repo.cs"
   },
   "no-boolean-literal-assert": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            True();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class Assert\n{\n    public static void True(bool condition) { }\n}\n\nclass C\n{\n    void M()\n    {\n        Assert.True(true);\n    }\n}\n",
+    "good": "class Assert\n{\n    public static void True(bool condition) { }\n}\n\nclass C\n{\n    bool flag;\n    void M()\n    {\n        Assert.True(flag);\n    }\n}\n",
     "path": "Repo.cs"
   },
   "no-case-only-field-difference": {
@@ -1015,8 +1025,8 @@
     "path": "Repo.cs"
   },
   "no-debug-in-production": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Launch();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    void M()\n    {\n        System.Diagnostics.Debugger.Launch();\n    }\n}\n",
+    "good": "class Rocket\n{\n    public void Launch() { }\n}\n\nclass C\n{\n    void M()\n    {\n        new Rocket().Launch();\n    }\n}\n",
     "path": "Repo.cs"
   },
   "no-default-argument": {
@@ -1035,8 +1045,8 @@
     "path": "Repo.cs"
   },
   "no-double-dispose": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Dispose();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    void M()\n    {\n        var s = new System.IO.MemoryStream();\n        s.Dispose();\n        s.Dispose();\n    }\n}\n",
+    "good": "class C\n{\n    void M()\n    {\n        var s = new System.IO.MemoryStream();\n        s.Dispose();\n    }\n}\n",
     "path": "Repo.cs"
   },
   "no-double-prefix": {
@@ -1095,8 +1105,8 @@
     "path": "Repo.cs"
   },
   "no-empty-nullable-access": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Value();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    int M(int? x) => x.Value;\n}\n",
+    "good": "class C\n{\n    int M(int? x) => x.GetValueOrDefault();\n}\n",
     "path": "Repo.cs"
   },
   "no-equality-on-reference": {
@@ -1105,8 +1115,8 @@
     "path": "Repo.cs"
   },
   "no-exit": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Exit();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    void M()\n    {\n        System.Environment.Exit(1);\n    }\n}\n",
+    "good": "class C\n{\n    void Exit() { }\n    void M()\n    {\n        Exit();\n    }\n}\n",
     "path": "Repo.cs"
   },
   "no-expected-exception": {
@@ -1120,8 +1130,8 @@
     "path": "Repo.cs"
   },
   "no-explicit-foreach-cast": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Cast();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "using System.Collections;\nusing System.Linq;\nclass C\n{\n    void M(IEnumerable items)\n    {\n        foreach (var item in items.Cast<int>()) { }\n    }\n}\n",
+    "good": "using System.Collections.Generic;\nclass C\n{\n    void M(IEnumerable<int> items)\n    {\n        foreach (var item in items) { }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "no-explicit-rethrow": {
@@ -1225,8 +1235,8 @@
     "path": "Repo.cs"
   },
   "no-interface-cast": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            GetType();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "interface IFoo { }\nclass Foo : IFoo { }\nclass C\n{\n    void M(IFoo f)\n    {\n        var t = f.GetType();\n    }\n}\n",
+    "good": "class Foo { }\nclass C\n{\n    void M(Foo f)\n    {\n        var t = f.GetType();\n    }\n}\n",
     "path": "Repo.cs"
   },
   "no-inverted-boolean": {
@@ -1245,8 +1255,8 @@
     "path": "Repo.cs"
   },
   "no-list-in-public-api": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            List();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    public System.Collections.Generic.List<int> M() => null;\n}\n",
+    "good": "class C\n{\n    public System.Collections.Generic.IReadOnlyList<int> M() => null;\n}\n",
     "path": "Repo.cs"
   },
   "no-literal-localized-arg": {
@@ -1280,8 +1290,8 @@
     "path": "Repo.cs"
   },
   "no-nested-generic-signature": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            List();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    public System.Collections.Generic.List<System.Collections.Generic.List<int>> M() => null;\n}\n",
+    "good": "class C\n{\n    public System.Collections.Generic.List<int> M() => null;\n}\n",
     "path": "Repo.cs"
   },
   "no-nested-switch": {
@@ -1300,8 +1310,8 @@
     "path": "Repo.cs"
   },
   "no-new-shared-part": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Export();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "[System.ComponentModel.Composition.Export]\n[System.ComponentModel.Composition.PartCreationPolicy(System.ComponentModel.Composition.CreationPolicy.Shared)]\nclass Holder\n{\n}\n\nclass C\n{\n    void M()\n    {\n        var holder = new Holder();\n    }\n}\n",
+    "good": "[System.ComponentModel.Composition.Export]\nclass Holder\n{\n}\n\nclass C\n{\n    void M()\n    {\n        var holder = new Holder();\n    }\n}\n",
     "path": "Repo.cs"
   },
   "no-not-implemented": {
@@ -1350,13 +1360,13 @@
     "path": "Repo.cs"
   },
   "no-path-resolution": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Start();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    void M()\n    {\n        System.Diagnostics.Process.Start(\"notepad\");\n    }\n}\n",
+    "good": "class Timer\n{\n    public void Start() { }\n}\n\nclass C\n{\n    void M()\n    {\n        new Timer().Start();\n    }\n}\n",
     "path": "Repo.cs"
   },
   "no-plaintext-password": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            ComputeHash();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    byte[] M(System.Security.Cryptography.MD5 hasher, byte[] data) => hasher.ComputeHash(data);\n}\n",
+    "good": "class Widget { public byte[] ComputeHash(byte[] data) => data; }\nclass C\n{\n    byte[] M(Widget w, byte[] data) => w.ComputeHash(data);\n}\n",
     "path": "Repo.cs"
   },
   "no-private-only-constructors": {
@@ -1430,18 +1440,18 @@
     "path": "Repo.cs"
   },
   "no-reference-equals-value": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            ReferenceEquals();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    bool M(int a, int b) => object.ReferenceEquals(a, b);\n}\n",
+    "good": "class C\n{\n    bool M(object a, object b) => object.ReferenceEquals(a, b);\n}\n",
     "path": "Repo.cs"
   },
   "no-reflection-accessibility": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            GetField();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    System.Reflection.FieldInfo M(System.Type t) => t.GetField(\"secret\", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);\n}\n",
+    "good": "class C\n{\n    System.Reflection.FieldInfo M(System.Type t) => t.GetField(\"visible\", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);\n}\n",
     "path": "Repo.cs"
   },
   "no-return-from-using": {
-    "bad": "class Holder\n{\n    object M()\n    {\n        using (var item = new object())\n        {\n            return item;\n        }\n    }\n}\n",
-    "good": "class Holder\n{\n    void M()\n    {\n        using (var item = new object())\n        {\n        }\n    }\n}\n",
+    "bad": "class Holder\n{\n    System.IO.MemoryStream M()\n    {\n        using (var item = new System.IO.MemoryStream())\n        {\n            return item;\n        }\n    }\n}\n",
+    "good": "class Holder\n{\n    void M()\n    {\n        using (var item = new System.IO.MemoryStream())\n        {\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "no-rooted-action-route": {
@@ -1510,8 +1520,8 @@
     "path": "Repo.cs"
   },
   "no-thread-suspend": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Suspend();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    void M()\n    {\n        System.Threading.Thread.CurrentThread.Suspend();\n    }\n}\n",
+    "good": "class Worker\n{\n    public void Suspend() { }\n}\n\nclass C\n{\n    void M()\n    {\n        new Worker().Suspend();\n    }\n}\n",
     "path": "Repo.cs"
   },
   "no-throw-in-finally": {
@@ -1540,8 +1550,8 @@
     "path": "Repo.cs"
   },
   "no-type-on-type": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            GetType();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    System.Type M(System.Type t) => t.GetType();\n}\n",
+    "good": "class Foo { }\nclass C\n{\n    System.Type M(Foo f) => f.GetType();\n}\n",
     "path": "Repo.cs"
   },
   "no-unconditional-replace": {
@@ -1585,13 +1595,13 @@
     "path": "Repo.cs"
   },
   "no-weak-lock": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Enter();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    void M()\n    {\n        System.Threading.Monitor.Enter(this);\n    }\n}\n",
+    "good": "class C\n{\n    readonly object _lock = new object();\n    void M()\n    {\n        System.Threading.Monitor.Enter(_lock);\n    }\n}\n",
     "path": "Repo.cs"
   },
   "no-weak-lock-object": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Enter();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    void M(string key)\n    {\n        System.Threading.Monitor.Enter(key);\n    }\n}\n",
+    "good": "class C\n{\n    readonly object _lock = new object();\n    void M()\n    {\n        System.Threading.Monitor.Enter(_lock);\n    }\n}\n",
     "path": "Repo.cs"
   },
   "no-weak-tls": {
@@ -1615,8 +1625,8 @@
     "path": "Repo.cs"
   },
   "normalize-uppercase": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            ToLower();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    string M(string s) => s.ToLower();\n}\n",
+    "good": "class C\n{\n    string M(string s) => s.ToUpper();\n}\n",
     "path": "Repo.cs"
   },
   "nosql-injection": {
@@ -1647,6 +1657,11 @@
   "one-statement-per-line": {
     "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return; return;\n        }\n    }\n}\n",
     "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "path": "Repo.cs"
+  },
+  "one-type-per-file": {
+    "bad": "class A { }\nclass B { }\n",
+    "good": "class A { }\n",
     "path": "Repo.cs"
   },
   "one-variable-per-line": {
@@ -1715,8 +1730,8 @@
     "path": "Repo.cs"
   },
   "part-creation-policy": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Export();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "[System.ComponentModel.Composition.PartCreationPolicy(System.ComponentModel.Composition.CreationPolicy.Shared)]\nclass Holder\n{\n}\n",
+    "good": "[System.ComponentModel.Composition.Export]\n[System.ComponentModel.Composition.PartCreationPolicy(System.ComponentModel.Composition.CreationPolicy.Shared)]\nclass Holder\n{\n}\n",
     "path": "Repo.cs"
   },
   "pascal-case-member": {
@@ -1735,8 +1750,8 @@
     "path": "Repo.cs"
   },
   "password-salt": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            ComputeHash();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    byte[] M(System.Security.Cryptography.SHA256 hasher, byte[] data) => hasher.ComputeHash(data);\n}\n",
+    "good": "class Widget { public byte[] ComputeHash(byte[] data) => data; }\nclass C\n{\n    byte[] M(Widget w, byte[] data) => w.ComputeHash(data);\n}\n",
     "path": "Repo.cs"
   },
   "path-injection": {
@@ -1750,8 +1765,8 @@
     "path": "Repo.cs"
   },
   "prefer-assembly-load": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            LoadFrom();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    void M()\n    {\n        System.Reflection.Assembly.LoadFrom(\"path\");\n    }\n}\n",
+    "good": "class Loader\n{\n    public void LoadFrom(string path) { }\n}\n\nclass C\n{\n    void M()\n    {\n        new Loader().LoadFrom(\"path\");\n    }\n}\n",
     "path": "Repo.cs"
   },
   "prefer-awaitable": {
@@ -1835,8 +1850,8 @@
     "path": "Repo.cs"
   },
   "prefer-property": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Get();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    int Get() => 1;\n\n    void M()\n    {\n        Get();\n    }\n}\n",
+    "good": "class Parameters\n{\n    public T Get<T>(string name) => default;\n}\n\nclass C\n{\n    void M(Parameters parameters)\n    {\n        parameters.Get<int>(\"x\");\n    }\n}\n",
     "path": "Repo.cs"
   },
   "prefer-range": {
@@ -1845,8 +1860,8 @@
     "path": "Repo.cs"
   },
   "prefer-set-min-max": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Min();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "using System.Collections.Generic;\n\nnamespace Sample\n{\n    class C\n    {\n        int M()\n        {\n            var s = new HashSet<int> { 1, 2 };\n            return s.Min();\n        }\n    }\n}\n",
+    "good": "using System.Collections.Generic;\nusing System.Linq;\n\nnamespace Sample\n{\n    class C\n    {\n        int M()\n        {\n            var list = new List<int> { 1, 2 };\n            return list.Min();\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "prefer-string-comparison": {
@@ -1870,13 +1885,13 @@
     "path": "Repo.cs"
   },
   "produces-response-type": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Ok();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class ControllerBase\n{\n    protected object Ok(object value) => value;\n}\n\nclass MyController : ControllerBase\n{\n    object M() => Ok(1);\n}\n",
+    "good": "class Result\n{\n    public static Result Ok(object value) => new Result();\n}\n\nclass C\n{\n    void M()\n    {\n        Result.Ok(1);\n    }\n}\n",
     "path": "Repo.cs"
   },
   "property-not-get-method": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Get();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    int Get() => 1;\n\n    void M()\n    {\n        Get();\n    }\n}\n",
+    "good": "class Parameters\n{\n    public T Get<T>(string name) => default;\n}\n\nclass C\n{\n    void M(Parameters parameters)\n    {\n        parameters.Get<int>(\"x\");\n    }\n}\n",
     "path": "Repo.cs"
   },
   "pure-returns-value": {
@@ -1895,8 +1910,8 @@
     "path": "Repo.cs"
   },
   "readonly-field-assignment": {
-    "bad": "class Holder\n{\n    readonly int value;\n\n    void M(Holder other)\n    {\n        other.value = 1;\n    }\n}\n",
-    "good": "class Holder\n{\n    int value;\n\n    void M(Holder other)\n    {\n        other.value = 1;\n    }\n}\n",
+    "bad": "interface ICounter { int Count { get; set; } }\n\nclass Holder<T> where T : ICounter\n{\n    readonly T state;\n\n    Holder(T state) { this.state = state; }\n\n    void M()\n    {\n        state.Count = 1;\n    }\n}\n",
+    "good": "interface IFoo { }\n\nclass Holder\n{\n    readonly IFoo foo;\n\n    Holder(IFoo foo) { this.foo = foo; }\n}\n",
     "path": "Repo.cs"
   },
   "readonly-not-mutable": {
@@ -1915,8 +1930,8 @@
     "path": "Repo.cs"
   },
   "redundant-include": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Include();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "using System.Linq;\n\nstatic class Ext\n{\n    public static IQueryable<T> Include<T>(this IQueryable<T> source, string path) => source;\n}\n\nclass C\n{\n    void M(IQueryable<int> query)\n    {\n        var q = query.Include(\"A\").Include(\"A\");\n    }\n}\n",
+    "good": "using System.Linq;\n\nstatic class Ext\n{\n    public static IQueryable<T> Include<T>(this IQueryable<T> source, string path) => source;\n}\n\nclass C\n{\n    void M(IQueryable<int> query)\n    {\n        var q = query.Include(\"A\").Include(\"B\");\n    }\n}\n",
     "path": "Repo.cs"
   },
   "redundant-modifier": {
@@ -1930,8 +1945,8 @@
     "path": "Repo.cs"
   },
   "redundant-nullable-compare": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            HasValue();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    bool M(int? x) => x.HasValue == true;\n}\n",
+    "good": "class C\n{\n    bool M(int? x) => x.HasValue;\n}\n",
     "path": "Repo.cs"
   },
   "redundant-parentheses": {
@@ -1970,8 +1985,8 @@
     "path": "Repo.cs"
   },
   "regular-number-pattern": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Match();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Regex.Match();\n        }\n    }\n}\n",
+    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Pattern.Match();\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "release-lock-same-method": {
@@ -2020,8 +2035,8 @@
     "path": "Repo.cs"
   },
   "reuse-client": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            SendAsync();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    [FunctionName(\"Run\")]\n    public System.Threading.Tasks.Task Run(System.Net.Http.HttpClient client, System.Net.Http.HttpRequestMessage request) => client.SendAsync(request);\n}\n",
+    "good": "class Bus { public void SendAsync(object message) { } }\nclass C\n{\n    [FunctionName(\"Run\")]\n    void M(Bus bus, object message) => bus.SendAsync(message);\n}\n",
     "path": "Repo.cs"
   },
   "robust-cipher": {
@@ -2105,8 +2120,8 @@
     "path": "Repo.cs"
   },
   "simplify-type-check": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            GetType();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class Foo { }\nclass C\n{\n    bool M(object o) => o.GetType() == typeof(Foo);\n}\n",
+    "good": "class Foo { }\nclass C\n{\n    bool M(object o) => o is Foo;\n}\n",
     "path": "Repo.cs"
   },
   "single-key-attribute": {
@@ -2120,8 +2135,8 @@
     "path": "Repo.cs"
   },
   "sql-injection": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            Execute(input);\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            Execute(\"fixed\");\n        }\n    }\n}\n",
+    "bad": "namespace Sample\n{\n    class SqlCommand\n    {\n        public void Execute(string sql) { }\n    }\n\n    class C\n    {\n        public void M(string input)\n        {\n            var cmd = new SqlCommand();\n            cmd.Execute(input);\n        }\n    }\n}\n",
+    "good": "namespace Sample\n{\n    class UpdateRequisitionCommand\n    {\n        public void Execute(string recordId) { }\n    }\n\n    class C\n    {\n        public void M(UpdateRequisitionCommand updateRequisitionCommand, string recordId)\n        {\n            updateRequisitionCommand.Execute(recordId);\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "sql-keyword-whitespace": {
@@ -2164,9 +2179,19 @@
     "good": "class Holder\n{\n    static int Value = 1;\n    static int Other = Value;\n}\n",
     "path": "Repo.cs"
   },
+  "string-concat": {
+    "bad": "class C\n{\n    string M(string name) => \"Hello \" + name;\n}\n",
+    "good": "class C\n{\n    string M(string name) => $\"Hello {name}\";\n}\n",
+    "path": "Repo.cs"
+  },
   "string-culture": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            ToLower();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    string M(string s) => s.ToLower();\n}\n",
+    "good": "class C\n{\n    string M(string s) => s.ToLowerInvariant();\n}\n",
+    "path": "Repo.cs"
+  },
+  "string-empty": {
+    "bad": "class C\n{\n    string M() => \"\";\n}\n",
+    "good": "class C\n{\n    string M() => string.Empty;\n}\n",
     "path": "Repo.cs"
   },
   "strong-crypto-key": {
@@ -2175,8 +2200,8 @@
     "path": "Repo.cs"
   },
   "sum-overflow-check": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Sum();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "using System.Collections.Generic;\nusing System.Linq;\nclass C\n{\n    int M(List<int> items)\n    {\n        unchecked\n        {\n            return items.Sum();\n        }\n    }\n}\n",
+    "good": "using System.Collections.Generic;\nusing System.Linq;\nclass C\n{\n    int M(List<int> items) => items.Sum();\n}\n",
     "path": "Repo.cs"
   },
   "suppress-finalize-needs-destructor": {
@@ -2194,14 +2219,19 @@
     "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            switch (value)\n            {\n                case 1:\n                    break;\n                default:\n                    break;\n            }\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
+  "switch-pattern": {
+    "bad": "class C\n{\n    int M(int x)\n    {\n        switch (x)\n        {\n            case 1:\n                return 10;\n            default:\n                return 0;\n        }\n    }\n}\n",
+    "good": "class C\n{\n    int M(int x)\n    {\n        switch (x)\n        {\n            case 1:\n                Console.WriteLine(x);\n                return 10;\n            default:\n                return 0;\n        }\n    }\n}\n",
+    "path": "Repo.cs"
+  },
   "switch-too-many-cases": {
     "bad": "namespace Sample\n{\n    class C\n    {\n        void M(int value)\n        {\n            switch (value)\n            {\n                case 1:\n                    break;\n                case 2:\n                    break;\n                case 3:\n                    break;\n                case 4:\n                    break;\n                case 5:\n                    break;\n                case 6:\n                    break;\n                case 7:\n                    break;\n                case 8:\n                    break;\n                case 9:\n                    break;\n                case 10:\n                    break;\n                case 11:\n                    break;\n                case 12:\n                    break;\n                case 13:\n                    break;\n                case 14:\n                    break;\n                case 15:\n                    break;\n                case 16:\n                    break;\n                case 17:\n                    break;\n                case 18:\n                    break;\n                case 19:\n                    break;\n                case 20:\n                    break;\n                case 21:\n                    break;\n                case 22:\n                    break;\n                case 23:\n                    break;\n                case 24:\n                    break;\n                case 25:\n                    break;\n                case 26:\n                    break;\n                case 27:\n                    break;\n                case 28:\n                    break;\n                case 29:\n                    break;\n                case 30:\n                    break;\n                case 31:\n                    break;\n            }\n        }\n    }\n}\n",
     "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            switch (value)\n            {\n                case 1:\n                    break;\n                case 2:\n                    break;\n                default:\n                    break;\n            }\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "task-not-null": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            FromResult();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    System.Threading.Tasks.Task M()\n    {\n        return null;\n    }\n}\n",
+    "good": "class C\n{\n    System.Threading.Tasks.Task M()\n    {\n        return System.Threading.Tasks.Task.CompletedTask;\n    }\n}\n",
     "path": "Repo.cs"
   },
   "test-has-assertion": {
@@ -2285,8 +2315,8 @@
     "path": "Repo.cs"
   },
   "unique-log-placeholder": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Information();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "interface ILogger { void Information(string template, params object[] args); void Log(string message); void LogError(string message); }\n\nclass C\n{\n    void M(ILogger logger, string a, string b)\n    {\n        logger.Information(\"{Name} {Name}\", a, b);\n    }\n}\n",
+    "good": "interface ILogger { void Information(string template, params object[] args); void Log(string message); void LogError(string message); }\n\nclass C\n{\n    void M(ILogger logger, string a, string b)\n    {\n        logger.Information(\"{FirstName} {LastName}\", a, b);\n    }\n}\n",
     "path": "Repo.cs"
   },
   "unpredictable-iv": {
@@ -2295,8 +2325,8 @@
     "path": "Repo.cs"
   },
   "unpredictable-random": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Next();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "class C\n{\n    void M()\n    {\n        var r = new System.Random();\n        r.Next();\n    }\n}\n",
+    "good": "class LinkedListNode\n{\n    public LinkedListNode Next() => this;\n}\n\nclass C\n{\n    void M()\n    {\n        new LinkedListNode().Next();\n    }\n}\n",
     "path": "Repo.cs"
   },
   "unread-private-field": {
@@ -2342,6 +2372,11 @@
   "unused-type-parameter": {
     "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            T();\n        }\n    }\n}\n",
     "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "path": "Repo.cs"
+  },
+  "unused-using": {
+    "bad": "using System.Text;\n\nclass C\n{\n}\n",
+    "good": "using System.Text;\n\nclass C\n{\n    StringBuilder M() => new StringBuilder();\n}\n",
     "path": "Repo.cs"
   },
   "uri-not-string-argument": {

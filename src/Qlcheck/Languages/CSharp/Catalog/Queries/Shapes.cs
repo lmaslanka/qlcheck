@@ -109,6 +109,25 @@ internal static class Shapes
 
     public static bool NestedIn(SyntaxNode node, SyntaxKind kind) => Enclosing(node, kind) is not null;
 
+    public static bool IsStaticConstantsHolderClass(SyntaxNode classNode)
+    {
+        if (!HasModifier(classNode, SyntaxKind.StaticKeyword))
+        {
+            return false;
+        }
+
+        var members = classNode.ChildNodes().Where(child => IsMemberKind(child.Kind())).ToList();
+        return members.Count > 0 && members.All(IsConstOrStaticDataMember);
+    }
+
+    private static bool IsConstOrStaticDataMember(SyntaxNode member) =>
+        member switch
+        {
+            FieldDeclarationSyntax => HasModifier(member, SyntaxKind.ConstKeyword) || HasModifier(member, SyntaxKind.StaticKeyword),
+            PropertyDeclarationSyntax => HasModifier(member, SyntaxKind.StaticKeyword),
+            _ => false,
+        };
+
     public static int LineSpan(SyntaxNode node)
     {
         var span = node.GetLocation().GetLineSpan();

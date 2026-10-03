@@ -1,10 +1,11 @@
+// Copyright (c) qlcheck contributors.
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace Qlcheck.Languages.CSharp.Checks.File;
+namespace Qlcheck.Languages.CSharp.Catalog;
 
-public sealed class InlineSqlCheck : IFileCheck
+internal static class InlineSqlPattern
 {
     private const string LayoutMessageValue =
         "Inline SQL must be a C# raw string literal with qlfmt layout.";
@@ -12,8 +13,6 @@ public sealed class InlineSqlCheck : IFileCheck
     private const string UnformattableMessageValue = "Inline SQL is not a single string literal.";
 
     private const string FormatFailedMessageValue = "Inline SQL could not be formatted.";
-
-    private const string CheckIdValue = "inline-sql";
 
     private const string CommandTextProperty = "CommandText";
 
@@ -61,40 +60,33 @@ public sealed class InlineSqlCheck : IFileCheck
 
     public static string FormatFailedMessage => FormatFailedMessageValue;
 
-    public static string CheckId => CheckIdValue;
-
-    public string Id => CheckId;
-
-    public string Language => CSharpLanguage.LanguageId;
-
-    public bool EnabledByDefault => false;
-
-    public IReadOnlyList<Finding> Analyze(SourceFile file, SyntaxTree tree)
+    public static void Apply(WalkContext ctx, string id)
     {
         var finder = new SqlExpressionFinder();
-        finder.Visit(tree.GetRoot());
-        return finder.Expressions
-            .Select(expression => TryCreateFinding(file.Path, tree, expression))
-            .OfType<Finding>()
-            .ToList();
+        finder.Visit(ctx.Tree.GetRoot());
+        foreach (var expression in finder.Expressions)
+        {
+            TryReport(ctx, id, expression);
+        }
     }
 
-    private static Finding? TryCreateFinding(string path, SyntaxTree tree, ExpressionSyntax expression)
+    private static void TryReport(WalkContext ctx, string id, ExpressionSyntax expression)
     {
         var resolved = Resolve(expression);
         if (resolved is UnresolvedSql)
         {
-            return null;
+            return;
         }
 
         if (resolved is UnformattableSql unformattable)
         {
-            return Finding.At(CheckId, path, unformattable.Node, UnformattableMessage);
+            ctx.ReportCustom(id, unformattable.Node, UnformattableMessage);
+            return;
         }
 
         if (resolved is not LiteralSql literal)
         {
-            return null;
+            return;
         }
 
         string formatted;
@@ -104,22 +96,19 @@ public sealed class InlineSqlCheck : IFileCheck
         }
         catch (QlParse.SqlParseException ex)
         {
-            return Finding.At(
-                CheckId,
-                path,
-                literal.Node,
-                $"{FormatFailedMessage} {ex.Message} at {ex.Position}");
+            ctx.ReportCustom(id, literal.Node, $"{FormatFailedMessage} {ex.Message} at {ex.Position}");
+            return;
         }
 
         if (IsRawString(literal.Node) && ValuesEqual(literal.Value, formatted))
         {
-            return null;
+            return;
         }
 
-        var line = tree.GetText().Lines[literal.Node.GetLocation().GetLineSpan().StartLinePosition.Line];
+        var line = ctx.Tree.GetText().Lines[literal.Node.GetLocation().GetLineSpan().StartLinePosition.Line];
         var contentIndent = line.ToString().TakeWhile(char.IsWhiteSpace).Count() + RawStringExtraIndent;
         var replacement = ToRawStringLiteral(formatted, contentIndent);
-        return Finding.At(CheckId, path, literal.Node, LayoutMessage, replacement);
+        ctx.ReportCustom(id, literal.Node, LayoutMessage, replacement);
     }
 
     private static SqlTarget Resolve(ExpressionSyntax expression)

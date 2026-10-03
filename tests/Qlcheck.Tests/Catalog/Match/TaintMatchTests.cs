@@ -93,4 +93,79 @@ public class TaintMatchTests
         TaintMatch.Report(ctx, MatchFixtures.Id, ["CommandText"]);
         Assert.Empty(ctx.Findings);
     }
+
+    [Fact]
+    public void ReportOnTypes_flags_tainted_argument_on_an_allowed_receiver_type()
+    {
+        var ctx = MatchFixtures.Context(
+            """
+            class SqlCommand { public void Execute(string sql) { } }
+            class C
+            {
+                public void M(string userInput)
+                {
+                    var cmd = new SqlCommand();
+                    cmd.Execute(userInput);
+                }
+            }
+            """);
+        TaintMatch.ReportOnTypes(ctx, MatchFixtures.Id, ["SqlCommand"], ["Execute"]);
+        Assert.Single(ctx.Findings);
+    }
+
+    [Fact]
+    public void ReportOnTypes_ignores_a_call_on_a_receiver_type_that_is_not_allowed()
+    {
+        var ctx = MatchFixtures.Context(
+            """
+            class UpdateRequisitionCommand { public void Execute(string recordId) { } }
+            class C
+            {
+                public void M(UpdateRequisitionCommand updateRequisitionCommand, string recordId)
+                {
+                    updateRequisitionCommand.Execute(recordId);
+                }
+            }
+            """);
+        TaintMatch.ReportOnTypes(ctx, MatchFixtures.Id, ["SqlCommand"], ["Execute"]);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void Report_ignores_a_non_string_typed_parameter()
+    {
+        var ctx = MatchFixtures.Context(
+            "class C { public System.Threading.Tasks.Task M(System.Net.Http.HttpClient client, System.Guid recordId) "
+            + "=> client.GetAsync(recordId); }");
+        TaintMatch.Report(ctx, MatchFixtures.Id, ["GetAsync"]);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void Report_flags_a_string_typed_parameter_reaching_a_sink()
+    {
+        var ctx = MatchFixtures.Context(
+            "class C { public System.Threading.Tasks.Task M(System.Net.Http.HttpClient client, string url) "
+            + "=> client.GetAsync(url); }");
+        TaintMatch.Report(ctx, MatchFixtures.Id, ["GetAsync"]);
+        Assert.Single(ctx.Findings);
+    }
+
+    [Fact]
+    public void Report_ignores_a_nullable_non_string_typed_parameter()
+    {
+        var ctx = MatchFixtures.Context(
+            "class C { object CommandText; public void M(int? recordId) { CommandText = recordId; } }");
+        TaintMatch.Report(ctx, MatchFixtures.Id, ["CommandText"]);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void ReportOnTypes_ignores_a_bare_invocation_with_no_receiver()
+    {
+        var ctx = MatchFixtures.Context(
+            "class C { public void Execute(string sql) { } public void M(string userInput) { Execute(userInput); } }");
+        TaintMatch.ReportOnTypes(ctx, MatchFixtures.Id, ["SqlCommand"], ["Execute"]);
+        Assert.Empty(ctx.Findings);
+    }
 }

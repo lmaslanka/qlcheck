@@ -69,4 +69,13 @@ internal sealed class WalkContext
         var message = $"{_messages[id]} {detail}";
         Findings.Add(Finding.At(id, Path, node, message));
     }
+
+    public void ReportWith(string id, SyntaxNode node, string? replacement) =>
+        Findings.Add(Finding.At(id, Path, node, _messages[id], replacement));
+
+    public void ReportCustom(string id, SyntaxNode node, string message, string? replacement = null) =>
+        Findings.Add(Finding.At(id, Path, node, message, replacement));
+
+    public void ReportCustom(string id, SyntaxToken token, string message, string? replacement = null) =>
+        Findings.Add(Finding.At(id, Path, token, message, replacement));
 }

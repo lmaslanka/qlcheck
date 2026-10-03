@@ -1,39 +1,23 @@
+// Copyright (c) qlcheck contributors.
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace Qlcheck.Languages.CSharp.Checks.File;
+namespace Qlcheck.Languages.CSharp.Catalog;
 
-public sealed class SwitchPatternCheck : IFileCheck
+internal static class SwitchPatternCandidate
 {
-    private const string CheckIdValue = "switch-pattern";
-
     private const int MinSections = 2;
 
-    private const string MessageValue = "This switch statement should be a pattern-matching switch expression.";
-
-    public static string CheckId => CheckIdValue;
-
-    public static string Message => MessageValue;
-
-    public string Id => CheckId;
-
-    public string Language => CSharpLanguage.LanguageId;
-
-    public IReadOnlyList<Finding> Analyze(SourceFile file, SyntaxTree tree)
+    public static void Apply(WalkContext ctx, string id)
     {
-        var findings = new List<Finding>();
-        foreach (var statement in tree.GetRoot().DescendantNodes().OfType<SwitchStatementSyntax>())
+        foreach (var statement in ctx.Nodes(SyntaxKind.SwitchStatement).OfType<SwitchStatementSyntax>())
         {
-            if (!IsCandidate(statement))
+            if (IsCandidate(statement))
             {
-                continue;
+                ctx.Report(id, statement.SwitchKeyword);
             }
-
-            findings.Add(Finding.At(CheckId, file.Path, statement.SwitchKeyword, Message));
         }
-
-        return findings;
     }
 
     private static bool IsCandidate(SwitchStatementSyntax statement)

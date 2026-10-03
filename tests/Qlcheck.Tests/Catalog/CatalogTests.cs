@@ -8,11 +8,13 @@ namespace Qlcheck.Tests;
 
 public class CatalogTests
 {
-    private const int CatalogCount = 502;
+    private const int CatalogCount = 510;
 
-    private const int EnabledCatalogCount = 495;
+    private const int EnabledCatalogCount = 501;
 
-    private const int HouseEnabledCount = 6;
+    private const int UnimplementedCatalogCount = 7;
+
+    private const int HouseEnabledCount = 0;
 
     private const string UnknownId = "nope";
 
@@ -80,7 +82,7 @@ public class CatalogTests
     public void Architecture_checks_are_discovered_and_unimplemented()
     {
         var architecture = Catalog.Checks.Where(check => !CatalogWalker.IsImplemented(check.Id)).ToList();
-        Assert.Equal(CatalogCount - EnabledCatalogCount, architecture.Count);
+        Assert.Equal(UnimplementedCatalogCount, architecture.Count);
         Assert.All(architecture, check => Assert.False(check.EnabledByDefault));
         Assert.Contains(architecture, check => check.Id == ArchitectureId);
     }
@@ -126,6 +128,11 @@ public class CatalogTests
         var failures = new List<string>();
         foreach (var id in CatalogWalker.ImplementedIds)
         {
+            if (CatalogWalker.TryClass(id, out var group) && group == CheckClass.Process)
+            {
+                continue;
+            }
+
             var fixture = fixtures[id];
             if (!Run(id, fixture.Bad, fixture.Path).Any(finding => finding.Check == id))
             {
@@ -175,9 +182,18 @@ public class CatalogTests
         var file = new SourceFile(path, source);
         var tree = CSharpTrees.Parse(file);
         var compilation = CSharpCompilations.Create("fixture", [tree]);
-        var model = compilation.GetSemanticModel(tree);
         var selected = new HashSet<string>(StringComparer.Ordinal) { id };
         var messages = new Dictionary<string, string>(StringComparer.Ordinal) { [id] = Catalog.Messages[id] };
+
+        if (CatalogWalker.TryClass(id, out var group) && group == CheckClass.Compilation)
+        {
+            var included = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { path };
+            var compilationCtx = new CompilationContext(compilation, included, messages);
+            CompilationEngine.Apply(compilationCtx, selected);
+            return compilationCtx.Findings;
+        }
+
+        var model = compilation.GetSemanticModel(tree);
         return CatalogWalker.Walk(file, tree, model, selected, messages);
     }
 

@@ -45,6 +45,19 @@ internal static class Symbols
         return Implements(type, Disposable);
     }
 
+    public static bool DerivesFrom(ITypeSymbol? type, string typeName)
+    {
+        for (var current = type; current is not null; current = current.BaseType)
+        {
+            if (current.Name == typeName)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static int InheritanceDepth(WalkContext ctx, SyntaxNode node)
     {
         var symbol = Declared(ctx, node) as INamedTypeSymbol;

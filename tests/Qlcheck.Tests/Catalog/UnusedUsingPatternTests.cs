@@ -1,15 +1,25 @@
+using Qlcheck.Languages.CSharp.Catalog;
+
 namespace Qlcheck.Tests;
 
-public class UnusedUsingCheckTests
+public class UnusedUsingPatternTests
 {
     private const string CompilationName = "qlcheck";
 
     private static IReadOnlyList<Finding> Run(string source, string path = "Repo.cs")
     {
+        var included = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { path };
+        return RunWithIncluded(source, path, included);
+    }
+
+    private static IReadOnlyList<Finding> RunWithIncluded(string source, string path, HashSet<string> included)
+    {
         var file = new SourceFile(path, source);
         var compilation = CSharpCompilations.Create(CompilationName, [CSharpTrees.Parse(file)]);
-        var included = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { path };
-        return new UnusedUsingCheck().AnalyzeCompilation(compilation, included);
+        var messages = new Dictionary<string, string>(StringComparer.Ordinal) { ["unused-using"] = "message" };
+        var ctx = new CompilationContext(compilation, included, messages);
+        UnusedUsingPattern.Apply(ctx, "unused-using");
+        return ctx.Findings;
     }
 
     [Fact]
@@ -24,8 +34,7 @@ public class UnusedUsingCheckTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.Equal(UnusedUsingCheck.CheckId, finding.Check);
-        Assert.Equal(UnusedUsingCheck.Message, finding.Message);
+        Assert.Equal("unused-using", finding.Check);
         Assert.Equal(string.Empty, finding.Replacement);
     }
 
@@ -85,13 +94,9 @@ public class UnusedUsingCheckTests
             {
             }
             """;
-        var file = new SourceFile("Repo.cs", source);
-        var compilation = CSharpCompilations.Create(CompilationName, [CSharpTrees.Parse(file)]);
         var included = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Other.cs" };
 
-        var findings = new UnusedUsingCheck().AnalyzeCompilation(compilation, included);
-
-        Assert.Empty(findings);
+        Assert.Empty(RunWithIncluded(source, "Repo.cs", included));
     }
 
     [Fact]

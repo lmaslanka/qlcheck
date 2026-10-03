@@ -1,11 +1,14 @@
+using Qlcheck.Languages.CSharp.Catalog;
+
 namespace Qlcheck.Tests;
 
-public class StringEmptyCheckTests
+public class StringEmptyPatternTests
 {
-    private static IReadOnlyList<Finding> Run(string source, string path = "Repo.cs")
+    private static IReadOnlyList<Finding> Run(string source)
     {
-        var file = new SourceFile(path, source);
-        return new StringEmptyCheck().Analyze(file, CSharpTrees.Parse(file));
+        var ctx = MatchFixtures.Context(source);
+        StringEmptyPattern.Apply(ctx, MatchFixtures.Id);
+        return ctx.Findings;
     }
 
     [Fact]
@@ -19,8 +22,7 @@ public class StringEmptyCheckTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.Equal(StringEmptyCheck.CheckId, finding.Check);
-        Assert.Equal(StringEmptyCheck.Message, finding.Message);
+        Assert.Equal(MatchFixtures.Id, finding.Check);
         Assert.Equal("string.Empty", finding.Replacement);
     }
 

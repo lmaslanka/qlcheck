@@ -5,6 +5,47 @@ namespace Qlcheck.Tests;
 public class StylePatternsTests
 {
     [Fact]
+    public void BoolCompare_reports_comparison_against_a_plain_bool()
+    {
+        var ctx = MatchFixtures.Context("class C { void M(bool flag) { var x = flag == true; } }");
+        StylePatterns.BoolCompare(ctx, MatchFixtures.Id);
+        Assert.Single(ctx.Findings);
+    }
+
+    [Fact]
+    public void BoolCompare_ignores_comparison_against_a_nullable_bool()
+    {
+        var ctx = MatchFixtures.Context("class C { void M(bool? flag) { var x = flag == true; } }");
+        StylePatterns.BoolCompare(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void ForeachAdd_ignores_a_loop_body_that_awaits_before_adding()
+    {
+        var ctx = MatchFixtures.Context(
+            """
+            class Holder
+            {
+                async System.Threading.Tasks.Task M(int[] source, System.Collections.Generic.List<int> items)
+                {
+                    foreach (var item in source)
+                    {
+                        if (await Check(item))
+                        {
+                            items.Add(item);
+                        }
+                    }
+                }
+
+                System.Threading.Tasks.Task<bool> Check(int item) => System.Threading.Tasks.Task.FromResult(true);
+            }
+            """);
+        StylePatterns.ForeachAdd(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
     public void AbstractMixed_ignores_abstract_class_with_no_methods()
     {
         var ctx = MatchFixtures.Context("abstract class C { public abstract int P { get; } }");
@@ -163,6 +204,92 @@ public class StylePatternsTests
     {
         var ctx = MatchFixtures.Context("class C { void M(object x) { Equals(x); } }");
         StylePatterns.EqualsWithoutComparison(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void PublicConst_ignores_static_class_with_only_const_fields()
+    {
+        var ctx = MatchFixtures.Context("static class C { public const int N = 1; public const int M = 2; }");
+        StylePatterns.PublicConst(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void PublicConst_flags_static_class_with_const_and_other_members()
+    {
+        var ctx = MatchFixtures.Context("static class C { public const int N = 1; public static void M() { } }");
+        StylePatterns.PublicConst(ctx, MatchFixtures.Id);
+        Assert.NotEmpty(ctx.Findings);
+    }
+
+    [Fact]
+    public void PublicConst_flags_non_static_class_with_const_fields()
+    {
+        var ctx = MatchFixtures.Context("class C { public const int N = 1; }");
+        StylePatterns.PublicConst(ctx, MatchFixtures.Id);
+        Assert.NotEmpty(ctx.Findings);
+    }
+
+    [Fact]
+    public void PublicConst_ignores_const_used_in_a_case_label()
+    {
+        var ctx = MatchFixtures.Context(
+            "class C { public const string A = \"a\"; void M(string s) { switch (s) { case A: break; } } }");
+        StylePatterns.PublicConst(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void PublicConst_ignores_const_used_in_an_is_pattern()
+    {
+        var ctx = MatchFixtures.Context(
+            "class C { public const string A = \"a\"; public const string B = \"b\"; bool M(string s) => s is A or B; }");
+        StylePatterns.PublicConst(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void PublicConst_ignores_const_used_in_an_attribute_argument()
+    {
+        var ctx = MatchFixtures.Context(
+            "class C { public const string A = \"a\"; [System.Obsolete(A)] void M() { } }");
+        StylePatterns.PublicConst(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void PublicConst_flags_const_only_read_normally()
+    {
+        var ctx = MatchFixtures.Context(
+            "class C { public const string A = \"a\"; string M() => A; }");
+        StylePatterns.PublicConst(ctx, MatchFixtures.Id);
+        Assert.NotEmpty(ctx.Findings);
+    }
+
+    [Fact]
+    public void AssignedNotReadonly_flags_a_field_only_ever_assigned_in_the_constructor()
+    {
+        var ctx = MatchFixtures.Context("class C { private int n; C(int value) { n = value; } }");
+        StylePatterns.AssignedNotReadonly(ctx, MatchFixtures.Id);
+        Assert.NotEmpty(ctx.Findings);
+    }
+
+    [Fact]
+    public void AssignedNotReadonly_ignores_a_field_mutated_with_a_compound_assignment_later()
+    {
+        var ctx = MatchFixtures.Context(
+            "class C { private int n; C(int value) { n = value; } void Advance(int delta) { n += delta; } }");
+        StylePatterns.AssignedNotReadonly(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void AssignedNotReadonly_ignores_a_field_incremented_later()
+    {
+        var ctx = MatchFixtures.Context(
+            "class C { private int n; C(int value) { n = value; } void Advance() { n++; } }");
+        StylePatterns.AssignedNotReadonly(ctx, MatchFixtures.Id);
         Assert.Empty(ctx.Findings);
     }
 }

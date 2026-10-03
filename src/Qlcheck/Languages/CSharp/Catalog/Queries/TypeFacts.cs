@@ -61,8 +61,21 @@ internal static class TypeFacts
         return Names.TypeText(method.ReturnType) == VoidName;
     }
 
-    public static bool IsPublicField(SyntaxNode node) =>
-        node is FieldDeclarationSyntax && Shapes.HasModifier(node, SyntaxKind.PublicKeyword);
+    public static bool IsPublicField(WalkContext ctx, SyntaxNode node)
+    {
+        if (node is not FieldDeclarationSyntax field || !Shapes.HasModifier(node, SyntaxKind.PublicKeyword))
+        {
+            return false;
+        }
+
+        if (Shapes.HasModifier(node, SyntaxKind.ConstKeyword) && ConstantUsage.IsRequiredElsewhere(ctx, field))
+        {
+            return false;
+        }
+
+        var enclosingClass = Shapes.Enclosing(node, SyntaxKind.ClassDeclaration);
+        return enclosingClass is null || !Shapes.IsStaticConstantsHolderClass(enclosingClass);
+    }
 
     public static bool FieldNotPrivate(SyntaxNode node)
     {
@@ -71,12 +84,13 @@ internal static class TypeFacts
             return false;
         }
 
-        if (Shapes.HasModifier(node, SyntaxKind.PrivateKeyword))
+        if (Shapes.HasModifier(node, SyntaxKind.PrivateKeyword) || Shapes.HasModifier(node, SyntaxKind.ConstKeyword))
         {
             return false;
         }
 
-        return !Shapes.HasModifier(node, SyntaxKind.ConstKeyword);
+        var enclosingClass = Shapes.Enclosing(node, SyntaxKind.ClassDeclaration);
+        return enclosingClass is null || !Shapes.IsStaticConstantsHolderClass(enclosingClass);
     }
 
     public static bool Extends(SyntaxNode node, string name) => BaseType(node) == name;

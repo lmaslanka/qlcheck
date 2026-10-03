@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Qlcheck.Languages.CSharp.Catalog;
 using Qlcheck.Languages.CSharp.Catalog.Queries;
 
 namespace Qlcheck.Tests;
@@ -47,6 +48,31 @@ public class TypeFactsTests
         Assert.True(TypeFacts.Named(node, "Foo"));
         Assert.False(TypeFacts.Named(node, "Bar"));
     }
+
+    [Fact]
+    public void IsPublicField_flags_a_plain_public_field()
+    {
+        var ctx = MatchFixtures.Context("class C { public int Value; }");
+        Assert.True(TypeFacts.IsPublicField(ctx, FieldFrom(ctx)));
+    }
+
+    [Fact]
+    public void IsPublicField_ignores_a_const_used_in_a_case_label()
+    {
+        var ctx = MatchFixtures.Context(
+            "class C { public const string A = \"a\"; void M(string s) { switch (s) { case A: break; } } }");
+        Assert.False(TypeFacts.IsPublicField(ctx, FieldFrom(ctx)));
+    }
+
+    [Fact]
+    public void IsPublicField_flags_a_const_only_read_normally()
+    {
+        var ctx = MatchFixtures.Context("class C { public const string A = \"a\"; string M() => A; }");
+        Assert.True(TypeFacts.IsPublicField(ctx, FieldFrom(ctx)));
+    }
+
+    private static FieldDeclarationSyntax FieldFrom(WalkContext ctx) =>
+        ctx.Tree.GetRoot().DescendantNodes().OfType<FieldDeclarationSyntax>().First();
 
     private static ExpressionSyntax Expression(string expression)
     {

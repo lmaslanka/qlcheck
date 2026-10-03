@@ -1,34 +1,27 @@
+// Copyright (c) qlcheck contributors.
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace Qlcheck.Languages.CSharp.Checks.File;
+namespace Qlcheck.Languages.CSharp.Catalog;
 
-public sealed class OneTypePerFileCheck : IFileCheck
+internal static class OneTypePerFilePattern
 {
-    private const string CheckIdValue = "one-type-per-file";
-
     private const string GeneratedSuffix = ".g.cs";
 
     private const string DesignerSuffix = ".Designer.cs";
 
     private const int MinTopLevelTypes = 2;
 
-    public static string CheckId => CheckIdValue;
-
-    public string Id => CheckId;
-
-    public string Language => CSharpLanguage.LanguageId;
-
-    public IReadOnlyList<Finding> Analyze(SourceFile file, SyntaxTree tree)
+    public static void Apply(WalkContext ctx, string id)
     {
-        if (file.Path.EndsWith(GeneratedSuffix, StringComparison.OrdinalIgnoreCase)
-            || file.Path.EndsWith(DesignerSuffix, StringComparison.OrdinalIgnoreCase))
+        if (ctx.Path.EndsWith(GeneratedSuffix, StringComparison.OrdinalIgnoreCase)
+            || ctx.Path.EndsWith(DesignerSuffix, StringComparison.OrdinalIgnoreCase))
         {
-            return [];
+            return;
         }
 
-        var types = tree.GetRoot()
+        var types = ctx.Tree.GetRoot()
             .DescendantNodes()
             .OfType<BaseTypeDeclarationSyntax>()
             .Where(IsTopLevel)
@@ -40,16 +33,13 @@ public sealed class OneTypePerFileCheck : IFileCheck
 
         if (unique.Count < MinTopLevelTypes)
         {
-            return [];
+            return;
         }
 
-        return unique.Skip(1)
-            .Select(extra => Finding.At(
-                CheckId,
-                file.Path,
-                extra.Identifier,
-                $"Move '{extra.Identifier.Text}' into its own file."))
-            .ToList();
+        foreach (var extra in unique.Skip(1))
+        {
+            ctx.ReportCustom(id, extra.Identifier, $"Move '{extra.Identifier.Text}' into its own file.");
+        }
     }
 
     private static bool IsTopLevel(BaseTypeDeclarationSyntax type) =>

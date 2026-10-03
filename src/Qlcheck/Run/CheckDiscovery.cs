@@ -10,14 +10,8 @@ public static class CheckDiscovery
 
     private const string NoImplementation = "has no implementation.";
 
-    private static readonly Type[] CheckTypes =
-        [.. typeof(ICheck).Assembly.GetTypes().Where(IsHouseCheck)];
-
-    public static IReadOnlyList<ICheck> All()
-    {
-        var house = CheckTypes.Select(t => (ICheck)Activator.CreateInstance(t)!);
-        return house.Concat(Catalog.Checks).OrderBy(c => c.Id, StringComparer.Ordinal).ToList();
-    }
+    public static IReadOnlyList<ICheck> All() =>
+        Catalog.Checks.OrderBy(c => c.Id, StringComparer.Ordinal).ToList();
 
     internal static bool TrySelect(
         IReadOnlyList<string> checkIds,
@@ -34,11 +28,6 @@ public static class CheckDiscovery
         checks = all.Where(c => c.EnabledByDefault || enableIds.Contains(c.Id)).ToList();
         return RejectUnimplemented(checks, stderr);
     }
-
-    private static bool IsHouseCheck(Type type) =>
-        type is { IsClass: true, IsAbstract: false }
-        && typeof(ICheck).IsAssignableFrom(type)
-        && type.GetConstructor(Type.EmptyTypes) is not null;
 
     private static bool SelectExplicit(
         IReadOnlyList<ICheck> all,

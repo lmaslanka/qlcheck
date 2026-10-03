@@ -1,4 +1,4 @@
-namespace Qlcheck.Languages.CSharp.Checks.File;
+namespace Qlcheck.Languages.CSharp.Catalog;
 
 internal static class SqlText
 {
