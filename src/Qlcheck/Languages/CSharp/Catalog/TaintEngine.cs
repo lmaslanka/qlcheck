@@ -28,7 +28,7 @@ internal static class TaintEngine
         Row.TaintOn(
             "sql-injection",
             CheckClass.Taint,
-            ["SqlCommand", "NpgsqlCommand", "SqliteCommand", "MySqlCommand", "DbCommand"],
+            ["DbCommand"],
             "Execute", "ExecuteAsync", "ExecuteReader", "ExecuteReaderAsync", "ExecuteScalar", "ExecuteScalarAsync"),
         Row.Taint("ssrf", CheckClass.Taint, "GetAsync"),
         Row.Taint("ssrf-traversal", CheckClass.Taint, "SendAsync"),

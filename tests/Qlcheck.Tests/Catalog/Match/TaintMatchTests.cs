@@ -114,6 +114,26 @@ public class TaintMatchTests
     }
 
     [Fact]
+    public void ReportOnTypes_flags_tainted_argument_on_a_subtype_of_an_allowed_receiver_type()
+    {
+        var ctx = MatchFixtures.Context(
+            """
+            class DbCommand { public void Execute(string sql) { } }
+            class OracleCommand : DbCommand { }
+            class C
+            {
+                public void M(string userInput)
+                {
+                    var cmd = new OracleCommand();
+                    cmd.Execute(userInput);
+                }
+            }
+            """);
+        TaintMatch.ReportOnTypes(ctx, MatchFixtures.Id, ["DbCommand"], ["Execute"]);
+        Assert.Single(ctx.Findings);
+    }
+
+    [Fact]
     public void ReportOnTypes_ignores_a_call_on_a_receiver_type_that_is_not_allowed()
     {
         var ctx = MatchFixtures.Context(
@@ -132,16 +152,6 @@ public class TaintMatchTests
     }
 
     [Fact]
-    public void Report_ignores_a_non_string_typed_parameter()
-    {
-        var ctx = MatchFixtures.Context(
-            "class C { public System.Threading.Tasks.Task M(System.Net.Http.HttpClient client, System.Guid recordId) "
-            + "=> client.GetAsync(recordId); }");
-        TaintMatch.Report(ctx, MatchFixtures.Id, ["GetAsync"]);
-        Assert.Empty(ctx.Findings);
-    }
-
-    [Fact]
     public void Report_flags_a_string_typed_parameter_reaching_a_sink()
     {
         var ctx = MatchFixtures.Context(
@@ -152,12 +162,22 @@ public class TaintMatchTests
     }
 
     [Fact]
-    public void Report_ignores_a_nullable_non_string_typed_parameter()
+    public void Report_flags_a_non_string_typed_parameter_reaching_a_sink()
+    {
+        var ctx = MatchFixtures.Context(
+            "class C { public System.Threading.Tasks.Task M(System.Net.Http.HttpClient client, System.Guid recordId) "
+            + "=> client.GetAsync(recordId); }");
+        TaintMatch.Report(ctx, MatchFixtures.Id, ["GetAsync"]);
+        Assert.Single(ctx.Findings);
+    }
+
+    [Fact]
+    public void Report_flags_a_nullable_non_string_typed_parameter_reaching_a_sink()
     {
         var ctx = MatchFixtures.Context(
             "class C { object CommandText; public void M(int? recordId) { CommandText = recordId; } }");
         TaintMatch.Report(ctx, MatchFixtures.Id, ["CommandText"]);
-        Assert.Empty(ctx.Findings);
+        Assert.Single(ctx.Findings);
     }
 
     [Fact]

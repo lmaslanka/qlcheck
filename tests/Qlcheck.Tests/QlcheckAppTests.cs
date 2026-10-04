@@ -118,18 +118,6 @@ public class QlcheckAppTests : IDisposable
     }
 
     [Fact]
-    public void Inline_sql_flag_reports_layout_finding()
-    {
-        var file = Write("Repo.cs", InlineSql);
-
-        var stdout = new StringWriter();
-        var code = QlcheckApp.Run(["--inline-sql", file], stdout, new StringWriter());
-
-        Assert.Equal(ExitCode.Findings, code);
-        Assert.Contains("\"check\": \"inline-sql\"", stdout.ToString());
-    }
-
-    [Fact]
     public void Default_run_skips_coverage()
     {
         var file = Write("Repo.cs", "class C { void M() { } }\n");
@@ -161,44 +149,6 @@ public class QlcheckAppTests : IDisposable
 
         Assert.Equal(ExitCode.Error, code);
         Assert.Contains("No project for", stderr.ToString());
-    }
-
-    [Fact]
-    public void Default_run_skips_inline_sql()
-    {
-        var file = Write("Repo.cs", InlineSql);
-
-        var stdout = new StringWriter();
-        var code = QlcheckApp.Run([file], stdout, new StringWriter());
-
-        Assert.NotEqual(ExitCode.Error, code);
-        Assert.DoesNotContain("inline-sql", stdout.ToString());
-    }
-
-    [Fact]
-    public void Check_flag_enables_inline_sql_exclusively()
-    {
-        var file = Write("Repo.cs", InlineSql);
-
-        var stdout = new StringWriter();
-        var code = QlcheckApp.Run(["--check", "inline-sql", file], stdout, new StringWriter());
-
-        Assert.Equal(ExitCode.Findings, code);
-        var text = stdout.ToString();
-        Assert.Contains("\"check\": \"inline-sql\"", text);
-        Assert.DoesNotContain("magic-literal", text);
-    }
-
-    [Fact]
-    public void Check_filter_excludes_inline_sql_even_with_flag()
-    {
-        var file = Write("Repo.cs", InlineSql);
-
-        var stdout = new StringWriter();
-        var code = QlcheckApp.Run(["--check", "magic-literal", "--inline-sql", file], stdout, new StringWriter());
-
-        Assert.Equal(ExitCode.Clean, code);
-        Assert.DoesNotContain("inline-sql", stdout.ToString());
     }
 
     [Fact]
@@ -303,16 +253,72 @@ public class QlcheckAppTests : IDisposable
         Assert.DoesNotContain("Hidden.cs", text);
     }
 
-    private const string InlineSql =
-        """
-        class C
-        {
-            void M()
-            {
-                connection.QueryAsync("select 1");
-            }
-        }
-        """;
+    [Fact]
+    public void Unstaged_reports_only_modified_and_untracked_files()
+    {
+        Git("init", "-q");
+        Write("Committed.cs", Dirty);
+        Write("Modified.cs", "class C {}\n");
+        Git("add", ".");
+        Git("commit", "-q", "-m", "init");
+        Write("Modified.cs", Dirty);
+        Write("Staged.cs", Dirty);
+        Git("add", "Staged.cs");
+        Write("Untracked.cs", Dirty);
+
+        var stdout = new StringWriter();
+        var code = QlcheckApp.Run(["--unstaged", "--check", "magic-literal", _dir], stdout, new StringWriter());
+
+        Assert.Equal(ExitCode.Findings, code);
+        var text = stdout.ToString();
+        Assert.Contains("Modified.cs", text);
+        Assert.Contains("Untracked.cs", text);
+        Assert.DoesNotContain("Committed.cs", text);
+        Assert.DoesNotContain("Staged.cs", text);
+    }
+
+    [Fact]
+    public void Unstaged_stats_count_only_changed_files()
+    {
+        Git("init", "-q");
+        Write("Committed.cs", Dirty);
+        Git("add", ".");
+        Git("commit", "-q", "-m", "init");
+        Write("Untracked.cs", Dirty);
+
+        var stdout = new StringWriter();
+        var code = QlcheckApp.Run(["--unstaged", "--stats", "--check", "magic-literal", _dir], stdout, new StringWriter());
+
+        Assert.Equal(ExitCode.Findings, code);
+        Assert.Matches(@"Files checked\s+1", stdout.ToString());
+    }
+
+    [Fact]
+    public void Unstaged_is_clean_when_nothing_changed()
+    {
+        Git("init", "-q");
+        Write("Committed.cs", Dirty);
+        Git("add", ".");
+        Git("commit", "-q", "-m", "init");
+
+        var stdout = new StringWriter();
+        var code = QlcheckApp.Run(["--unstaged", _dir], stdout, new StringWriter());
+
+        Assert.Equal(ExitCode.Clean, code);
+        Assert.DoesNotContain("Committed.cs", stdout.ToString());
+    }
+
+    [Fact]
+    public void Unstaged_outside_a_git_repository_exits_two()
+    {
+        Write("Repo.cs", Dirty);
+        var stderr = new StringWriter();
+
+        var code = QlcheckApp.Run(["--unstaged", _dir], new StringWriter(), stderr);
+
+        Assert.Equal(ExitCode.Error, code);
+        Assert.Contains("--unstaged needs a git repository", stderr.ToString());
+    }
 
     private const string Dirty =
         """
@@ -324,6 +330,26 @@ public class QlcheckAppTests : IDisposable
             }
         }
         """;
+
+    private void Git(params string[] args)
+    {
+        var info = new System.Diagnostics.ProcessStartInfo("git")
+        {
+            WorkingDirectory = _dir,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+        };
+        foreach (var arg in (string[])["-c", "user.name=qlcheck", "-c", "user.email=qlcheck@example.com", "-c", "commit.gpgsign=false", .. args])
+        {
+            info.ArgumentList.Add(arg);
+        }
+
+        using var process = System.Diagnostics.Process.Start(info)!;
+        var stderr = process.StandardError.ReadToEnd();
+        process.StandardOutput.ReadToEnd();
+        process.WaitForExit();
+        Assert.True(process.ExitCode == 0, stderr);
+    }
 
     private string Write(string name, string text)
     {

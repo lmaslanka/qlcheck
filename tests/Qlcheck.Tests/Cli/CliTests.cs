@@ -75,4 +75,28 @@ public class CliTests
         Assert.Equal(["src"], options.Paths);
         Assert.Equal(string.Empty, stderr.ToString());
     }
+
+    [Fact]
+    public void TryParse_defaults_to_current_directory_with_unstaged()
+    {
+        var stderr = new StringWriter();
+
+        var options = CliModule.TryParse(["--unstaged"], stderr);
+
+        Assert.NotNull(options);
+        Assert.True(options.Unstaged);
+        Assert.Equal(["."], options.Paths);
+    }
+
+    [Fact]
+    public void TryParse_keeps_paths_with_unstaged()
+    {
+        var stderr = new StringWriter();
+
+        var options = CliModule.TryParse(["--unstaged", "src"], stderr);
+
+        Assert.NotNull(options);
+        Assert.True(options.Unstaged);
+        Assert.Equal(["src"], options.Paths);
+    }
 }

@@ -796,6 +796,29 @@ public class PatternsTests
         Assert.Empty(ctx.Findings);
     }
 
+    private const string ExceptionFirstLoggerInterface =
+        "interface ILogger { void Information(System.Exception ex, string template, params object[] args); void Information(string template, params object[] args); void Log(string message); void LogError(string message); }";
+
+    [Fact]
+    public void LogArgumentPosition_ignores_a_matching_argument_count_on_an_exception_first_overload()
+    {
+        var ctx = MatchFixtures.Context(
+            ExceptionFirstLoggerInterface
+            + "\nclass C { void M(ILogger logger, System.Exception ex, string id) { logger.Information(ex, \"Processing {Id}\", id); } }");
+        SymbolPatterns.LogArgumentPosition(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void ConstantLogTemplate_ignores_a_literal_template_on_an_exception_first_overload()
+    {
+        var ctx = MatchFixtures.Context(
+            ExceptionFirstLoggerInterface
+            + "\nclass C { void M(ILogger logger, System.Exception ex, string id) { logger.Information(ex, \"Processing {Id}\", id); } }");
+        SymbolPatterns.ConstantLogTemplate(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
+
     [Fact]
     public void LogPlaceholderOrder_reports_descending_numeric_placeholders()
     {
@@ -1213,6 +1236,21 @@ public class PatternsTests
     }
 
     [Fact]
+    public void DisposeOwnMembers_ignores_a_null_conditional_dispose_call()
+    {
+        var ctx = MatchFixtures.Context(
+            """
+            class C : System.IDisposable
+            {
+                System.IO.MemoryStream stream = new System.IO.MemoryStream();
+                public void Dispose() { stream?.Dispose(); System.GC.SuppressFinalize(this); }
+            }
+            """);
+        ResourcePatterns.DisposeOwnMembers(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
     public void NoDoubleDispose_reports_a_second_dispose_call_on_the_same_variable()
     {
         var ctx = MatchFixtures.Context(
@@ -1226,6 +1264,23 @@ public class PatternsTests
     {
         var ctx = MatchFixtures.Context(
             "class C { void M() { var s = new System.IO.MemoryStream(); s.Dispose(); } }");
+        ResourcePatterns.NoDoubleDispose(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void NoDoubleDispose_ignores_dispose_calls_in_mutually_exclusive_branches()
+    {
+        var ctx = MatchFixtures.Context(
+            """
+            class C
+            {
+                void M(System.IDisposable r, bool c)
+                {
+                    if (c) { r.Dispose(); } else { r.Dispose(); }
+                }
+            }
+            """);
         ResourcePatterns.NoDoubleDispose(ctx, MatchFixtures.Id);
         Assert.Empty(ctx.Findings);
     }
@@ -1436,6 +1491,24 @@ public class PatternsTests
             "class C { int M(int? x) => x == null || x.Value > 0; }");
         SymbolPatterns.NoEmptyNullableAccess(ctx, MatchFixtures.Id);
         Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void NoEmptyNullableAccess_ignores_an_early_return_guard_clause()
+    {
+        var ctx = MatchFixtures.Context(
+            "class C { int M(int? x) { if (!x.HasValue) return 0; return x.Value; } }");
+        SymbolPatterns.NoEmptyNullableAccess(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void NoEmptyNullableAccess_reports_access_after_an_unrelated_preceding_statement()
+    {
+        var ctx = MatchFixtures.Context(
+            "class C { int M(int? x) { System.Console.WriteLine(); return x.Value; } }");
+        SymbolPatterns.NoEmptyNullableAccess(ctx, MatchFixtures.Id);
+        Assert.Single(ctx.Findings);
     }
 
     [Fact]

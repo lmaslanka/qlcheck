@@ -16,9 +16,6 @@ _Avoid_: Violation, diagnostic, issue, error
 A programming language qlcheck can inspect. A Check runs only on files of its Language.
 _Avoid_: dialect, plugin
 
-**Inline SQL**:
-A SQL string that reaches a Dapper or ADO execution call. The inline-sql check is opt-in (`--inline-sql` or `--check inline-sql`).
-
 **Magic literal**:
 A numeric or string literal that should be a named const or enum member.
 

@@ -78,6 +78,22 @@ public class CatchFactsTests
     }
 
     [Fact]
+    public void Rethrows_is_true_when_the_sole_statement_throws_a_new_exception()
+    {
+        var node = FirstNode<CatchClauseSyntax>(
+            "class C { void M() { try { } catch (System.IO.IOException) { throw new System.Exception(\"failed\"); } } }");
+        Assert.True(CatchFacts.Rethrows(node));
+    }
+
+    [Fact]
+    public void Rethrows_is_false_for_a_bare_throw()
+    {
+        var node = FirstNode<CatchClauseSyntax>(
+            "class C { void M() { try { } catch (System.Exception) { throw; } } }");
+        Assert.False(CatchFacts.Rethrows(node));
+    }
+
+    [Fact]
     public void BareRethrow_is_false_for_non_throw_node()
     {
         Assert.False(CatchFacts.BareRethrow(Expression("1")));

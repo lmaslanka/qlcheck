@@ -123,10 +123,15 @@ internal static class Shapes
     private static bool IsConstOrStaticDataMember(SyntaxNode member) =>
         member switch
         {
-            FieldDeclarationSyntax => HasModifier(member, SyntaxKind.ConstKeyword) || HasModifier(member, SyntaxKind.StaticKeyword),
-            PropertyDeclarationSyntax => HasModifier(member, SyntaxKind.StaticKeyword),
+            FieldDeclarationSyntax => HasModifier(member, SyntaxKind.ConstKeyword)
+                || (HasModifier(member, SyntaxKind.StaticKeyword) && HasModifier(member, SyntaxKind.ReadOnlyKeyword)),
+            PropertyDeclarationSyntax => HasModifier(member, SyntaxKind.StaticKeyword) && IsGetOnly((PropertyDeclarationSyntax)member),
             _ => false,
         };
+
+    private static bool IsGetOnly(PropertyDeclarationSyntax property) =>
+        property.AccessorList is { Accessors: [{ } accessor] } && accessor.IsKind(SyntaxKind.GetAccessorDeclaration)
+        || property.AccessorList is null && property.ExpressionBody is not null;
 
     public static int LineSpan(SyntaxNode node)
     {

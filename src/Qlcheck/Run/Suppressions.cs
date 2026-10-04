@@ -60,7 +60,8 @@ internal static partial class Suppressions
             return false;
         }
 
-        return today.DayNumber - checkedOn.DayNumber <= SuppressionDays;
+        var age = today.DayNumber - checkedOn.DayNumber;
+        return age >= 0 && age <= SuppressionDays;
     }
 
     [GeneratedRegex(

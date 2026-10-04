@@ -7,7 +7,6 @@ internal sealed class CatalogCheck : ICheck
 {
     private static readonly HashSet<string> OptInIds = new(StringComparer.Ordinal)
     {
-        "inline-sql",
         "coverage",
     };
 

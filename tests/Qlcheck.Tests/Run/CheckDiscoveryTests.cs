@@ -8,7 +8,6 @@ public class CheckDiscoveryTests
     public void Discovers_migrated_file_checks_as_catalog_rows()
     {
         var checks = CheckDiscovery.All();
-        Assert.Contains(checks, c => c.Id == "inline-sql" && c is CatalogCheck && !c.EnabledByDefault);
         Assert.Contains(checks, c => c.Id == "magic-literal" && c is CatalogCheck && c.EnabledByDefault);
         Assert.Contains(checks, c => c.Id == "string-concat" && c is CatalogCheck && c.EnabledByDefault);
         Assert.Contains(checks, c => c.Id == "string-empty" && c is CatalogCheck && c.EnabledByDefault);

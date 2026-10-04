@@ -32,7 +32,7 @@ public class CoverageReportTests
         var stdout = new StringWriter();
 
         Qlcheck.Report.Report.Write(
-            new Qlcheck.Cli.Cli.Options(false, false, [], [], [DisplayPath]),
+            new Qlcheck.Cli.Cli.Options(false, false, false, [], [], [DisplayPath]),
             [loaded],
             [Coverage],
             [finding],
@@ -55,7 +55,7 @@ public class CoverageReportTests
         var stdout = new StringWriter();
 
         Qlcheck.Report.Report.Write(
-            new Qlcheck.Cli.Cli.Options(false, false, [], [], [DisplayPath]),
+            new Qlcheck.Cli.Cli.Options(false, false, false, [], [], [DisplayPath]),
             [loaded],
             [Coverage],
             [],
@@ -76,7 +76,7 @@ public class CoverageReportTests
         var stdout = new StringWriter();
 
         Qlcheck.Report.Report.Write(
-            new Qlcheck.Cli.Cli.Options(true, false, [], [], [DisplayPath]),
+            new Qlcheck.Cli.Cli.Options(true, false, false, [], [], [DisplayPath]),
             [],
             [Coverage],
             [finding],

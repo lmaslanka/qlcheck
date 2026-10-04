@@ -89,7 +89,6 @@ internal static class SyntaxEngine
         Row.Handle("indent-conditional", CheckClass.Syntax, StylePatterns.IndentConditional),
         Row.Handle("indexer-string-or-int", CheckClass.Syntax, StylePatterns.BadIndexer),
         Row.Invoke("indexof-not-positive", CheckClass.Syntax, "IndexOf"),
-        Row.Handle("inline-sql", CheckClass.Syntax, InlineSqlPattern.Apply),
         Row.Handle("integer-division-to-float", CheckClass.Syntax, StylePatterns.IntDivToFloat),
         Row.Handle("interface-method-callable", CheckClass.Syntax, StylePatterns.ExplicitInterface),
         Row.Handle("literal-suffix-upper", CheckClass.Syntax, Patterns.LiteralSuffix),

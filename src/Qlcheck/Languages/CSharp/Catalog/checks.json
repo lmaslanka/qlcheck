@@ -564,10 +564,6 @@
     "message": "An inheritance chain is deeper than 5. Flatten it."
   },
   {
-    "id": "inline-sql",
-    "message": "Inline SQL must be a C# raw string literal with qlfmt layout."
-  },
-  {
     "id": "integer-division-to-float",
     "message": "Results of integer division should not be assigned to floating point variables."
   },

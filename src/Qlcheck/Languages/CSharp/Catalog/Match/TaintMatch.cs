@@ -32,7 +32,7 @@ internal static class TaintMatch
             }
 
             var receiverType = Symbols.TypeOf(ctx, member.Expression);
-            if (receiverType is null || !types.Contains(receiverType.Name))
+            if (receiverType is null || !types.Any(type => Symbols.DerivesFrom(receiverType, type)))
             {
                 continue;
             }
@@ -147,14 +147,10 @@ internal static class TaintMatch
         {
             if (parameter.Identifier.Text == identifier.Identifier.Text)
             {
-                return IsStringTyped(parameter.Type);
+                return true;
             }
         }
 
         return false;
     }
-
-    private static bool IsStringTyped(TypeSyntax? type) =>
-        type is PredefinedTypeSyntax predefined && predefined.Keyword.IsKind(SyntaxKind.StringKeyword)
-        || type is NullableTypeSyntax nullable && IsStringTyped(nullable.ElementType);
 }

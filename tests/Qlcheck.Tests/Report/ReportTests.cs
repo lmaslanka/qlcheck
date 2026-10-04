@@ -5,7 +5,7 @@ namespace Qlcheck.Tests;
 public class ReportTests
 {
     private static Qlcheck.Cli.Cli.Options Options(bool human = false, bool stats = false) =>
-        new(human, stats, [], [], []);
+        new(human, stats, false, [], [], []);
 
     [Fact]
     public void Write_prints_a_blank_line_before_stats_when_human_output_produced_findings()

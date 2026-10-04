@@ -1,4 +1,5 @@
 // Copyright (c) qlcheck contributors.
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -300,85 +301,100 @@ internal static class SymbolPatterns
 
     private static string? TemplateArgument(InvocationExpressionSyntax invocation)
     {
-        foreach (var argument in invocation.ArgumentList.Arguments)
+        var index = TemplateArgumentIndex(invocation);
+        return index < 0 ? null : ((LiteralExpressionSyntax)invocation.ArgumentList.Arguments[index].Expression).Token.ValueText;
+    }
+
+    private static int TemplateArgumentIndex(InvocationExpressionSyntax invocation)
+    {
+        for (var i = 0; i < invocation.ArgumentList.Arguments.Count; i++)
         {
-            if (argument.Expression is LiteralExpressionSyntax literal && literal.IsKind(SyntaxKind.StringLiteralExpression))
+            if (invocation.ArgumentList.Arguments[i].Expression is LiteralExpressionSyntax literal
+                && literal.IsKind(SyntaxKind.StringLiteralExpression))
             {
-                return literal.Token.ValueText;
+                return i;
             }
         }
 
-        return null;
+        return -1;
     }
 
     private static List<string> ExtractPlaceholders(string template) =>
         PlaceholderPattern.Matches(template).Select(match => match.Groups[1].Value).ToList();
 
-    public static void ConstantLogTemplate(WalkContext ctx, string id)
+    private sealed record LogCall(InvocationExpressionSyntax Invocation, int TemplateIndex, string? Template, List<string> Placeholders);
+
+    private static readonly ConditionalWeakTable<WalkContext, List<LogCall>> LogCallCache = new();
+
+    private static List<LogCall> LogCalls(WalkContext ctx)
     {
+        if (LogCallCache.TryGetValue(ctx, out var cached))
+        {
+            return cached;
+        }
+
+        var calls = new List<LogCall>();
         foreach (var node in ctx.Nodes(SyntaxKind.InvocationExpression))
         {
-            if (node is not InvocationExpressionSyntax invocation
-                || !IsLoggerCall(ctx, invocation, InformationMethodName)
-                || invocation.ArgumentList.Arguments.Count == 0)
+            if (node is not InvocationExpressionSyntax invocation || !IsLoggerCall(ctx, invocation, InformationMethodName))
             {
                 continue;
             }
 
-            if (invocation.ArgumentList.Arguments[0].Expression is not LiteralExpressionSyntax literal
-                || !literal.IsKind(SyntaxKind.StringLiteralExpression))
+            var templateIndex = TemplateArgumentIndex(invocation);
+            var template = TemplateArgument(invocation);
+            var placeholders = template is null ? [] : ExtractPlaceholders(template);
+            calls.Add(new LogCall(invocation, templateIndex, template, placeholders));
+        }
+
+        LogCallCache.Add(ctx, calls);
+        return calls;
+    }
+
+    public static void ConstantLogTemplate(WalkContext ctx, string id)
+    {
+        foreach (var call in LogCalls(ctx))
+        {
+            if (call.Invocation.ArgumentList.Arguments.Count > 0 && call.Template is null)
             {
-                ctx.Report(id, invocation);
+                ctx.Report(id, call.Invocation);
             }
         }
     }
 
     public static void LogArgumentPosition(WalkContext ctx, string id)
     {
-        foreach (var node in ctx.Nodes(SyntaxKind.InvocationExpression))
+        foreach (var call in LogCalls(ctx))
         {
-            if (node is not InvocationExpressionSyntax invocation || !IsLoggerCall(ctx, invocation, InformationMethodName))
+            if (call.TemplateIndex < 0 || call.Template is null)
             {
                 continue;
             }
 
-            var template = TemplateArgument(invocation);
-            if (template is null)
+            var argumentCount = call.Invocation.ArgumentList.Arguments.Count - call.TemplateIndex - 1;
+            if (call.Placeholders.Count != argumentCount)
             {
-                continue;
-            }
-
-            var placeholderCount = ExtractPlaceholders(template).Count;
-            var argumentCount = invocation.ArgumentList.Arguments.Count - 1;
-            if (placeholderCount != argumentCount)
-            {
-                ctx.Report(id, invocation);
+                ctx.Report(id, call.Invocation);
             }
         }
     }
 
     public static void LogPlaceholderOrder(WalkContext ctx, string id)
     {
-        foreach (var node in ctx.Nodes(SyntaxKind.InvocationExpression))
+        foreach (var call in LogCalls(ctx))
         {
-            if (node is not InvocationExpressionSyntax invocation || !IsLoggerCall(ctx, invocation, InformationMethodName))
+            if (call.Template is null)
             {
                 continue;
             }
 
-            var template = TemplateArgument(invocation);
-            if (template is null)
-            {
-                continue;
-            }
-
-            var numeric = ExtractPlaceholders(template)
+            var numeric = call.Placeholders
                 .Where(placeholder => int.TryParse(placeholder, out _))
                 .Select(int.Parse)
                 .ToList();
             if (numeric.Count > 1 && !IsAscending(numeric))
             {
-                ctx.Report(id, invocation);
+                ctx.Report(id, call.Invocation);
             }
         }
     }
@@ -398,41 +414,28 @@ internal static class SymbolPatterns
 
     public static void LogPlaceholderPascalCase(WalkContext ctx, string id)
     {
-        foreach (var node in ctx.Nodes(SyntaxKind.InvocationExpression))
+        foreach (var call in LogCalls(ctx))
         {
-            if (node is not InvocationExpressionSyntax invocation || !IsLoggerCall(ctx, invocation, InformationMethodName))
+            if (call.Template is null)
             {
                 continue;
             }
 
-            var template = TemplateArgument(invocation);
-            if (template is null)
-            {
-                continue;
-            }
-
-            var hasBadCasing = ExtractPlaceholders(template)
-                .Any(name => !int.TryParse(name, out _) && !TypeFacts.IsPascal(name));
+            var hasBadCasing = call.Placeholders.Any(name => !int.TryParse(name, out _) && !TypeFacts.IsPascal(name));
             if (hasBadCasing)
             {
-                ctx.Report(id, invocation);
+                ctx.Report(id, call.Invocation);
             }
         }
     }
 
     public static void LogTemplateSyntax(WalkContext ctx, string id)
     {
-        foreach (var node in ctx.Nodes(SyntaxKind.InvocationExpression))
+        foreach (var call in LogCalls(ctx))
         {
-            if (node is not InvocationExpressionSyntax invocation || !IsLoggerCall(ctx, invocation, InformationMethodName))
+            if (call.Template is not null && !HasBalancedPlaceholders(call.Template))
             {
-                continue;
-            }
-
-            var template = TemplateArgument(invocation);
-            if (template is not null && !HasBalancedPlaceholders(template))
-            {
-                ctx.Report(id, invocation);
+                ctx.Report(id, call.Invocation);
             }
         }
     }
@@ -465,23 +468,16 @@ internal static class SymbolPatterns
 
     public static void UniqueLogPlaceholder(WalkContext ctx, string id)
     {
-        foreach (var node in ctx.Nodes(SyntaxKind.InvocationExpression))
+        foreach (var call in LogCalls(ctx))
         {
-            if (node is not InvocationExpressionSyntax invocation || !IsLoggerCall(ctx, invocation, InformationMethodName))
+            if (call.Template is null)
             {
                 continue;
             }
 
-            var template = TemplateArgument(invocation);
-            if (template is null)
+            if (call.Placeholders.Count != call.Placeholders.Distinct(StringComparer.Ordinal).Count())
             {
-                continue;
-            }
-
-            var placeholders = ExtractPlaceholders(template);
-            if (placeholders.Count != placeholders.Distinct(StringComparer.Ordinal).Count())
-            {
-                ctx.Report(id, invocation);
+                ctx.Report(id, call.Invocation);
             }
         }
     }
@@ -925,8 +921,38 @@ internal static class SymbolPatterns
             }
         }
 
+        return IsGuardedByPrecedingStatement(member, baseText);
+    }
+
+    private static bool IsGuardedByPrecedingStatement(MemberAccessExpressionSyntax member, string baseText)
+    {
+        var statement = member.Ancestors().OfType<StatementSyntax>().FirstOrDefault(s => s.Parent is BlockSyntax);
+        if (statement is null || statement.Parent is not BlockSyntax block)
+        {
+            return false;
+        }
+
+        var index = block.Statements.IndexOf(statement);
+        for (var i = 0; i < index; i++)
+        {
+            if (block.Statements[i] is IfStatementSyntax ifStatement
+                && IsNullDenial(ifStatement.Condition.ToString(), baseText)
+                && AlwaysExits(ifStatement.Statement))
+            {
+                return true;
+            }
+        }
+
         return false;
     }
+
+    private static bool AlwaysExits(StatementSyntax statement) =>
+        statement switch
+        {
+            BlockSyntax block => block.Statements.Count > 0 && AlwaysExits(block.Statements[^1]),
+            ReturnStatementSyntax or ThrowStatementSyntax or ContinueStatementSyntax or BreakStatementSyntax => true,
+            _ => false,
+        };
 
     private static bool IsNullGuard(string condition, string baseText) =>
         condition.Contains($"{baseText}.HasValue", StringComparison.Ordinal)

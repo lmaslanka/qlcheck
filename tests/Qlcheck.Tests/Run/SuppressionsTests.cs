@@ -66,6 +66,14 @@ public class SuppressionsTests
     }
 
     [Fact]
+    public void Filter_keeps_a_finding_with_a_future_dated_comment()
+    {
+        var future = DateTime.UtcNow.AddDays(1).ToString("yyyy-MM-dd");
+        var text = $"var creds = new SigningCredentials(); // qlcheck-ignore: {CheckId} checked-on:{future}\n";
+        Assert.Single(Filter(text, line: 1));
+    }
+
+    [Fact]
     public void Filter_keeps_a_finding_with_a_malformed_date()
     {
         var text = $"var creds = new SigningCredentials(); // qlcheck-ignore: {CheckId} checked-on:not-a-date\n";

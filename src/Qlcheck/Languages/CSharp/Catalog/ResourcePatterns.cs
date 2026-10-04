@@ -275,9 +275,8 @@ internal static class ResourcePatterns
             var disposedNames = disposeMethod.Body!.DescendantNodes()
                 .OfType<InvocationExpressionSyntax>()
                 .Where(invocation => Names.Invocation(invocation) == DisposeMethodName)
-                .Select(invocation => invocation.Expression)
-                .OfType<MemberAccessExpressionSyntax>()
-                .Select(member => Names.Simple(member.Expression))
+                .Select(DisposeReceiverName)
+                .OfType<string>()
                 .ToHashSet(StringComparer.Ordinal);
 
             if (disposableFieldNames.Any(name => !disposedNames.Contains(name)))
@@ -286,6 +285,15 @@ internal static class ResourcePatterns
             }
         }
     }
+
+    private static string? DisposeReceiverName(InvocationExpressionSyntax invocation) =>
+        invocation.Expression switch
+        {
+            MemberAccessExpressionSyntax member => Names.Simple(member.Expression),
+            MemberBindingExpressionSyntax when invocation.Parent is ConditionalAccessExpressionSyntax conditional
+                && conditional.WhenNotNull == invocation => Names.Simple(conditional.Expression),
+            _ => null,
+        };
 
     // A class is only responsible for disposing the disposable fields it *owns* -- the ones it
     // creates itself. A field assigned straight from a constructor parameter (dependency
@@ -357,7 +365,7 @@ internal static class ResourcePatterns
             }
 
             var disposeCallsByReceiver = block.Statements
-                .SelectMany(statement => statement.DescendantNodesAndSelf())
+                .SelectMany(statement => statement.DescendantNodesAndSelf(descendIntoChildren: n => n is not IfStatementSyntax))
                 .OfType<InvocationExpressionSyntax>()
                 .Where(invocation => Names.Invocation(invocation) == DisposeMethodName
                     && invocation.Expression is MemberAccessExpressionSyntax member

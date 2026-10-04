@@ -664,11 +664,6 @@
     "good": "namespace Sample\n{\n    class A0 { }\n    class A1 : A0 { }\n}\n",
     "path": "Repo.cs"
   },
-  "inline-sql": {
-    "bad": "class C\n{\n    void M()\n    {\n        connection.QueryAsync(\"select 1\");\n    }\n}\n",
-    "good": "class C\n{\n    void M()\n    {\n        Console.WriteLine(\"select 1\");\n    }\n}\n",
-    "path": "Repo.cs"
-  },
   "integer-division-to-float": {
     "bad": "class Holder\n{\n    void M(int a, int b)\n    {\n        float n = a / b;\n    }\n}\n",
     "good": "class Holder\n{\n    void M(int a, int b)\n    {\n        int n = a / b;\n    }\n}\n",
@@ -2135,7 +2130,7 @@
     "path": "Repo.cs"
   },
   "sql-injection": {
-    "bad": "namespace Sample\n{\n    class SqlCommand\n    {\n        public void Execute(string sql) { }\n    }\n\n    class C\n    {\n        public void M(string input)\n        {\n            var cmd = new SqlCommand();\n            cmd.Execute(input);\n        }\n    }\n}\n",
+    "bad": "namespace Sample\n{\n    class DbCommand\n    {\n    }\n\n    class SqlCommand : DbCommand\n    {\n        public void Execute(string sql) { }\n    }\n\n    class C\n    {\n        public void M(string input)\n        {\n            var cmd = new SqlCommand();\n            cmd.Execute(input);\n        }\n    }\n}\n",
     "good": "namespace Sample\n{\n    class UpdateRequisitionCommand\n    {\n        public void Execute(string recordId) { }\n    }\n\n    class C\n    {\n        public void M(UpdateRequisitionCommand updateRequisitionCommand, string recordId)\n        {\n            updateRequisitionCommand.Execute(recordId);\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },

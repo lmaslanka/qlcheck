@@ -111,6 +111,30 @@ public class ShapesTests
         Assert.Equal(0, Shapes.ParameterCount(node));
     }
 
+    [Fact]
+    public void IsStaticConstantsHolderClass_is_true_for_const_and_readonly_static_fields()
+    {
+        var node = FirstNode<ClassDeclarationSyntax>(
+            "static class Globals { public const int Max = 10; public static readonly int Min = 0; }");
+        Assert.True(Shapes.IsStaticConstantsHolderClass(node));
+    }
+
+    [Fact]
+    public void IsStaticConstantsHolderClass_is_false_for_a_mutable_static_field()
+    {
+        var node = FirstNode<ClassDeclarationSyntax>(
+            "static class Globals { public static int Counter; public const int Max = 10; }");
+        Assert.False(Shapes.IsStaticConstantsHolderClass(node));
+    }
+
+    [Fact]
+    public void IsStaticConstantsHolderClass_is_false_for_a_static_property_with_a_setter()
+    {
+        var node = FirstNode<ClassDeclarationSyntax>(
+            "static class Globals { public static int Counter { get; set; } }");
+        Assert.False(Shapes.IsStaticConstantsHolderClass(node));
+    }
+
     private static T FirstNode<T>(string source, int skip = 0)
         where T : SyntaxNode =>
         CSharpSyntaxTree.ParseText(source).GetRoot().DescendantNodes().OfType<T>().Skip(skip).First();

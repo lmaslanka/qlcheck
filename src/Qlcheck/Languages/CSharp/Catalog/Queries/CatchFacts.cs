@@ -43,17 +43,7 @@ internal static class CatchFacts
             return false;
         }
 
-        if (clause.Block.Statements[0] is not ThrowStatementSyntax thrown)
-        {
-            return false;
-        }
-
-        if (thrown.Expression is null)
-        {
-            return true;
-        }
-
-        return thrown.Expression is IdentifierNameSyntax;
+        return clause.Block.Statements[0] is ThrowStatementSyntax thrown && thrown.Expression is not null;
     }
 
     public static bool BareRethrow(SyntaxNode node)
