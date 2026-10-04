@@ -77,26 +77,26 @@ public class CliTests
     }
 
     [Fact]
-    public void TryParse_defaults_to_current_directory_with_unstaged()
+    public void TryParse_defaults_to_current_directory_with_uncommitted()
     {
         var stderr = new StringWriter();
 
-        var options = CliModule.TryParse(["--unstaged"], stderr);
+        var options = CliModule.TryParse(["--uncommitted"], stderr);
 
         Assert.NotNull(options);
-        Assert.True(options.Unstaged);
+        Assert.True(options.Uncommitted);
         Assert.Equal(["."], options.Paths);
     }
 
     [Fact]
-    public void TryParse_keeps_paths_with_unstaged()
+    public void TryParse_keeps_paths_with_uncommitted()
     {
         var stderr = new StringWriter();
 
-        var options = CliModule.TryParse(["--unstaged", "src"], stderr);
+        var options = CliModule.TryParse(["--uncommitted", "src"], stderr);
 
         Assert.NotNull(options);
-        Assert.True(options.Unstaged);
+        Assert.True(options.Uncommitted);
         Assert.Equal(["src"], options.Paths);
     }
 }

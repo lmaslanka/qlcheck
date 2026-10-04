@@ -254,7 +254,7 @@ public class QlcheckAppTests : IDisposable
     }
 
     [Fact]
-    public void Unstaged_reports_only_modified_and_untracked_files()
+    public void Uncommitted_reports_modified_staged_and_untracked_files()
     {
         Git("init", "-q");
         Write("Committed.cs", Dirty);
@@ -267,18 +267,18 @@ public class QlcheckAppTests : IDisposable
         Write("Untracked.cs", Dirty);
 
         var stdout = new StringWriter();
-        var code = QlcheckApp.Run(["--unstaged", "--check", "magic-literal", _dir], stdout, new StringWriter());
+        var code = QlcheckApp.Run(["--uncommitted", "--check", "magic-literal", _dir], stdout, new StringWriter());
 
         Assert.Equal(ExitCode.Findings, code);
         var text = stdout.ToString();
         Assert.Contains("Modified.cs", text);
+        Assert.Contains("Staged.cs", text);
         Assert.Contains("Untracked.cs", text);
         Assert.DoesNotContain("Committed.cs", text);
-        Assert.DoesNotContain("Staged.cs", text);
     }
 
     [Fact]
-    public void Unstaged_stats_count_only_changed_files()
+    public void Uncommitted_stats_count_only_changed_files()
     {
         Git("init", "-q");
         Write("Committed.cs", Dirty);
@@ -287,14 +287,14 @@ public class QlcheckAppTests : IDisposable
         Write("Untracked.cs", Dirty);
 
         var stdout = new StringWriter();
-        var code = QlcheckApp.Run(["--unstaged", "--stats", "--check", "magic-literal", _dir], stdout, new StringWriter());
+        var code = QlcheckApp.Run(["--uncommitted", "--stats", "--check", "magic-literal", _dir], stdout, new StringWriter());
 
         Assert.Equal(ExitCode.Findings, code);
         Assert.Matches(@"Files checked\s+1", stdout.ToString());
     }
 
     [Fact]
-    public void Unstaged_is_clean_when_nothing_changed()
+    public void Uncommitted_is_clean_when_nothing_changed()
     {
         Git("init", "-q");
         Write("Committed.cs", Dirty);
@@ -302,22 +302,22 @@ public class QlcheckAppTests : IDisposable
         Git("commit", "-q", "-m", "init");
 
         var stdout = new StringWriter();
-        var code = QlcheckApp.Run(["--unstaged", _dir], stdout, new StringWriter());
+        var code = QlcheckApp.Run(["--uncommitted", _dir], stdout, new StringWriter());
 
         Assert.Equal(ExitCode.Clean, code);
         Assert.DoesNotContain("Committed.cs", stdout.ToString());
     }
 
     [Fact]
-    public void Unstaged_outside_a_git_repository_exits_two()
+    public void Uncommitted_outside_a_git_repository_exits_two()
     {
         Write("Repo.cs", Dirty);
         var stderr = new StringWriter();
 
-        var code = QlcheckApp.Run(["--unstaged", _dir], new StringWriter(), stderr);
+        var code = QlcheckApp.Run(["--uncommitted", _dir], new StringWriter(), stderr);
 
         Assert.Equal(ExitCode.Error, code);
-        Assert.Contains("--unstaged needs a git repository", stderr.ToString());
+        Assert.Contains("--uncommitted needs a git repository", stderr.ToString());
     }
 
     private const string Dirty =

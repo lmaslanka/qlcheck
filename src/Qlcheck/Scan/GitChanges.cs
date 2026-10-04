@@ -14,16 +14,19 @@ internal static class GitChanges
 
     private static readonly string[] UnstagedArgs = ["diff", "--name-only", "--relative", "--diff-filter=d", "-z"];
 
+    private static readonly string[] StagedArgs = ["diff", "--cached", "--name-only", "--relative", "--diff-filter=d", "-z"];
+
     private static readonly string[] UntrackedArgs = ["ls-files", "--others", "--exclude-standard", "-z"];
 
-    // Full paths of files under the given paths with unstaged changes: tracked files modified in the
-    // working tree but not staged, plus untracked files git does not ignore. Deleted files are left out.
-    public static IReadOnlySet<string> Unstaged(IReadOnlyList<string> paths)
+    // Full paths of files under the given paths that are not committed: tracked files with staged
+    // or unstaged changes, plus untracked files git does not ignore. Deleted files are left out.
+    public static IReadOnlySet<string> Uncommitted(IReadOnlyList<string> paths)
     {
         var changed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var dir in paths.Select(DirectoryOf).Distinct(StringComparer.Ordinal))
         {
             AddAll(changed, dir, UnstagedArgs);
+            AddAll(changed, dir, StagedArgs);
             AddAll(changed, dir, UntrackedArgs);
         }
 
@@ -74,7 +77,7 @@ internal static class GitChanges
         process.WaitForExit();
         if (process.ExitCode != 0)
         {
-            throw new InvalidOperationException($"--unstaged needs a git repository: {stderr.ToString().Trim()}");
+            throw new InvalidOperationException($"--uncommitted needs a git repository: {stderr.ToString().Trim()}");
         }
 
         return stdout;

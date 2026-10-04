@@ -28,7 +28,7 @@ public static class QlcheckApp
         {
             languages = LanguageDiscovery.All();
             loaded = SourceScan.Load(options.Paths, path => languages.Any(language => language.Matches(path)));
-            reported = options.Unstaged ? OnlyUnstaged(loaded, options.Paths) : loaded;
+            reported = options.Uncommitted ? OnlyUncommitted(loaded, options.Paths) : loaded;
         }
         catch (CaughtException ex)
         {
@@ -50,7 +50,7 @@ public static class QlcheckApp
 
         timer.Stop();
 
-        if (options.Unstaged)
+        if (options.Uncommitted)
         {
             run = InFiles(run, reported);
         }
@@ -61,12 +61,12 @@ public static class QlcheckApp
     }
 
     // Checks still run on every loaded file so cross-file Checks see the whole tree; only what is
-    // reported is narrowed to files with unstaged changes.
-    private static IReadOnlyList<SourceScan.LoadedSource> OnlyUnstaged(
+    // reported is narrowed to files that are not committed.
+    private static IReadOnlyList<SourceScan.LoadedSource> OnlyUncommitted(
         IReadOnlyList<SourceScan.LoadedSource> loaded,
         IReadOnlyList<string> paths)
     {
-        var changed = GitChanges.Unstaged(paths);
+        var changed = GitChanges.Uncommitted(paths);
         return loaded.Where(source => changed.Contains(source.FullPath)).ToList();
     }
 
