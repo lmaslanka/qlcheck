@@ -230,6 +230,169 @@ public class CatalogTests
     }
 
     [Fact]
+    public void CatchOnlyRethrow_fires_only_on_the_bare_rethrow_case()
+    {
+        const string Source = """
+            namespace X;
+
+            using System;
+            using System.Threading.Tasks;
+
+            public sealed class StoreReadException : Exception
+            {
+                public StoreReadException()
+                {
+                }
+
+                public StoreReadException(string message) : base(message)
+                {
+                }
+
+                public StoreReadException(string message, Exception innerException) : base(message, innerException)
+                {
+                }
+            }
+
+            public static class Wrap
+            {
+                public static async Task<int> ReadAsync(Func<Task<int>> query, int page)
+                {
+                    try
+                    {
+                        return await query();
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        throw new StoreReadException($"Read(page: {page}) failed - {ex.Message}", ex);
+                    }
+                }
+
+                public static void Validate(Action check)
+                {
+                    try
+                    {
+                        check();
+                    }
+                    catch (Exception exception) when (exception is ArgumentException or FormatException)
+                    {
+                        throw new StoreReadException("Token rejected.");
+                    }
+                }
+
+                public static void Rethrow(Action work)
+                {
+                    try
+                    {
+                        work();
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        throw;
+                    }
+                }
+            }
+
+            """;
+
+        var findings = Run("catch-only-rethrow", Source, "Wrap.cs");
+
+        Assert.Single(findings);
+        var lines = Source.Replace("\r\n", "\n").Split('\n');
+        Assert.Equal("catch (InvalidOperationException)", lines[findings[0].Line - 1].Trim());
+    }
+
+    [Fact]
+    public void Ssrf_checks_match_the_regression_report_for_Repo_and_Client()
+    {
+        const string RepoSource = """
+            namespace X;
+
+            using System.Threading.Tasks;
+
+            public interface IDocumentRepository
+            {
+                Task<string> GetAsync(long requisitionId, long documentId);
+            }
+
+            public sealed class GetDocumentQuery
+            {
+                private readonly IDocumentRepository repository;
+
+                public GetDocumentQuery(IDocumentRepository repository)
+                {
+                    this.repository = repository;
+                }
+
+                public async Task<string> QueryAsync(long requisitionId, long documentId)
+                {
+                    return await repository.GetAsync(requisitionId, documentId);
+                }
+            }
+
+            """;
+
+        const string ClientSource = """
+            namespace X;
+
+            using System;
+            using System.Net.Http;
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            public sealed class ClientOptions
+            {
+                public string BaseUrl { get; init; } = "https://control-plane.example";
+                public string ApplicationCode { get; init; } = "app";
+            }
+
+            public sealed class ControlClient
+            {
+                private readonly HttpClient httpClient;
+                private readonly ClientOptions options;
+
+                public ControlClient(HttpClient httpClient, ClientOptions options)
+                {
+                    this.httpClient = httpClient;
+                    this.options = options;
+                    this.httpClient.BaseAddress = new Uri($"{options.BaseUrl.TrimEnd('/')}/", UriKind.Absolute);
+                }
+
+                public async Task<string> GetTenantAsync(Guid tenantId, CancellationToken cancellationToken)
+                {
+                    return await httpClient.GetStringAsync(
+                        $"api/applications/{Uri.EscapeDataString(options.ApplicationCode)}/tenants/{tenantId:D}",
+                        cancellationToken);
+                }
+
+                public async Task<int> SendAsync(Guid tenantId, CancellationToken cancellationToken)
+                {
+                    using var request = new HttpRequestMessage(HttpMethod.Post, $"api/tenants/{tenantId:D}/invitations");
+                    using var response = await httpClient.SendAsync(request, cancellationToken);
+                    return (int)response.StatusCode;
+                }
+
+                public async Task<string> UnsafeAsync(string userSuppliedUrl, CancellationToken cancellationToken)
+                {
+                    return await httpClient.GetStringAsync(userSuppliedUrl, cancellationToken);
+                }
+            }
+
+            """;
+
+        Assert.Empty(Run("ssrf", RepoSource, "Repo.cs"));
+
+        var ssrfFindings = Run("ssrf", ClientSource, "Client.cs");
+        Assert.Single(ssrfFindings);
+
+        var clientLines = ClientSource.Replace("\r\n", "\n").Split('\n');
+        Assert.Equal(
+            "return await httpClient.GetStringAsync(userSuppliedUrl, cancellationToken);",
+            clientLines[ssrfFindings[0].Line - 1].Trim());
+
+        Assert.Empty(Run("ssrf-traversal", ClientSource, "Client.cs"));
+    }
+
+    [Fact]
     public void Project_reference_resolves_a_type_the_platform_compilation_misses()
     {
         var dir = Directory.CreateTempSubdirectory("qlcheck_ref_");

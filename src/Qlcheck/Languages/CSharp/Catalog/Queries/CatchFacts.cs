@@ -33,17 +33,29 @@ internal static class CatchFacts
 
     public static bool Rethrows(SyntaxNode node)
     {
-        if (node is not CatchClauseSyntax clause)
+        if (node is not CatchClauseSyntax clause || clause.Filter is not null)
         {
             return false;
         }
 
-        if (clause.Block.Statements.Count != 1)
+        if (clause.Block.Statements.Count != 1
+            || clause.Block.Statements[0] is not ThrowStatementSyntax thrown)
         {
             return false;
         }
 
-        return clause.Block.Statements[0] is ThrowStatementSyntax thrown && thrown.Expression is not null;
+        if (thrown.Expression is null)
+        {
+            return true;
+        }
+
+        if (thrown.Expression is not IdentifierNameSyntax identifier)
+        {
+            return false;
+        }
+
+        return clause.Declaration is { Identifier.ValueText: var caught }
+            && caught == identifier.Identifier.ValueText;
     }
 
     public static bool BareRethrow(SyntaxNode node)

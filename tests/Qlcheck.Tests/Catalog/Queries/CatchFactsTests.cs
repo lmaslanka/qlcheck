@@ -78,18 +78,34 @@ public class CatchFactsTests
     }
 
     [Fact]
-    public void Rethrows_is_true_when_the_sole_statement_throws_a_new_exception()
+    public void Rethrows_is_false_when_the_sole_statement_throws_a_new_exception()
     {
         var node = FirstNode<CatchClauseSyntax>(
             "class C { void M() { try { } catch (System.IO.IOException) { throw new System.Exception(\"failed\"); } } }");
+        Assert.False(CatchFacts.Rethrows(node));
+    }
+
+    [Fact]
+    public void Rethrows_is_true_for_a_bare_throw()
+    {
+        var node = FirstNode<CatchClauseSyntax>(
+            "class C { void M() { try { } catch (System.Exception) { throw; } } }");
         Assert.True(CatchFacts.Rethrows(node));
     }
 
     [Fact]
-    public void Rethrows_is_false_for_a_bare_throw()
+    public void Rethrows_is_false_when_throwing_an_unrelated_identifier()
     {
         var node = FirstNode<CatchClauseSyntax>(
-            "class C { void M() { try { } catch (System.Exception) { throw; } } }");
+            "class C { void M() { System.Exception other = null; try { } catch (System.Exception ex) { throw other; } } }");
+        Assert.False(CatchFacts.Rethrows(node));
+    }
+
+    [Fact]
+    public void Rethrows_is_false_when_the_catch_has_a_when_filter()
+    {
+        var node = FirstNode<CatchClauseSyntax>(
+            "class C { void M() { try { } catch (System.Exception ex) when (ex != null) { throw; } } }");
         Assert.False(CatchFacts.Rethrows(node));
     }
 

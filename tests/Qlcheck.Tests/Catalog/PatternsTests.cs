@@ -1898,4 +1898,100 @@ public class PatternsTests
         Patterns.TestCase(ctx, MatchFixtures.Id);
         Assert.Single(ctx.Findings);
     }
+
+    [Fact]
+    public void CatchOnlyRethrow_ignores_a_catch_that_wraps_with_a_new_exception_and_inner_exception()
+    {
+        var ctx = MatchFixtures.Context(
+            """
+            class C
+            {
+                void M(System.Action work)
+                {
+                    try
+                    {
+                        work();
+                    }
+                    catch (System.InvalidOperationException ex)
+                    {
+                        throw new System.ApplicationException("failed", ex);
+                    }
+                }
+            }
+            """);
+        Patterns.CatchOnlyRethrow(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void CatchOnlyRethrow_ignores_a_filtered_catch_that_translates_to_a_new_exception()
+    {
+        var ctx = MatchFixtures.Context(
+            """
+            class C
+            {
+                void M(System.Action check)
+                {
+                    try
+                    {
+                        check();
+                    }
+                    catch (System.Exception exception) when (exception is System.ArgumentException)
+                    {
+                        throw new System.ApplicationException("Token rejected.");
+                    }
+                }
+            }
+            """);
+        Patterns.CatchOnlyRethrow(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void CatchOnlyRethrow_flags_a_catch_whose_only_statement_is_a_bare_rethrow()
+    {
+        var ctx = MatchFixtures.Context(
+            """
+            class C
+            {
+                void M(System.Action work)
+                {
+                    try
+                    {
+                        work();
+                    }
+                    catch (System.InvalidOperationException)
+                    {
+                        throw;
+                    }
+                }
+            }
+            """);
+        Patterns.CatchOnlyRethrow(ctx, MatchFixtures.Id);
+        Assert.Single(ctx.Findings);
+    }
+
+    [Fact]
+    public void CatchOnlyRethrow_flags_a_catch_that_only_rethrows_the_caught_variable()
+    {
+        var ctx = MatchFixtures.Context(
+            """
+            class C
+            {
+                void M(System.Action work)
+                {
+                    try
+                    {
+                        work();
+                    }
+                    catch (System.InvalidOperationException ex)
+                    {
+                        throw ex;
+                    }
+                }
+            }
+            """);
+        Patterns.CatchOnlyRethrow(ctx, MatchFixtures.Id);
+        Assert.Single(ctx.Findings);
+    }
 }
