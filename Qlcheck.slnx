@@ -4,5 +4,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Qlcheck.Tests/Qlcheck.Tests.csproj" />
+    <Project Path="tests/Qlcheck.ArchitectureTests/Qlcheck.ArchitectureTests.csproj" />
   </Folder>
 </Solution>
