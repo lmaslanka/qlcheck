@@ -54,7 +54,7 @@ internal static partial class Suppressions
 
         var match = Pattern().Match(lines[index]);
         if (!match.Success
-            || !string.Equals(match.Groups[RuleGroup].Value, checkId, StringComparison.OrdinalIgnoreCase)
+            || !ContainsRule(match.Groups[RuleGroup].Value, checkId)
             || !DateOnly.TryParse(match.Groups[DateGroup].Value, out var checkedOn))
         {
             return false;
@@ -64,8 +64,14 @@ internal static partial class Suppressions
         return age >= 0 && age <= SuppressionDays;
     }
 
+    private static bool ContainsRule(string rules, string checkId) =>
+        rules
+            .Split(',')
+            .Select(rule => rule.Trim())
+            .Any(rule => string.Equals(rule, checkId, StringComparison.OrdinalIgnoreCase));
+
     [GeneratedRegex(
-        @"qlcheck-ignore:\s*(?<rule>[a-z0-9-]+)\s+checked-on:\s*(?<date>\d{4}-\d{2}-\d{2})",
+        @"qlcheck-ignore:\s*(?<rule>[a-z0-9-]+(?:\s*,\s*[a-z0-9-]+)*)\s+checked-on:\s*(?<date>\d{4}-\d{2}-\d{2})",
         RegexOptions.IgnoreCase)]
     private static partial Regex Pattern();
 }

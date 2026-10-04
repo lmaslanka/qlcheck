@@ -95,4 +95,32 @@ public class SuppressionsTests
         var text = $"// qlcheck-ignore: {CheckId} checked-on:{today}\n\nvar creds = new SigningCredentials();\n";
         Assert.Single(Filter(text, line: 3));
     }
+
+    [Fact]
+    public void Filter_suppresses_a_finding_listed_first_in_a_comma_separated_rule_list()
+    {
+        var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        var text =
+            $"var creds = new SigningCredentials(); // qlcheck-ignore: {CheckId}, sql-injection checked-on:{today}\n";
+        Assert.Empty(Filter(text, line: 1));
+    }
+
+    [Fact]
+    public void Filter_suppresses_a_finding_listed_second_in_a_comma_separated_rule_list()
+    {
+        var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        var text =
+            $"var creds = new SigningCredentials(); // qlcheck-ignore: sql-injection, {CheckId} checked-on:{today}\n";
+        Assert.Empty(Filter(text, line: 1));
+    }
+
+    [Fact]
+    public void Filter_keeps_a_finding_not_named_in_a_comma_separated_rule_list()
+    {
+        var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        var text =
+            "var creds = new SigningCredentials(); "
+            + $"// qlcheck-ignore: sql-injection, no-console-log checked-on:{today}\n";
+        Assert.Single(Filter(text, line: 1));
+    }
 }

@@ -149,6 +149,87 @@ public class CatalogTests
     }
 
     [Fact]
+    public void Record_Exception_call_does_not_trigger_exception_checks()
+    {
+        const string Source = """
+            namespace X;
+
+            using Xunit;
+
+            public sealed class ATests
+            {
+                [Fact]
+                public void Run_Valid_DoesNotThrow()
+                {
+                    var exception = Record.Exception(() => Work());
+
+                    Assert.Null(exception);
+                }
+
+                private static void Work()
+                {
+                }
+            }
+
+            """;
+
+        string[] ids =
+        [
+            "exception-name-extends",
+            "exception-public",
+            "exception-standard-constructors",
+            "throw-created-exception",
+        ];
+
+        foreach (var id in ids)
+        {
+            Assert.Empty(Run(id, Source, "Repro/ATests.cs"));
+        }
+    }
+
+    [Fact]
+    public void Theory_only_test_class_satisfies_test_has_case()
+    {
+        const string Source = """
+            namespace X;
+
+            using Xunit;
+
+            public sealed class T1Tests
+            {
+                [Theory]
+                [InlineData(1)]
+                public void Run_Value_Works(int value)
+                {
+                    Assert.Equal(1, value);
+                }
+            }
+
+            """;
+
+        var findings = Run("test-has-case", Source, "MeebliApi.Tests/X/T1Tests.cs");
+
+        Assert.Empty(findings);
+    }
+
+    [Fact]
+    public void Test_class_with_no_test_methods_still_reports_test_has_case()
+    {
+        const string Source = """
+            namespace X;
+
+            public sealed class EmptyTests
+            {
+            }
+
+            """;
+
+        var findings = Run("test-has-case", Source, "MeebliApi.Tests/X/EmptyTests.cs");
+
+        Assert.Contains(findings, finding => finding.Check == "test-has-case");
+    }
+
+    [Fact]
     public void Project_reference_resolves_a_type_the_platform_compilation_misses()
     {
         var dir = Directory.CreateTempSubdirectory("qlcheck_ref_");

@@ -13,8 +13,6 @@ internal static class SyntaxEngine
 
     private const string DateTimeType = "DateTime";
 
-    private const string ExceptionType = "Exception";
-
     private const string HttpGetAttribute = "HttpGet";
 
     private const string ValueKeyword = "value";
@@ -59,9 +57,9 @@ internal static class SyntaxEngine
         Row.Ident("escape-field-keyword", CheckClass.Syntax, "field"),
         Row.Ident("escape-partial-return", CheckClass.Syntax, "partial"),
         Row.Ident("escape-scoped", CheckClass.Syntax, "scoped"),
-        Row.Invoke("exception-name-extends", CheckClass.Syntax, ExceptionType),
-        Row.Invoke("exception-public", CheckClass.Syntax, ExceptionType),
-        Row.Invoke("exception-standard-constructors", CheckClass.Syntax, ExceptionType),
+        Row.Handle("exception-name-extends", CheckClass.Syntax, Patterns.ExceptionNameExtends),
+        Row.Handle("exception-public", CheckClass.Syntax, Patterns.ExceptionPublic),
+        Row.Handle("exception-standard-constructors", CheckClass.Syntax, Patterns.ExceptionStandardConstructors),
         Row.Handle("explicit-whitespace", CheckClass.Syntax, Patterns.ExplicitWhitespace),
         Row.Handle("extension-own-namespace", CheckClass.Syntax, StylePatterns.ExtensionObject),
         Row.Handle("field-private", CheckClass.Syntax, Patterns.FieldPrivate),
@@ -268,7 +266,7 @@ internal static class SyntaxEngine
         Row.Test("test-has-case", CheckClass.Syntax, Patterns.TestCase),
         Row.Test("test-signature", CheckClass.Syntax, Patterns.TestSignature),
         Row.Invoke("testable-clock", CheckClass.Syntax, NowProperty, DateTimeType),
-        Row.Invoke("throw-created-exception", CheckClass.Syntax, ExceptionType),
+        Row.Handle("throw-created-exception", CheckClass.Syntax, Patterns.ThrowCreatedException),
         Row.Invoke("timezone-id-direct", CheckClass.Syntax, "FindSystemTimeZoneById"),
         Row.Handle("tostring-not-null", CheckClass.Syntax, StylePatterns.StringToString),
         Row.Invoke("type-name-not-namespace", CheckClass.Syntax, "System"),

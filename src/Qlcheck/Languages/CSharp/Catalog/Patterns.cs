@@ -32,6 +32,12 @@ internal static class Patterns
 
     private const string TestMethodName = "TestMethod";
 
+    private const string DataTestMethodName = "DataTestMethod";
+
+    private const string TestCaseName = "TestCase";
+
+    private const string TestCaseSourceName = "TestCaseSource";
+
     private const string IgnoreName = "Ignore";
 
     private const string SkipName = "Skip";
@@ -148,6 +154,57 @@ internal static class Patterns
 
     public static void ThrowNotImplemented(WalkContext ctx, string id) =>
         ThrowNamed(ctx, id, NotImplementedName);
+
+    public static void ExceptionNameExtends(WalkContext ctx, string id)
+    {
+        foreach (var node in ExceptionNamedTypes(ctx))
+        {
+            var baseType = TypeFacts.BaseType(node);
+            if (baseType.Length == 0 || !baseType.EndsWith(ExceptionName, StringComparison.Ordinal))
+            {
+                ctx.Report(id, node);
+            }
+        }
+    }
+
+    public static void ExceptionPublic(WalkContext ctx, string id)
+    {
+        foreach (var node in ExceptionNamedTypes(ctx))
+        {
+            if (!Shapes.HasModifier(node, SyntaxKind.PublicKeyword))
+            {
+                ctx.Report(id, node);
+            }
+        }
+    }
+
+    public static void ExceptionStandardConstructors(WalkContext ctx, string id)
+    {
+        foreach (var node in ExceptionNamedTypes(ctx))
+        {
+            if (MissingStandardConstructors(node))
+            {
+                ctx.Report(id, node);
+            }
+        }
+    }
+
+    public static void ThrowCreatedException(WalkContext ctx, string id)
+    {
+        foreach (var node in ctx.Nodes(SyntaxKind.ObjectCreationExpression).Concat(
+            ctx.Nodes(SyntaxKind.ImplicitObjectCreationExpression)))
+        {
+            if (node.Parent is not ExpressionStatementSyntax)
+            {
+                continue;
+            }
+
+            if (IsExceptionCreation(ctx, node))
+            {
+                ctx.Report(id, node);
+            }
+        }
+    }
 
     public static void BareRethrow(WalkContext ctx, string id) =>
         Report(ctx, id, SyntaxKind.ThrowStatement, CatchFacts.BareRethrow);
@@ -605,6 +662,47 @@ internal static class Patterns
                 ctx.Report(id, node);
             }
         }
+    }
+
+    private static IEnumerable<SyntaxNode> ExceptionNamedTypes(WalkContext ctx) =>
+        ctx.Nodes(SyntaxKind.ClassDeclaration)
+            .Concat(ctx.Nodes(SyntaxKind.RecordDeclaration))
+            .Where(node => TypeFacts.EndsWith(node, ExceptionName));
+
+    private static bool MissingStandardConstructors(SyntaxNode node)
+    {
+        var constructors = node.ChildNodes().OfType<ConstructorDeclarationSyntax>().ToList();
+        var hasParameterless = constructors.Any(ctor => ctor.ParameterList.Parameters.Count == 0);
+        var hasMessage = constructors.Any(ctor =>
+            ctor.ParameterList.Parameters.Count == 1
+            && IsStringParameter(ctor.ParameterList.Parameters[0]));
+        var hasMessageAndInner = constructors.Any(ctor =>
+            ctor.ParameterList.Parameters.Count == 2
+            && IsStringParameter(ctor.ParameterList.Parameters[0])
+            && IsExceptionParameter(ctor.ParameterList.Parameters[1]));
+
+        return !(hasParameterless && hasMessage && hasMessageAndInner);
+    }
+
+    private const string StringTypeName = "string";
+
+    private static bool IsStringParameter(ParameterSyntax parameter) =>
+        parameter.Type is not null && Names.TypeText(parameter.Type) == StringTypeName;
+
+    private static bool IsExceptionParameter(ParameterSyntax parameter) =>
+        parameter.Type is not null
+        && Names.TypeText(parameter.Type).EndsWith(ExceptionName, StringComparison.Ordinal);
+
+    private static bool IsExceptionCreation(WalkContext ctx, SyntaxNode creation)
+    {
+        var type = Symbols.TypeOf(ctx, creation);
+        if (type is not null && type.TypeKind != TypeKind.Error)
+        {
+            return Symbols.DerivesFrom(type, ExceptionName);
+        }
+
+        return creation is ObjectCreationExpressionSyntax typed
+            && Names.TypeText(typed.Type).EndsWith(ExceptionName, StringComparison.Ordinal);
     }
 
     private static void Suffix(WalkContext ctx, string id, string suffix)
@@ -1070,7 +1168,7 @@ internal static class Patterns
 
         foreach (var child in node.DescendantNodes())
         {
-            if (Names.Attribute(child) is FactName or TestName or TestMethodName)
+            if (IsTestCaseAttribute(Names.Attribute(child)))
             {
                 return false;
             }
@@ -1078,6 +1176,12 @@ internal static class Patterns
 
         return true;
     }
+
+    private static bool IsTestCaseAttribute(string name) =>
+        name is FactName or TheoryName or TestName or TestCaseName or TestCaseSourceName
+            or TestMethodName or DataTestMethodName
+        || name.EndsWith(FactName, StringComparison.Ordinal)
+        || name.EndsWith(TheoryName, StringComparison.Ordinal);
 
     private static bool BadTestSignature(SyntaxNode node)
     {

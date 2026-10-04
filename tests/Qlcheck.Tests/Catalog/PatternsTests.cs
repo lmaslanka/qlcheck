@@ -1715,4 +1715,187 @@ public class PatternsTests
         Patterns.DisposeCreated(ctx, MatchFixtures.Id);
         Assert.NotEmpty(ctx.Findings);
     }
+
+    [Fact]
+    public void ExceptionChecks_ignore_a_call_to_Record_Exception()
+    {
+        var ctx = MatchFixtures.Context(
+            """
+            class C
+            {
+                void M()
+                {
+                    var exception = Record.Exception(() => Work());
+                }
+
+                static void Work() { }
+            }
+            """);
+
+        Patterns.ExceptionNameExtends(ctx, MatchFixtures.Id);
+        Patterns.ExceptionPublic(ctx, MatchFixtures.Id);
+        Patterns.ExceptionStandardConstructors(ctx, MatchFixtures.Id);
+        Patterns.ThrowCreatedException(ctx, MatchFixtures.Id);
+
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void ExceptionNameExtends_flags_a_class_named_like_exception_that_does_not_extend_exception()
+    {
+        var ctx = MatchFixtures.Context("public class FooException { }");
+        Patterns.ExceptionNameExtends(ctx, MatchFixtures.Id);
+        Assert.Single(ctx.Findings);
+    }
+
+    [Fact]
+    public void ExceptionNameExtends_ignores_a_class_that_extends_exception()
+    {
+        var ctx = MatchFixtures.Context("public class FooException : Exception { public FooException() { } }");
+        Patterns.ExceptionNameExtends(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void ExceptionPublic_flags_an_internal_exception_type()
+    {
+        var ctx = MatchFixtures.Context("internal sealed class FooException : Exception { }");
+        Patterns.ExceptionPublic(ctx, MatchFixtures.Id);
+        Assert.Single(ctx.Findings);
+    }
+
+    [Fact]
+    public void ExceptionPublic_ignores_a_public_exception_type()
+    {
+        var ctx = MatchFixtures.Context("public sealed class FooException : Exception { }");
+        Patterns.ExceptionPublic(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void ExceptionStandardConstructors_flags_a_type_missing_the_standard_constructors()
+    {
+        var ctx = MatchFixtures.Context("public class FooException : Exception { }");
+        Patterns.ExceptionStandardConstructors(ctx, MatchFixtures.Id);
+        Assert.Single(ctx.Findings);
+    }
+
+    [Fact]
+    public void ExceptionStandardConstructors_ignores_a_type_with_all_standard_constructors()
+    {
+        var ctx = MatchFixtures.Context(
+            """
+            public class FooException : Exception
+            {
+                public FooException() { }
+
+                public FooException(string message) : base(message) { }
+
+                public FooException(string message, Exception innerException) : base(message, innerException) { }
+            }
+            """);
+        Patterns.ExceptionStandardConstructors(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void ThrowCreatedException_flags_a_discarded_exception_object()
+    {
+        var ctx = MatchFixtures.Context("class C { void M() { new InvalidOperationException(\"x\"); } }");
+        Patterns.ThrowCreatedException(ctx, MatchFixtures.Id);
+        Assert.Single(ctx.Findings);
+    }
+
+    [Fact]
+    public void ThrowCreatedException_ignores_an_exception_that_is_thrown()
+    {
+        var ctx = MatchFixtures.Context("class C { void M() { throw new InvalidOperationException(\"x\"); } }");
+        Patterns.ThrowCreatedException(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void TestCase_recognizes_a_theory_as_a_test_case()
+    {
+        var ctx = MatchFixtures.Context(
+            """
+            class WidgetTests
+            {
+                [Theory]
+                [InlineData(1)]
+                void M(int value) { }
+            }
+            """);
+        Patterns.TestCase(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void TestCase_recognizes_a_fully_qualified_theory_attribute()
+    {
+        var ctx = MatchFixtures.Context(
+            """
+            class WidgetTests
+            {
+                [Xunit.TheoryAttribute]
+                [Xunit.InlineData(1)]
+                void M(int value) { }
+            }
+            """);
+        Patterns.TestCase(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void TestCase_recognizes_nunit_test_case_attributes()
+    {
+        var ctx = MatchFixtures.Context(
+            """
+            class WidgetTests
+            {
+                [TestCase(1)]
+                void M(int value) { }
+            }
+            """);
+        Patterns.TestCase(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void TestCase_recognizes_mstest_data_test_method_attribute()
+    {
+        var ctx = MatchFixtures.Context(
+            """
+            class WidgetTests
+            {
+                [DataTestMethod]
+                void M(int value) { }
+            }
+            """);
+        Patterns.TestCase(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void TestCase_recognizes_a_skippable_fact_by_name_convention()
+    {
+        var ctx = MatchFixtures.Context(
+            """
+            class WidgetTests
+            {
+                [SkippableFact]
+                void M() { }
+            }
+            """);
+        Patterns.TestCase(ctx, MatchFixtures.Id);
+        Assert.Empty(ctx.Findings);
+    }
+
+    [Fact]
+    public void TestCase_still_flags_a_test_class_with_no_test_methods()
+    {
+        var ctx = MatchFixtures.Context("class WidgetTests { void M() { } }");
+        Patterns.TestCase(ctx, MatchFixtures.Id);
+        Assert.Single(ctx.Findings);
+    }
 }

@@ -455,18 +455,18 @@
     "path": "Repo.cs"
   },
   "exception-name-extends": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Exception();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "namespace Sample\n{\n    public class FooException\n    {\n    }\n}\n",
+    "good": "namespace Sample\n{\n    public class FooException : Exception\n    {\n        public FooException() { }\n\n        public FooException(string message) : base(message) { }\n\n        public FooException(string message, Exception innerException) : base(message, innerException) { }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "exception-public": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Exception();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "namespace Sample\n{\n    internal sealed class FooException : Exception\n    {\n        public FooException() { }\n\n        public FooException(string message) : base(message) { }\n\n        public FooException(string message, Exception innerException) : base(message, innerException) { }\n    }\n}\n",
+    "good": "namespace Sample\n{\n    public sealed class FooException : Exception\n    {\n        public FooException() { }\n\n        public FooException(string message) : base(message) { }\n\n        public FooException(string message, Exception innerException) : base(message, innerException) { }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "exception-standard-constructors": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Exception();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "namespace Sample\n{\n    public class FooException : Exception\n    {\n    }\n}\n",
+    "good": "namespace Sample\n{\n    public class FooException : Exception\n    {\n        public FooException() { }\n\n        public FooException(string message) : base(message) { }\n\n        public FooException(string message, Exception innerException) : base(message, innerException) { }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "explicit-whitespace": {
@@ -2236,7 +2236,7 @@
   },
   "test-has-case": {
     "bad": "namespace Sample\n{\n    class WidgetTests\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class WidgetTests\n    {\n        [Fact]\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "good": "namespace Sample\n{\n    class WidgetTests\n    {\n        [Theory]\n        [InlineData(1)]\n        void M(int value)\n        {\n            return;\n        }\n    }\n}\n",
     "path": "SampleTests.cs"
   },
   "test-signature": {
@@ -2255,8 +2255,8 @@
     "path": "Repo.cs"
   },
   "throw-created-exception": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Exception();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            new InvalidOperationException(\"x\");\n        }\n    }\n}\n",
+    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            throw new InvalidOperationException(\"x\");\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "timezone-id-direct": {
