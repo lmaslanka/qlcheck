@@ -9,7 +9,8 @@ internal static class CheckRun
     public static RunResult Execute(
         IReadOnlyList<SourceScan.LoadedSource> loaded,
         IReadOnlyList<ICheck> checks,
-        IReadOnlyList<ILanguage> languages)
+        IReadOnlyList<ILanguage> languages,
+        DisableFiles? disabled = null)
     {
         EnsureOwned(checks, languages);
         EnsureOneLanguage(loaded, languages);
@@ -34,7 +35,26 @@ internal static class CheckRun
             coverage.AddRange(result.Coverage);
         }
 
-        return new RunResult(Suppressions.Filter(findings, loaded), coverage);
+        var kept = Suppressions.Filter(findings, loaded);
+        return new RunResult(disabled is null ? kept : WithoutDisabled(kept, loaded, disabled), coverage);
+    }
+
+    // Cross-file Checks still saw files in a disabled tree; only their Findings there are dropped.
+    private static IReadOnlyList<Finding> WithoutDisabled(
+        IReadOnlyList<Finding> findings,
+        IReadOnlyList<SourceScan.LoadedSource> loaded,
+        DisableFiles disabled)
+    {
+        var fullPaths = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var source in loaded)
+        {
+            fullPaths[source.File.Path] = source.FullPath;
+        }
+
+        return findings
+            .Where(finding => !fullPaths.TryGetValue(finding.File, out var fullPath)
+                              || !disabled.IsDisabled(finding.Check, fullPath))
+            .ToList();
     }
 
     private static void EnsureOwned(IReadOnlyList<ICheck> checks, IReadOnlyList<ILanguage> languages)

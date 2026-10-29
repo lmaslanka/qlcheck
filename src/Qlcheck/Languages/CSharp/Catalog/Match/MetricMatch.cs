@@ -25,7 +25,6 @@ internal static class MetricMatch
             [MetricNames.Coupling] = Coupling,
             [MetricNames.Arity] = Arity,
             [MetricNames.CaseLength] = CaseLength,
-            [MetricNames.DuplicateString] = DuplicateString,
             [MetricNames.Expression] = Expression,
             [MetricNames.SwitchCases] = SwitchCases,
             [MetricNames.Logs] = Logs,
@@ -153,23 +152,6 @@ internal static class MetricMatch
         }
     }
 
-    private static void DuplicateString(WalkContext ctx, string id)
-    {
-        var counts = CountStrings(ctx);
-        foreach (var node in ctx.Nodes(SyntaxKind.StringLiteralExpression))
-        {
-            if (node is not LiteralExpressionSyntax literal)
-            {
-                continue;
-            }
-
-            if (counts.TryGetValue(literal.Token.ValueText, out var count) && count >= Thresholds.DuplicateString)
-            {
-                ctx.Report(id, node, Detail(count));
-            }
-        }
-    }
-
     private static void Expression(WalkContext ctx, string id)
     {
         foreach (var node in ctx.Nodes(SyntaxKind.IfStatement))
@@ -253,23 +235,6 @@ internal static class MetricMatch
         {
             ctx.Report(id, statement.Condition, Detail(score));
         }
-    }
-
-    private static Dictionary<string, int> CountStrings(WalkContext ctx)
-    {
-        var counts = new Dictionary<string, int>(StringComparer.Ordinal);
-        foreach (var node in ctx.Nodes(SyntaxKind.StringLiteralExpression))
-        {
-            if (node is not LiteralExpressionSyntax literal || literal.Token.ValueText.Length == 0)
-            {
-                continue;
-            }
-
-            var value = literal.Token.ValueText;
-            counts[value] = counts.TryGetValue(value, out var count) ? count + 1 : 1;
-        }
-
-        return counts;
     }
 
     private static string Detail(int score) => $"{OpenDetail}{score}{CloseDetail}";

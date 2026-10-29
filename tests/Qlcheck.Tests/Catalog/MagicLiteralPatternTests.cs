@@ -8,6 +8,10 @@ public class MagicLiteralPatternTests
 
     private const string Pending = "pending";
 
+    private const int Twice = 2;
+
+    private const int Thrice = 3;
+
     private static IReadOnlyList<Finding> Run(string source)
     {
         var ctx = MatchFixtures.Context(source);
@@ -16,7 +20,25 @@ public class MagicLiteralPatternTests
     }
 
     [Fact]
-    public void Reports_magic_number_in_method_body()
+    public void Reports_number_repeated_in_file()
+    {
+        var source = """
+            class C
+            {
+                int M() => 42;
+                int N() => 42;
+            }
+            """;
+
+        var findings = Run(source);
+        Assert.Equal(Twice, findings.Count);
+        Assert.All(findings, finding => Assert.Equal(MatchFixtures.Id, finding.Check));
+        Assert.All(findings, finding => Assert.Equal(MagicLiteralPattern.NumberMessage(FortyTwo, Twice), finding.Message));
+        Assert.All(findings, finding => Assert.Null(finding.Replacement));
+    }
+
+    [Fact]
+    public void Ignores_number_used_once()
     {
         var source = """
             class C
@@ -28,10 +50,51 @@ public class MagicLiteralPatternTests
             }
             """;
 
-        var finding = Assert.Single(Run(source));
-        Assert.Equal(MatchFixtures.Id, finding.Check);
-        Assert.Equal(MagicLiteralPattern.NumberMessage(FortyTwo), finding.Message);
-        Assert.Null(finding.Replacement);
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
+    public void Ignores_string_used_once()
+    {
+        var source = """
+            class C
+            {
+                string M() => "pending";
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
+    public void Reports_string_repeated_in_file_with_count()
+    {
+        var source = """
+            class C
+            {
+                string M() => "pending";
+                string N() => "pending";
+                bool O(string s) => s == "pending";
+            }
+            """;
+
+        var findings = Run(source);
+        Assert.Equal(Thrice, findings.Count);
+        Assert.All(findings, finding => Assert.Equal(MagicLiteralPattern.StringMessage(Pending, Thrice), finding.Message));
+    }
+
+    [Fact]
+    public void Does_not_group_values_of_different_types()
+    {
+        var source = """
+            class C
+            {
+                int M() => 5;
+                double N() => 5.0;
+            }
+            """;
+
+        Assert.Empty(Run(source));
     }
 
     [Fact]
@@ -40,10 +103,8 @@ public class MagicLiteralPatternTests
         var source = """
             class C
             {
-                int M()
-                {
-                    return 0 + 1;
-                }
+                int M() => 0 + 1;
+                int N() => 0 + 1;
             }
             """;
 
@@ -57,29 +118,12 @@ public class MagicLiteralPatternTests
             class C
             {
                 const int Max = 42;
-                enum Kind { A = 3 }
+                const int Min = -42;
+                enum Kind { A = 42 }
             }
             """;
 
         Assert.Empty(Run(source));
-    }
-
-    [Fact]
-    public void Reports_magic_string_in_method_body()
-    {
-        var source = """
-            class C
-            {
-                string M()
-                {
-                    return "pending";
-                }
-            }
-            """;
-
-        var finding = Assert.Single(Run(source));
-        Assert.Equal(MatchFixtures.Id, finding.Check);
-        Assert.Equal(MagicLiteralPattern.StringMessage(Pending), finding.Message);
     }
 
     [Fact]
@@ -89,7 +133,9 @@ public class MagicLiteralPatternTests
             class C
             {
                 const string Name = "pending";
+                const string Other = "pending";
                 string M() => "";
+                string N() => "";
             }
             """;
 
@@ -103,6 +149,21 @@ public class MagicLiteralPatternTests
             class C
             {
                 string M() => "User not found";
+                string N() => "User not found";
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
+    public void Skips_long_strings()
+    {
+        var source = """
+            class C
+            {
+                string M() => "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopq";
+                string N() => "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopq";
             }
             """;
 
@@ -116,6 +177,7 @@ public class MagicLiteralPatternTests
             class C
             {
                 string M() => "NULLIF(";
+                string N() => "NULLIF(";
             }
             """;
 
@@ -129,6 +191,7 @@ public class MagicLiteralPatternTests
             class C
             {
                 string M() => "letter.world";
+                string N() => "letter.world";
             }
             """;
 
@@ -141,10 +204,8 @@ public class MagicLiteralPatternTests
         var source = """
             class C
             {
-                void M()
-                {
-                    throw new InvalidOperationException("gone");
-                }
+                void M() => throw new InvalidOperationException("gone");
+                void N() => throw new InvalidOperationException("gone");
             }
             """;
 
@@ -157,6 +218,8 @@ public class MagicLiteralPatternTests
         var source = """
             [System.Obsolete("gone")]
             class C { }
+            [System.Obsolete("gone")]
+            class D { }
             """;
 
         Assert.Empty(Run(source));
@@ -168,7 +231,7 @@ public class MagicLiteralPatternTests
         var source = """
             class C
             {
-                string[] M() => new string[] { "Aguascalientes", "Chiapas" };
+                string[] M() => new string[] { "Chiapas", "Chiapas" };
             }
             """;
 
@@ -181,7 +244,7 @@ public class MagicLiteralPatternTests
         var source = """
             class C
             {
-                System.Collections.Generic.List<string> M() => new System.Collections.Generic.List<string> { "Chiapas" };
+                System.Collections.Generic.List<string> M() => new System.Collections.Generic.List<string> { "Chiapas", "Chiapas" };
             }
             """;
 
@@ -194,7 +257,7 @@ public class MagicLiteralPatternTests
         var source = """
             class C
             {
-                string[] M() => ["Chiapas"];
+                string[] M() => ["Chiapas", "Chiapas"];
             }
             """;
 
@@ -209,11 +272,13 @@ public class MagicLiteralPatternTests
             class C
             {
                 Foo M() => new Foo { Name = "pending" };
+                Foo N() => new Foo { Name = "pending" };
             }
             """;
 
-        var finding = Assert.Single(Run(source));
-        Assert.Equal(MagicLiteralPattern.StringMessage(Pending), finding.Message);
+        var findings = Run(source);
+        Assert.Equal(Twice, findings.Count);
+        Assert.All(findings, finding => Assert.Equal(MagicLiteralPattern.StringMessage(Pending, Twice), finding.Message));
     }
 
     [Fact]
@@ -222,12 +287,11 @@ public class MagicLiteralPatternTests
         var source = """
             class C
             {
-                int[] M() => new int[] { 42 };
+                int[] M() => new int[] { 42, 42 };
             }
             """;
 
-        var finding = Assert.Single(Run(source));
-        Assert.Equal(MagicLiteralPattern.NumberMessage(FortyTwo), finding.Message);
+        Assert.Equal(Twice, Run(source).Count);
     }
 
     [Fact]
@@ -237,22 +301,7 @@ public class MagicLiteralPatternTests
             class C
             {
                 bool M() => true;
-            }
-            """;
-
-        Assert.Empty(Run(source));
-    }
-
-    [Fact]
-    public void Skips_message_thrown_directly()
-    {
-        var source = """
-            class C
-            {
-                void M()
-                {
-                    throw "gone";
-                }
+                bool N() => true;
             }
             """;
 
@@ -266,10 +315,8 @@ public class MagicLiteralPatternTests
             class MyException<T> : System.Exception { }
             class C
             {
-                void M()
-                {
-                    throw new MyException<int>("magicvalue");
-                }
+                void M() => throw new MyException<int>("magicvalue");
+                void N() => throw new MyException<int>("magicvalue");
             }
             """;
 
@@ -277,20 +324,22 @@ public class MagicLiteralPatternTests
     }
 
     [Fact]
-    public void Reports_number_argument()
+    public void Reports_number_arguments_and_parameter_defaults()
     {
         var source = """
             class C
             {
-                void M()
+                void M(int x = 42)
                 {
                     Foo(42);
+                    for (var i = 42; i < Bound; i++) { }
                 }
             }
             """;
 
-        var finding = Assert.Single(Run(source));
-        Assert.Equal(MagicLiteralPattern.NumberMessage(FortyTwo), finding.Message);
+        var findings = Run(source);
+        Assert.Equal(Thrice, findings.Count);
+        Assert.All(findings, finding => Assert.Equal(MagicLiteralPattern.NumberMessage(FortyTwo, Thrice), finding.Message));
     }
 
     [Fact]
@@ -302,42 +351,12 @@ public class MagicLiteralPatternTests
                 void M()
                 {
                     const int x = 42;
+                    const int y = 42;
                 }
             }
             """;
 
         Assert.Empty(Run(source));
-    }
-
-    [Fact]
-    public void Reports_number_in_a_for_loop_initializer()
-    {
-        var source = """
-            class C
-            {
-                void M()
-                {
-                    for (var i = 42; i < Bound; i++) { }
-                }
-            }
-            """;
-
-        var finding = Assert.Single(Run(source));
-        Assert.Equal(MagicLiteralPattern.NumberMessage(FortyTwo), finding.Message);
-    }
-
-    [Fact]
-    public void Reports_number_in_a_parameter_default_value()
-    {
-        var source = """
-            class C
-            {
-                void M(int x = 42) { }
-            }
-            """;
-
-        var finding = Assert.Single(Run(source));
-        Assert.Equal(MagicLiteralPattern.NumberMessage(FortyTwo), finding.Message);
     }
 
     [Fact]
@@ -347,10 +366,12 @@ public class MagicLiteralPatternTests
             class C
             {
                 decimal M() => 2.5m;
+                decimal N() => 2.5m;
             }
             """;
 
-        var finding = Assert.Single(Run(source));
-        Assert.Equal(MagicLiteralPattern.NumberMessage("2.5m"), finding.Message);
+        var findings = Run(source);
+        Assert.Equal(Twice, findings.Count);
+        Assert.Equal(MagicLiteralPattern.NumberMessage("2.5m", Twice), findings[0].Message);
     }
 }

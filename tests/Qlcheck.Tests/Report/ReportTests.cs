@@ -14,7 +14,7 @@ public class ReportTests
         var loaded = new List<SourceScan.LoadedSource> { new("/repo/Repo.cs", new SourceFile("Repo.cs", "class C { }")) };
         var stdout = new StringWriter();
 
-        ReportWriter.Write(Options(human: true, stats: true), loaded, [], findings, [], TimeSpan.Zero, stdout);
+        ReportWriter.Write(Options(human: true, stats: true), loaded, [], new RunResult(findings, []), [], TimeSpan.Zero, stdout);
 
         Assert.Contains("\n\n╭", stdout.ToString());
     }
@@ -25,7 +25,7 @@ public class ReportTests
         var findings = new List<Finding> { new("id", "check", "Repo.cs", 1, 1, "message", "line1\nline2") };
         var stdout = new StringWriter();
 
-        ReportWriter.Write(Options(human: true), [], [], findings, [], TimeSpan.Zero, stdout);
+        ReportWriter.Write(Options(human: true), [], [], new RunResult(findings, []), [], TimeSpan.Zero, stdout);
 
         Assert.Contains("  line1", stdout.ToString());
         Assert.Contains("  line2", stdout.ToString());
@@ -37,7 +37,7 @@ public class ReportTests
         var loaded = new List<SourceScan.LoadedSource> { new("/repo/Repo.cs", new SourceFile("Repo.cs", "class C { }")) };
         var stdout = new StringWriter();
 
-        ReportWriter.Write(Options(stats: true), loaded, [], [], [], TimeSpan.Zero, stdout);
+        ReportWriter.Write(Options(stats: true), loaded, [], new RunResult([], []), [], TimeSpan.Zero, stdout);
 
         var text = stdout.ToString();
         Assert.Contains("By check", text);
@@ -50,7 +50,7 @@ public class ReportTests
         var loaded = new List<SourceScan.LoadedSource> { new("/repo/Repo.cs", new SourceFile("Repo.cs", string.Empty)) };
         var stdout = new StringWriter();
 
-        ReportWriter.Write(Options(stats: true), loaded, [], [], [], TimeSpan.Zero, stdout);
+        ReportWriter.Write(Options(stats: true), loaded, [], new RunResult([], []), [], TimeSpan.Zero, stdout);
 
         Assert.Contains("Lines checked", stdout.ToString());
     }
@@ -63,7 +63,7 @@ public class ReportTests
         var loaded = new List<SourceScan.LoadedSource> { new("/repo/Repo.cs", new SourceFile("Repo.cs", "class C { }")) };
         var stdout = new StringWriter();
 
-        ReportWriter.Write(Options(stats: true), loaded, [], findings, [], TimeSpan.Zero, stdout);
+        ReportWriter.Write(Options(stats: true), loaded, [], new RunResult(findings, []), [], TimeSpan.Zero, stdout);
 
         Assert.Contains('…', stdout.ToString());
     }
@@ -74,7 +74,7 @@ public class ReportTests
         var loaded = new List<SourceScan.LoadedSource> { new("/repo/Repo.cs", new SourceFile("Repo.cs", "class C { }")) };
         var stdout = new StringWriter();
 
-        ReportWriter.Write(Options(stats: true), loaded, [], [], [], TimeSpan.FromSeconds(2.5), stdout);
+        ReportWriter.Write(Options(stats: true), loaded, [], new RunResult([], []), [], TimeSpan.FromSeconds(2.5), stdout);
 
         Assert.Contains("2.50 s", stdout.ToString());
     }
@@ -87,7 +87,7 @@ public class ReportTests
         var coverage = new List<CoverageFile> { new("Repo.cs", false, [new CoverageMethod("M", [2])]) };
         var stdout = new StringWriter();
 
-        ReportWriter.Write(Options(), loaded, [], [], coverage, TimeSpan.Zero, stdout);
+        ReportWriter.Write(Options(), loaded, [], new RunResult([], coverage), [], TimeSpan.Zero, stdout);
 
         Assert.Contains("line two", stdout.ToString());
     }
@@ -98,7 +98,7 @@ public class ReportTests
         var coverage = new List<CoverageFile> { new("Missing.cs", false, [new CoverageMethod("M", [1])]) };
         var stdout = new StringWriter();
 
-        ReportWriter.Write(Options(), [], [], [], coverage, TimeSpan.Zero, stdout);
+        ReportWriter.Write(Options(), [], [], new RunResult([], coverage), [], TimeSpan.Zero, stdout);
 
         Assert.Contains("\"text\": \"1|\"", stdout.ToString());
     }
@@ -111,7 +111,7 @@ public class ReportTests
         var coverage = new List<CoverageFile> { new("Repo.cs", false, [new CoverageMethod("M", [2])]) };
         var stdout = new StringWriter();
 
-        ReportWriter.Write(Options(), loaded, [], [], coverage, TimeSpan.Zero, stdout);
+        ReportWriter.Write(Options(), loaded, [], new RunResult([], coverage), [], TimeSpan.Zero, stdout);
 
         Assert.Contains("line two", stdout.ToString());
     }

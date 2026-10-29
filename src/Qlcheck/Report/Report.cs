@@ -21,6 +21,8 @@ internal static class Report
 
     private const string ResultsHeading = "Results";
 
+    private const string DisabledHeading = "Disabled";
+
     private const string FileNoun = "file";
 
     private const string DurationLabel = "Duration";
@@ -41,11 +43,12 @@ internal static class Report
         Qlcheck.Cli.Cli.Options options,
         IReadOnlyList<SourceScan.LoadedSource> loaded,
         IReadOnlyList<ICheck> checks,
-        IReadOnlyList<Finding> findings,
-        IReadOnlyList<CoverageFile> coverage,
+        RunResult run,
+        IReadOnlyList<DisableFiles.Entry> disabled,
         TimeSpan duration,
         TextWriter stdout)
     {
+        var findings = run.Findings;
         if (options.Human)
         {
             WriteHuman(findings, stdout);
@@ -54,7 +57,8 @@ internal static class Report
         var jsonOnly = !options.Human && !options.Stats;
         if (jsonOnly)
         {
-            stdout.WriteLine(JsonSerializer.Serialize(new Payload(findings, ToJson(coverage, loaded)), JsonOptions));
+            var payload = new Payload(findings, DisabledJson(disabled), ToJson(run.Coverage, loaded));
+            stdout.WriteLine(JsonSerializer.Serialize(payload, JsonOptions));
         }
 
         if (!options.Stats)
@@ -67,7 +71,7 @@ internal static class Report
             stdout.WriteLine();
         }
 
-        WriteStats(loaded.Select(l => l.File).ToList(), checks, findings, duration, stdout);
+        WriteStats(loaded.Select(l => l.File).ToList(), checks, findings, disabled, duration, stdout);
     }
 
     private static void WriteHuman(IReadOnlyList<Finding> findings, TextWriter stdout)
@@ -93,6 +97,7 @@ internal static class Report
         IReadOnlyList<SourceFile> files,
         IReadOnlyList<ICheck> checks,
         IReadOnlyList<Finding> findings,
+        IReadOnlyList<DisableFiles.Entry> disabled,
         TimeSpan duration,
         TextWriter stdout)
     {
@@ -131,6 +136,7 @@ internal static class Report
         stdout.WriteLine(BoxRow("  Lines checked", lines, inner));
         stdout.WriteLine(BoxRow("  Checks run", checks.Count, inner));
         stdout.WriteLine(Box(string.Empty, inner));
+        WriteDisabled(disabled, inner, stdout);
         stdout.WriteLine(Box(ResultsHeading, inner));
         stdout.WriteLine(BoxRow("  Findings", findings.Count, inner));
         stdout.WriteLine(BoxRow("  Files with findings", filesWithFindings, inner));
@@ -166,6 +172,22 @@ internal static class Report
         stdout.WriteLine(Box(string.Empty, inner));
         stdout.WriteLine(BoxRow(DurationLabel, FormatDuration(duration), inner));
         stdout.WriteLine($"╰{new string('─', inner)}╯");
+    }
+
+    private static void WriteDisabled(IReadOnlyList<DisableFiles.Entry> disabled, int inner, TextWriter stdout)
+    {
+        if (disabled.Count == 0)
+        {
+            return;
+        }
+
+        stdout.WriteLine(Box(DisabledHeading, inner));
+        foreach (var entry in disabled)
+        {
+            stdout.WriteLine(BoxRow($"  {entry.Check}", entry.Under, inner));
+        }
+
+        stdout.WriteLine(Box(string.Empty, inner));
     }
 
     private static int LineCount(SourceFile file)
@@ -241,6 +263,9 @@ internal static class Report
 
         return $"{Math.Max(0, (int)duration.TotalMilliseconds)} ms";
     }
+
+    private static IReadOnlyList<DisabledPayload>? DisabledJson(IReadOnlyList<DisableFiles.Entry> disabled) =>
+        disabled.Count == 0 ? null : disabled.Select(entry => new DisabledPayload(entry.Check, entry.Under)).ToList();
 
     private static IReadOnlyList<FilePayload>? ToJson(
         IReadOnlyList<CoverageFile> coverage,
@@ -320,7 +345,10 @@ internal static class Report
 
     private sealed record Payload(
         IReadOnlyList<Finding> Findings,
+        IReadOnlyList<DisabledPayload>? Disabled,
         IReadOnlyList<FilePayload>? Coverage);
+
+    private sealed record DisabledPayload(string Check, string Under);
 
     private sealed record FilePayload(
         string File,

@@ -23,8 +23,6 @@ internal static class MetricNames
 
     internal const string CaseLength = "case-length";
 
-    internal const string DuplicateString = "duplicate-string";
-
     internal const string Expression = "expression";
 
     internal const string SwitchCases = "switch-cases";

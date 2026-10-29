@@ -7,6 +7,12 @@ internal static class CompilationEngine
     [
         new CompilationRow
         {
+            Id = "magic-literal-shared",
+            Class = CheckClass.Compilation,
+            Apply = ctx => MagicLiteralSharedPattern.Apply(ctx, "magic-literal-shared"),
+        },
+        new CompilationRow
+        {
             Id = "unused-using",
             Class = CheckClass.Compilation,
             Apply = ctx => UnusedUsingPattern.Apply(ctx, "unused-using"),

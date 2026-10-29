@@ -82,7 +82,7 @@ dotnet run --project src/Qlcheck -- .   # run against the current directory
 // Sample.cs
 public class UserRepository
 {
-    public int MaxRetries = 3;
+    public int MaxRetries = 3, MaxRedirects = 3;
 
     public void DeleteUser(DbCommand command, string userId)
     {
@@ -124,10 +124,10 @@ Sample.cs:8:5  no-public-field
   Fields should not have public accessibility.
 
 Sample.cs:8:29  magic-literal
-  Magic number 3 should be a named const or enum member.
+  Magic number 3 is used 2 times in this file; make it a named const or enum member.
 
-Sample.cs:19:35  magic-literal
-  Magic string "safe" should be a named const.
+Sample.cs:8:47  magic-literal
+  Magic number 3 is used 2 times in this file; make it a named const or enum member.
 ```
 
 That `sql-injection` finding isn't a text match on `.Execute(...)` — it resolved `command`'s
@@ -163,7 +163,7 @@ $ qlcheck Sample.cs
 | *(none)* | JSON findings on stdout — the default, agent-consumable format |
 | `--human` | Human-readable findings, one block per finding, with `replacement` text inlined |
 | `--stats` | Appends the summary box shown above (files/lines/checks/findings, grouped by check and by file) |
-| `--check <id>` | Run only the named check(s) (repeatable), ignoring the default/opt-in selection |
+| `--check <id>` | Run only the named check(s) (repeatable), ignoring the default/opt-in selection and any `.qlcheck_disable` file |
 | `--coverage` | Opt in to the `coverage` check (runs your test suite via `dotnet test`/`coverlet` and reports under-covered methods) |
 | `--help` / `-h` | Usage |
 
@@ -226,10 +226,27 @@ That silences this one finding for one year from `checked-on`, then it resurface
 re-evaluation — suppression comments are a snooze button, not a permanent exemption. Use one
 only after a human has actually made the call the check's message asked for.
 
+## Disabling checks
+
+To turn a check off for a folder and everything below it, list its id in a `.qlcheck_disable`
+file in that folder, one per line. `#` starts a comment, and `!id` turns a check back on below a
+deeper folder:
+
+```
+# tests/.qlcheck_disable
+magic-literal   # tests repeat literals on purpose
+```
+
+Disabling a check is a lasting policy, so a human decides it. An agent should not add a line
+just to make findings go away. Unknown ids are an error (exit `2`). `--check <id>` and
+`--coverage` override the file. Disabled checks are listed in the JSON output (`"disabled"`:
+`check` + `under`) and in the `--stats` box, so a clean run can't be mistaken for an unchecked
+one.
+
 ## Ignoring files
 
 qlcheck walks the given paths like `git` would, skipping anything matched by a
-`.qlcheck_ignore` file (gitignore syntax) in the scan root, in addition to sensible defaults
+`.qlcheck_ignore` file (gitignore syntax), in addition to sensible defaults
 (`bin/`, `obj/`, `.git/`, `node_modules/`, `dist/`, build/VCS/IDE directories, …):
 
 ```
@@ -237,6 +254,14 @@ qlcheck walks the given paths like `git` would, skipping anything matched by a
 Generated/
 **/*.Designer.cs
 ```
+
+## Where these files are read from
+
+`.qlcheck_ignore` and `.qlcheck_disable` work like `.gitignore`. Every file from the git root
+down to a folder applies to that folder. Each file's patterns are relative to its own folder, and
+a deeper file overrides a shallower one. Scanning `src/` therefore still honours the files at
+the repository root. Outside a git repository, only files at or below the scanned path are read.
+See [ADR 0010](docs/adr/0010-repo-files-combine-like-gitignore.md).
 
 ## How it's built
 

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Qlcheck.Checks;
 using Qlcheck.Languages;
 using Qlcheck.Run;
 using Qlcheck.Scan;
@@ -24,11 +25,13 @@ public static class QlcheckApp
         IReadOnlyList<SourceScan.LoadedSource> loaded;
         IReadOnlyList<SourceScan.LoadedSource> reported;
         IReadOnlyList<ILanguage> languages;
+        DisableFiles disabled;
         try
         {
             languages = LanguageDiscovery.All();
             loaded = SourceScan.Load(options.Paths, path => languages.Any(language => language.Matches(path)));
             reported = options.Uncommitted ? OnlyUncommitted(loaded, options.Paths) : loaded;
+            disabled = DisableFiles.Load(options.Paths, loaded.Select(source => source.FullPath));
         }
         catch (CaughtException ex)
         {
@@ -36,11 +39,19 @@ public static class QlcheckApp
             return ExitCode.Error;
         }
 
+        if (!CheckDiscovery.TryValidateDisabled(disabled.Entries, stderr))
+        {
+            return ExitCode.Error;
+        }
+
+        disabled = disabled.Without([.. options.CheckIds, .. options.EnableIds]);
+        checks = Running(checks, loaded, disabled);
+
         var timer = Stopwatch.StartNew();
         RunResult run;
         try
         {
-            run = reported.Count == 0 ? new RunResult([], []) : CheckRun.Execute(loaded, checks, languages);
+            run = reported.Count == 0 ? new RunResult([], []) : CheckRun.Execute(loaded, checks, languages, disabled);
         }
         catch (CaughtException ex)
         {
@@ -56,8 +67,22 @@ public static class QlcheckApp
         }
 
         var output = stdout;
-        Report.Report.Write(options, reported, checks, run.Findings, run.Coverage, timer.Elapsed, output);
+        Report.Report.Write(options, reported, checks, run, disabled.Disabled.ToList(), timer.Elapsed, output);
         return run.Findings.Count == 0 ? ExitCode.Clean : ExitCode.Findings;
+    }
+
+    // A Check disabled for every loaded file is not run at all; one disabled for only some files still
+    // runs, and CheckRun drops its Findings in the disabled trees.
+    private static IReadOnlyList<ICheck> Running(
+        IReadOnlyList<ICheck> checks,
+        IReadOnlyList<SourceScan.LoadedSource> loaded,
+        DisableFiles disabled)
+    {
+        var mentioned = disabled.Disabled.Select(entry => entry.Check).ToHashSet(StringComparer.Ordinal);
+        return checks
+            .Where(check => !mentioned.Contains(check.Id)
+                            || loaded.Any(source => !disabled.IsDisabled(check.Id, source.FullPath)))
+            .ToList();
     }
 
     // Checks still run on every loaded file so cross-file Checks see the whole tree; only what is

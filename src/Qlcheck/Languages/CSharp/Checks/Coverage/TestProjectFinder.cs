@@ -1,22 +1,18 @@
-using IOFile = System.IO.File;
 using Qlcheck.Scan;
 
 namespace Qlcheck.Languages.CSharp.Checks.Coverage;
 
 internal static class TestProjectFinder
 {
-    private const string GitDirectory = ".git";
-
     private const string CsprojPattern = "*.csproj";
 
     public static IReadOnlyList<string> Find(string productCsproj)
     {
         var product = Path.GetFullPath(productCsproj);
-        var root = GitRoot(product) ?? Path.GetDirectoryName(product)!;
-        var ignore = IgnorePatterns.Load(root);
+        var root = RepoRoot.Boundary(Path.GetDirectoryName(product)!);
         var matches = new List<string>();
         var unresolved = false;
-        foreach (var csproj in Enumerate(root, ignore))
+        foreach (var csproj in Enumerate(root))
         {
             if (string.Equals(Path.GetFullPath(csproj), product, StringComparison.OrdinalIgnoreCase))
             {
@@ -55,40 +51,16 @@ internal static class TestProjectFinder
         throw new InvalidOperationException($"No test project references {product}.");
     }
 
-    private static string? GitRoot(string path)
+    private static IEnumerable<string> Enumerate(string root)
     {
-        var dir = Path.GetDirectoryName(Path.GetFullPath(path));
-        while (!string.IsNullOrEmpty(dir))
-        {
-            var git = Path.Combine(dir, GitDirectory);
-            if (Directory.Exists(git) || IOFile.Exists(git))
-            {
-                return dir;
-            }
-
-            var parent = Path.GetDirectoryName(dir);
-            if (parent == dir)
-            {
-                break;
-            }
-
-            dir = parent;
-        }
-
-        return null;
-    }
-
-    private static IEnumerable<string> Enumerate(string root, IgnorePatterns ignore)
-    {
-        var pending = new Stack<string>();
-        pending.Push(root);
+        var pending = new Stack<(string Dir, IgnoreTree Ignore)>();
+        pending.Push((root, IgnoreTree.ForRoot(root)));
         while (pending.Count > 0)
         {
-            var dir = pending.Pop();
+            var (dir, ignore) = pending.Pop();
             foreach (var file in Directory.EnumerateFiles(dir, CsprojPattern))
             {
-                var relative = Path.GetRelativePath(root, file);
-                if (!ignore.IsIgnored(relative, isDirectory: false))
+                if (!ignore.IsIgnored(file, isDirectory: false))
                 {
                     yield return file;
                 }
@@ -96,10 +68,9 @@ internal static class TestProjectFinder
 
             foreach (var sub in Directory.EnumerateDirectories(dir))
             {
-                var relative = Path.GetRelativePath(root, sub);
-                if (!ignore.IsIgnored(relative, isDirectory: true))
+                if (!ignore.IsIgnored(sub, isDirectory: true))
                 {
-                    pending.Push(sub);
+                    pending.Push((sub, ignore.Enter(sub)));
                 }
             }
         }

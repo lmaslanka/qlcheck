@@ -33,7 +33,7 @@ internal static class SourceScan
             if (Directory.Exists(path))
             {
                 var root = Path.GetFullPath(path);
-                CollectFromDirectory(root, IgnorePatterns.Load(root), matches, files);
+                CollectFromDirectory(root, matches, files);
                 continue;
             }
 
@@ -43,22 +43,17 @@ internal static class SourceScan
         return files.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(f => f, StringComparer.Ordinal).ToList();
     }
 
-    private static void CollectFromDirectory(
-        string root,
-        IgnorePatterns ignore,
-        Func<string, bool> matches,
-        List<string> files)
+    private static void CollectFromDirectory(string root, Func<string, bool> matches, List<string> files)
     {
-        var pending = new Stack<string>();
-        pending.Push(root);
+        var pending = new Stack<(string Dir, IgnoreTree Ignore)>();
+        pending.Push((root, IgnoreTree.ForRoot(root)));
         while (pending.Count > 0)
         {
-            var dir = pending.Pop();
+            var (dir, ignore) = pending.Pop();
             foreach (var file in Directory.EnumerateFiles(dir))
             {
-                var relative = Path.GetRelativePath(root, file);
                 var full = Path.GetFullPath(file);
-                if (!ignore.IsIgnored(relative, isDirectory: false) && matches(full))
+                if (!ignore.IsIgnored(full, isDirectory: false) && matches(full))
                 {
                     files.Add(full);
                 }
@@ -66,10 +61,9 @@ internal static class SourceScan
 
             foreach (var sub in Directory.EnumerateDirectories(dir))
             {
-                var relative = Path.GetRelativePath(root, sub);
-                if (!ignore.IsIgnored(relative, isDirectory: true))
+                if (!ignore.IsIgnored(sub, isDirectory: true))
                 {
-                    pending.Push(sub);
+                    pending.Push((sub, ignore.Enter(sub)));
                 }
             }
         }

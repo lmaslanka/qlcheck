@@ -1,6 +1,7 @@
 // Copyright (c) qlcheck contributors.
 using Qlcheck.Checks;
 using Qlcheck.Languages.CSharp.Catalog;
+using Qlcheck.Scan;
 
 namespace Qlcheck.Run;
 
@@ -27,6 +28,33 @@ public static class CheckDiscovery
 
         checks = all.Where(c => c.EnabledByDefault || enableIds.Contains(c.Id)).ToList();
         return RejectUnimplemented(checks, stderr);
+    }
+
+    // Every id in a .qlcheck_disable file must name an implemented check, so a typo cannot
+    // silently disable nothing.
+    internal static bool TryValidateDisabled(IReadOnlyList<DisableFiles.Entry> entries, TextWriter stderr)
+    {
+        var known = All().ToDictionary(check => check.Id, StringComparer.Ordinal);
+        var errors = entries
+            .Select(entry => (Entry: entry, Error: DisabledError(known, entry.Check)))
+            .Where(item => item.Error is not null)
+            .ToList();
+        foreach (var (entry, error) in errors)
+        {
+            stderr.WriteLine($"{error} ({entry.File}:{entry.Line})");
+        }
+
+        return errors.Count == 0;
+    }
+
+    private static string? DisabledError(IReadOnlyDictionary<string, ICheck> known, string id)
+    {
+        if (!known.TryGetValue(id, out var check))
+        {
+            return $"{UnknownPrefix}{id}";
+        }
+
+        return check is CatalogCheck && !CatalogWalker.IsImplemented(id) ? $"Check '{id}' {NoImplementation}" : null;
     }
 
     private static bool SelectExplicit(

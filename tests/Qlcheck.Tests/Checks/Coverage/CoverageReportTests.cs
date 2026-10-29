@@ -35,8 +35,8 @@ public class CoverageReportTests
             new Qlcheck.Cli.Cli.Options(false, false, false, [], [], [DisplayPath]),
             [loaded],
             [Coverage],
-            [finding],
-            [coverage],
+            new RunResult([finding], [coverage]),
+            [],
             TimeSpan.Zero,
             stdout);
 
@@ -58,8 +58,8 @@ public class CoverageReportTests
             new Qlcheck.Cli.Cli.Options(false, false, false, [], [], [DisplayPath]),
             [loaded],
             [Coverage],
+            new RunResult([], [coverage]),
             [],
-            [coverage],
             TimeSpan.Zero,
             stdout);
 
@@ -79,8 +79,8 @@ public class CoverageReportTests
             new Qlcheck.Cli.Cli.Options(true, false, false, [], [], [DisplayPath]),
             [],
             [Coverage],
-            [finding],
-            [new CoverageFile(DisplayPath, true, [])],
+            new RunResult([finding], [new CoverageFile(DisplayPath, true, [])]),
+            [],
             TimeSpan.Zero,
             stdout);
 

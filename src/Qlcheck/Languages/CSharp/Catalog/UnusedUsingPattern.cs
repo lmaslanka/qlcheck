@@ -40,15 +40,12 @@ internal static class UnusedUsingPattern
                 continue;
             }
 
-            var path = diagnostic.Location.SourceTree.FilePath.Replace('\\', '/');
-            if (ctx.IncludedFiles.Count > 0
-                && !ctx.IncludedFiles.Contains(path)
-                && !ctx.IncludedFiles.Contains(diagnostic.Location.SourceTree.FilePath))
+            if (!ctx.Includes(diagnostic.Location.SourceTree))
             {
                 continue;
             }
 
-            ctx.Report(id, path, diagnostic.Location, string.Empty);
+            ctx.Report(id, CompilationContext.PathOf(diagnostic.Location.SourceTree), diagnostic.Location, string.Empty);
         }
     }
 

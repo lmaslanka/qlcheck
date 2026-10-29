@@ -120,9 +120,9 @@ public class IgnorePatternsTests
     [InlineData("TestResults")]
     [InlineData("coverage")]
     [InlineData("dist")]
-    public void Load_skips_common_non_source_directories(string name)
+    public void Defaults_skip_common_non_source_directories(string name)
     {
-        var ignore = IgnorePatterns.Load(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
+        var ignore = IgnorePatterns.Defaults;
 
         Assert.True(ignore.IsIgnored(name, isDirectory: true));
         Assert.True(ignore.IsIgnored($"src/{name}", isDirectory: true));

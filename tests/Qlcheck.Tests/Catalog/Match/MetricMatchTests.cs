@@ -11,13 +11,4 @@ public class MetricMatchTests
         MetricMatch.Report(ctx, MatchFixtures.Id, MetricNames.Arity);
         Assert.Contains(ctx.Findings, finding => finding.Message.Contains("(4)", StringComparison.Ordinal));
     }
-
-    [Fact]
-    public void Report_ignores_empty_string_literals_when_counting_duplicates()
-    {
-        var source = "class C { void M() { var a = \"\"; var b = \"\"; var c = \"\"; } }";
-        var ctx = MatchFixtures.Context(source);
-        MetricMatch.Report(ctx, MatchFixtures.Id, MetricNames.DuplicateString);
-        Assert.Empty(ctx.Findings);
-    }
 }

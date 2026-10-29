@@ -27,7 +27,11 @@ internal static class Thresholds
 
     internal const int CaseLength = 8;
 
-    internal const int DuplicateString = 3;
+    internal const int MagicLiteralRepeats = 2;
+
+    internal const int MagicStringLength = 40;
+
+    internal const int SharedLiteralFiles = 2;
 
     internal const int ExpressionComplexity = 3;
 

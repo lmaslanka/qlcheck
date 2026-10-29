@@ -20,6 +20,12 @@ public class QlcheckAppTests : IDisposable
 
     private const string IgnoreFileName = ".qlcheck_ignore";
 
+    private const string DisableFileName = ".qlcheck_disable";
+
+    private const string MagicLiteral = "magic-literal";
+
+    private const string HumanFlag = "--human";
+
     private readonly string _dir = Directory.CreateTempSubdirectory(TempPrefix).FullName;
 
     public void Dispose()
@@ -39,6 +45,8 @@ public class QlcheckAppTests : IDisposable
                 {
                     return 42;
                 }
+
+                int N() => 42;
             }
             """);
 
@@ -62,6 +70,8 @@ public class QlcheckAppTests : IDisposable
                 {
                     return 42;
                 }
+
+                int N() => 42;
             }
             """);
 
@@ -164,6 +174,8 @@ public class QlcheckAppTests : IDisposable
                 {
                     return 42;
                 }
+
+                int N() => 42;
             }
             """);
 
@@ -209,6 +221,8 @@ public class QlcheckAppTests : IDisposable
                 {
                     return 42;
                 }
+
+                int N() => 42;
             }
             """);
 
@@ -320,6 +334,76 @@ public class QlcheckAppTests : IDisposable
         Assert.Contains("--uncommitted needs a git repository", stderr.ToString());
     }
 
+    [Fact]
+    public void Disable_file_turns_a_check_off()
+    {
+        Write("Dirty.cs", Dirty);
+        Write(DisableFileName, "magic-literal  # tests repeat literals\n");
+
+        var stdout = new StringWriter();
+        QlcheckApp.Run([HumanFlag, _dir], stdout, new StringWriter());
+
+        Assert.DoesNotContain(MagicLiteral, stdout.ToString());
+    }
+
+    [Fact]
+    public void Check_flag_overrides_the_disable_file()
+    {
+        Write("Dirty.cs", Dirty);
+        Write(DisableFileName, "magic-literal\n");
+
+        var stdout = new StringWriter();
+        var code = QlcheckApp.Run(["--check", MagicLiteral, HumanFlag, _dir], stdout, new StringWriter());
+
+        Assert.Equal(ExitCode.Findings, code);
+        Assert.Contains(MagicLiteral, stdout.ToString());
+    }
+
+    [Fact]
+    public void Disable_file_in_a_subfolder_only_covers_that_folder()
+    {
+        Write("src/Dirty.cs", Dirty);
+        Write("tests/Dirty.cs", Dirty);
+        Write("tests/" + DisableFileName, "magic-literal\n");
+
+        var stdout = new StringWriter();
+        QlcheckApp.Run([HumanFlag, _dir], stdout, new StringWriter());
+
+        var text = stdout.ToString();
+        Assert.Matches(@"src/Dirty\.cs:\d+:\d+  magic-literal", text);
+        Assert.DoesNotMatch(@"tests/Dirty\.cs:\d+:\d+  magic-literal", text);
+    }
+
+    [Fact]
+    public void Unknown_id_in_the_disable_file_exits_two()
+    {
+        Write("Dirty.cs", Dirty);
+        Write(DisableFileName, "magic-literals\n");
+        var stderr = new StringWriter();
+
+        var code = QlcheckApp.Run([_dir], new StringWriter(), stderr);
+
+        Assert.Equal(ExitCode.Error, code);
+        Assert.Contains("Unknown check: magic-literals", stderr.ToString());
+    }
+
+    [Fact]
+    public void Json_and_stats_list_disabled_checks_with_their_folder()
+    {
+        Write("tests/Dirty.cs", Dirty);
+        Write("tests/" + DisableFileName, "magic-literal\n");
+
+        var json = new StringWriter();
+        QlcheckApp.Run([_dir], json, new StringWriter());
+        var stats = new StringWriter();
+        QlcheckApp.Run(["--stats", _dir], stats, new StringWriter());
+
+        Assert.Contains("\"disabled\"", json.ToString());
+        Assert.Contains("\"under\": \"tests/\"", json.ToString());
+        Assert.Matches(@"Disabled\s+│", stats.ToString());
+        Assert.Matches(@"magic-literal\s+tests/", stats.ToString());
+    }
+
     private const string Dirty =
         """
         class C
@@ -328,6 +412,8 @@ public class QlcheckAppTests : IDisposable
             {
                 return 42;
             }
+
+            int N() => 42;
         }
         """;
 

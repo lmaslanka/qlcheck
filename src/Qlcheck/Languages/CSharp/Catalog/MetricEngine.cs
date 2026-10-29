@@ -10,7 +10,6 @@ internal static class MetricEngine
         Row.Metric("case-length", CheckClass.Metric, MetricNames.CaseLength),
         Row.Metric("class-coupling", CheckClass.Metric, MetricNames.Coupling),
         Row.Metric("cognitive-complexity", CheckClass.Metric, MetricNames.Cognitive),
-        Row.Metric("duplicate-string", CheckClass.Metric, MetricNames.DuplicateString),
         Row.Metric("expression-complexity", CheckClass.Metric, MetricNames.Expression),
         Row.Metric("file-length", CheckClass.Metric, MetricNames.FileLength),
         Row.Metric("function-length", CheckClass.Metric, MetricNames.FunctionLength),

@@ -32,7 +32,7 @@ public sealed class IgnorePatterns
 
     private const string PathEnd = "(?:/|$)";
 
-    private static readonly string[] Defaults =
+    private static readonly string[] DefaultLines =
     [
         "bin/",
         "obj/",
@@ -61,28 +61,20 @@ public sealed class IgnorePatterns
     public static IgnorePatterns Parse(IEnumerable<string> lines) =>
         new(lines.Select(TryParseRule).OfType<Rule>().ToList());
 
-    public static IgnorePatterns Load(string scanRoot)
-    {
-        var lines = new List<string>(Defaults);
-        var root = scanRoot;
-        var file = Path.Combine(root, FileName);
-        if (File.Exists(file))
-        {
-            lines.AddRange(File.ReadAllLines(file));
-        }
+    public static IgnorePatterns Defaults { get; } = Parse(DefaultLines);
 
-        return Parse(lines);
-    }
+    public bool IsIgnored(string relativePath, bool isDirectory) => Match(relativePath, isDirectory) ?? false;
 
-    public bool IsIgnored(string relativePath, bool isDirectory)
+    // The last rule that matches decides: true ignored, false re-included by `!`, null no rule matched.
+    public bool? Match(string relativePath, bool isDirectory)
     {
         var path = relativePath.Replace('\\', '/').Trim('/');
         if (path.Length == 0 || path == CurrentDirectory)
         {
-            return false;
+            return null;
         }
 
-        var ignored = false;
+        bool? ignored = null;
         foreach (var rule in _rules)
         {
             if (rule.DirectoryOnly && !isDirectory)

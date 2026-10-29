@@ -35,6 +35,8 @@ public class CheckRunTests
             {
                 return 42;
             }
+
+            int N() => 42;
         }
         """;
 

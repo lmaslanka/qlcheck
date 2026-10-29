@@ -312,10 +312,6 @@
     "message": "Classes should `Dispose` of members from the classes' own `Dispose` methods."
   },
   {
-    "id": "duplicate-string",
-    "message": "This string literal is repeated 3 or more times. Name it."
-  },
-  {
     "id": "durable-entity-interface",
     "message": "Interfaces for durable entities should satisfy the restrictions."
   },
@@ -677,7 +673,11 @@
   },
   {
     "id": "magic-literal",
-    "message": "Magic literal should be a named constant."
+    "message": "Literal repeated in this file should be a named constant."
+  },
+  {
+    "id": "magic-literal-shared",
+    "message": "Literal repeats a value that is already, or should be, a shared named constant for the same target."
   },
   {
     "id": "matching-lock-release",

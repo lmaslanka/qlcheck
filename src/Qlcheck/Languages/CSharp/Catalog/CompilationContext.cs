@@ -25,4 +25,14 @@ internal sealed class CompilationContext
 
     public void Report(string id, string path, Location location, string? replacement = null) =>
         Findings.Add(Finding.At(id, path, location, _messages[id], replacement));
+
+    public void ReportCustom(string id, string path, Location location, string message, string? replacement = null) =>
+        Findings.Add(Finding.At(id, path, location, message, replacement));
+
+    public bool Includes(SyntaxTree tree) =>
+        IncludedFiles.Count == 0
+        || IncludedFiles.Contains(PathOf(tree))
+        || IncludedFiles.Contains(tree.FilePath);
+
+    public static string PathOf(SyntaxTree tree) => tree.FilePath.Replace('\\', '/');
 }

@@ -349,11 +349,6 @@
     "good": "class C : System.IDisposable\n{\n    System.IO.MemoryStream stream = new System.IO.MemoryStream();\n    public void Dispose() { stream.Dispose(); System.GC.SuppressFinalize(this); }\n}\n",
     "path": "Repo.cs"
   },
-  "duplicate-string": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            var a = \"repeat\";\n            var b = \"repeat\";\n            var c = \"repeat\";\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            var a = \"repeat\";\n            var b = \"repeat\";\n        }\n    }\n}\n",
-    "path": "Repo.cs"
-  },
   "durable-entity-interface": {
     "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            SignalEntity();\n        }\n    }\n}\n",
     "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
@@ -805,8 +800,13 @@
     "path": "Repo.cs"
   },
   "magic-literal": {
-    "bad": "class C\n{\n    int M()\n    {\n        return 42;\n    }\n}\n",
-    "good": "class C\n{\n    const int Max = 42;\n    int M()\n    {\n        return Max;\n    }\n}\n",
+    "bad": "class C\n{\n    int M()\n    {\n        return 42;\n    }\n\n    int N() => 42;\n}\n",
+    "good": "class C\n{\n    int M()\n    {\n        return 42;\n    }\n}\n",
+    "path": "Repo.cs"
+  },
+  "magic-literal-shared": {
+    "bad": "class Order\n{\n    const string Shipped = \"shipped\";\n    public string Status { get; set; }\n    bool IsShipped() => Status == Shipped;\n    void Ship() => Status = \"shipped\";\n}\n",
+    "good": "class Order\n{\n    const string Shipped = \"shipped\";\n    public string Status { get; set; }\n    bool IsShipped() => Status == Shipped;\n    void Ship() => Status = Shipped;\n}\n",
     "path": "Repo.cs"
   },
   "matching-lock-release": {
