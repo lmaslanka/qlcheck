@@ -160,8 +160,8 @@
     "path": "Repo.cs"
   },
   "database-password": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Password();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "namespace Sample\n{\n    class C\n    {\n        const string Connection = \"Server=db;User Id=sa;Password=Hunter2!;\";\n    }\n}\n",
+    "good": "using System;\n\nnamespace Sample\n{\n    class C\n    {\n        const string Local = \"Server=db;Integrated Security=true;\";\n\n        string M()\n        {\n            return Environment.GetEnvironmentVariable(\"ConnectionStrings__Default\") ?? Local;\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "datetime-kind": {
@@ -355,13 +355,13 @@
     "path": "Repo.cs"
   },
   "hardcoded-credential": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Password();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "using System.Net;\n\nnamespace Sample\n{\n    class C\n    {\n        NetworkCredential M()\n        {\n            return new NetworkCredential(\"admin\", \"Hunter2!\");\n        }\n    }\n}\n",
+    "good": "using System.Collections.Generic;\n\nnamespace Sample\n{\n    class C\n    {\n        const int PasswordLength = 12;\n\n        string M(IDictionary<string, string> config)\n        {\n            return config[\"Password\"];\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "hardcoded-secret": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Secret();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "namespace Sample\n{\n    class C\n    {\n        const string Token = \"gh\" + \"p_\" + \"Q9vH02tL57xN1spW6gmR3jYK8cDZ4bFQ9vH0\";\n    }\n}\n",
+    "good": "using System;\n\nnamespace Sample\n{\n    class C\n    {\n        const string TokenTypeName = \"JwtSecurityTokenHandler\";\n\n        string M()\n        {\n            return Environment.GetEnvironmentVariable(\"API_TOKEN\") ?? TokenTypeName;\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "http-client-factory": {
@@ -790,8 +790,8 @@
     "path": "Repo.cs"
   },
   "no-hardcoded-jwt-secret": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            SigningKey();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "namespace Microsoft.IdentityModel.Tokens\n{\n    public class SymmetricSecurityKey\n    {\n        public SymmetricSecurityKey(byte[] key)\n        {\n        }\n    }\n}\n\nnamespace Sample\n{\n    using System.Text;\n    using Microsoft.IdentityModel.Tokens;\n\n    class C\n    {\n        SymmetricSecurityKey M()\n        {\n            return new SymmetricSecurityKey(Encoding.UTF8.GetBytes(\"my signing key phrase 2024\"));\n        }\n    }\n}\n",
+    "good": "namespace Microsoft.IdentityModel.Tokens\n{\n    public class SymmetricSecurityKey\n    {\n        public SymmetricSecurityKey(byte[] key)\n        {\n        }\n    }\n}\n\nnamespace Sample\n{\n    using System;\n    using System.Text;\n    using Microsoft.IdentityModel.Tokens;\n\n    class C\n    {\n        SymmetricSecurityKey M()\n        {\n            return new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable(\"JWT_KEY\") ?? string.Empty));\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "no-hide-base-method": {

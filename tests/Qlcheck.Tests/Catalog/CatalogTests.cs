@@ -59,11 +59,7 @@ public class CatalogTests
         "restrict-cors",
         "secure-temp-file",
 
-        // Owned: secrets (plan 05), lock flow (plan 03), duplication (plan 04).
-        "hardcoded-secret",
-        "hardcoded-credential",
-        "database-password",
-        "no-hardcoded-jwt-secret",
+        // Owned: lock flow (plan 03), duplication (plan 04).
         "lock-released",
         "matching-lock-release",
         "release-lock-same-method",

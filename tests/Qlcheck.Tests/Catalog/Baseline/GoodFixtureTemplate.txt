@@ -2,14 +2,11 @@
 # Shrink-only: give the good fixture a compliant use of the API, then delete its line. Never add one.
 async-not-void
 brace-at-line-start
-database-password
 empty-class
 empty-method
 empty-statement
 file-length
 function-length
-hardcoded-credential
-hardcoded-secret
 identical-method
 interface-method-callable
 lock-released
@@ -18,7 +15,6 @@ no-async-identifier
 no-colliding-interface-inherit
 no-empty-block
 no-goto
-no-hardcoded-jwt-secret
 no-hide-base-method
 no-nested-block
 no-not-implemented

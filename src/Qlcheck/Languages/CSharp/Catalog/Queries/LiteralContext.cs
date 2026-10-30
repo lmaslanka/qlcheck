@@ -114,7 +114,7 @@ internal static class LiteralContext
         };
     }
 
-    private static IParameterSymbol? ParameterOf(IMethodSymbol method, BaseArgumentListSyntax list, ArgumentSyntax argument)
+    internal static IParameterSymbol? ParameterOf(IMethodSymbol method, BaseArgumentListSyntax list, ArgumentSyntax argument)
     {
         var parameters = method.Parameters;
         if (argument.NameColon is { } name)

@@ -161,7 +161,7 @@
   },
   {
     "id": "database-password",
-    "message": "A secure password should be used when connecting to a database."
+    "message": "Do not put a password in a connection string literal. Keep the connection string outside source control (user-secrets, or the environment variable `ConnectionStrings__<Name>`) and read it with `GetConnectionString`. Tell the user the database password must be rotated. You cannot rotate it yourself. If the user confirms it is not a real password, add `// qlcheck-ignore: database-password checked-on:<YYYY-MM-DD>` on this line or the line above."
   },
   {
     "id": "datetime-kind",
@@ -317,11 +317,11 @@
   },
   {
     "id": "hardcoded-credential",
-    "message": "Do not hard-code a credential."
+    "message": "Do not hard-code a password. Read it from configuration kept outside source control: `dotnet user-secrets` in development, an environment variable or secret store in production. Do not move it into `appsettings.json`. The value is already in source control, so tell the user it must be rotated. You cannot rotate it yourself. If the user confirms it is not a real secret, add `// qlcheck-ignore: hardcoded-credential checked-on:<YYYY-MM-DD>` on this line or the line above."
   },
   {
     "id": "hardcoded-secret",
-    "message": "Do not hard-code a secret."
+    "message": "Do not hard-code a secret such as an API key, token or private key. Read it from configuration kept outside source control: `dotnet user-secrets` in development, an environment variable or secret store in production. Do not move it into `appsettings.json`. The value is already in source control, so tell the user it must be revoked and rotated. You cannot do that yourself. If the user confirms it is not a real secret, add `// qlcheck-ignore: hardcoded-secret checked-on:<YYYY-MM-DD>` on this line or the line above."
   },
   {
     "id": "http-client-factory",
@@ -665,7 +665,7 @@
   },
   {
     "id": "no-hardcoded-jwt-secret",
-    "message": "JWT secret keys should not be disclosed."
+    "message": "Do not hard-code a JWT signing key. Load the key bytes from configuration kept outside source control or from a key vault. Anyone with this value can forge tokens, so tell the user the key must be rotated. You cannot rotate it yourself. If the user confirms it is not a real key, add `// qlcheck-ignore: no-hardcoded-jwt-secret checked-on:<YYYY-MM-DD>` on this line or the line above."
   },
   {
     "id": "no-hide-base-method",

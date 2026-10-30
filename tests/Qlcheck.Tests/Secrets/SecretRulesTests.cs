@@ -25,13 +25,13 @@ public class SecretRulesTests
     {
         var hit = SecretRules.Classify(null, null, "this is my signing key phrase", Plain with { IsSigningKeySlot = true });
 
-        Assert.Equal(SecretKind.JwtKey, hit?.Kind);
+        AssertKind(SecretKind.JwtKey, hit);
     }
 
     [Fact]
     public void A_jwt_config_key_path_is_a_jwt_key()
     {
-        Assert.Equal(SecretKind.JwtKey, SecretRules.Classify(null, "Jwt:SigningKey", ShortKey, Plain)?.Kind);
+        AssertKind(SecretKind.JwtKey, SecretRules.Classify(null, "Jwt:SigningKey", ShortKey, Plain));
     }
 
     [Fact]
@@ -45,7 +45,7 @@ public class SecretRulesTests
     {
         var value = FakeSecrets.Join("Server=db;User Id=sa;Password=", "Hunter2!;");
 
-        Assert.Equal(SecretKind.ConnectionPassword, SecretRules.Classify(PropertyName, null, value, Plain)?.Kind);
+        AssertKind(SecretKind.ConnectionPassword, SecretRules.Classify(PropertyName, null, value, Plain));
     }
 
     [Fact]
@@ -53,7 +53,7 @@ public class SecretRulesTests
     {
         var hit = SecretRules.Classify(PropertyName, null, Password, Plain with { IsConnectionStringSlot = true });
 
-        Assert.Equal(SecretKind.ConnectionPassword, hit?.Kind);
+        AssertKind(SecretKind.ConnectionPassword, hit);
     }
 
     [Fact]
@@ -61,27 +61,27 @@ public class SecretRulesTests
     {
         var hit = SecretRules.Classify(null, null, FakeSecrets.GitHub, Plain);
 
-        Assert.Equal(SecretKind.Format, hit?.Kind);
+        AssertKind(SecretKind.Format, hit);
         Assert.Equal("It looks like a GitHub token.", hit?.Detail);
     }
 
     [Fact]
     public void A_password_name_needs_no_entropy()
     {
-        Assert.Equal(SecretKind.Password, SecretRules.Classify(PasswordName, null, Password, Plain)?.Kind);
+        AssertKind(SecretKind.Password, SecretRules.Classify(PasswordName, null, Password, Plain));
     }
 
     [Fact]
     public void A_secret_name_needs_a_random_looking_value()
     {
-        Assert.Equal(SecretKind.NamedSecret, SecretRules.Classify(ApiKeyName, null, FakeSecrets.Random, Plain)?.Kind);
+        AssertKind(SecretKind.NamedSecret, SecretRules.Classify(ApiKeyName, null, FakeSecrets.Random, Plain));
         Assert.Null(SecretRules.Classify(ApiKeyName, null, "my-api-key", Plain));
     }
 
     [Fact]
     public void The_name_comes_from_the_last_key_segment_when_none_is_given()
     {
-        Assert.Equal(SecretKind.Password, SecretRules.Classify(null, "Smtp:Password", Password, Plain)?.Kind);
+        AssertKind(SecretKind.Password, SecretRules.Classify(null, "Smtp:Password", Password, Plain));
     }
 
     [Theory]
@@ -100,9 +100,13 @@ public class SecretRulesTests
     [Fact]
     public void Test_paths_keep_the_name_free_kinds_and_drop_the_named_ones()
     {
-        Assert.Equal(SecretKind.Format, SecretRules.Classify(null, null, FakeSecrets.Aws, TestPath)?.Kind);
-        Assert.Equal(SecretKind.JwtKey, SecretRules.Classify(null, JwtKeyPath, ShortKey, TestPath)?.Kind);
+        AssertKind(SecretKind.Format, SecretRules.Classify(null, null, FakeSecrets.Aws, TestPath));
+        AssertKind(SecretKind.JwtKey, SecretRules.Classify(null, JwtKeyPath, ShortKey, TestPath));
         Assert.Null(SecretRules.Classify(PasswordName, null, Password, TestPath));
         Assert.Null(SecretRules.Classify(ApiKeyName, null, FakeSecrets.Random, TestPath));
     }
+
+    // A helper rather than Assert.Equal on the enum, so the enum's values do not read as existing
+    // consts for every Assert.Equal with a small number elsewhere (magic-literal-shared).
+    private static void AssertKind(SecretKind expected, SecretHit? hit) => Assert.Equal(expected, hit?.Kind);
 }

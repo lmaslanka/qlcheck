@@ -14,7 +14,6 @@ command-injection
 connection-string-injection
 constructor-non-virtual
 controller-base
-database-password
 datetime-kind
 deserialization-injection
 dispose-created
@@ -26,8 +25,6 @@ exception-public
 exception-standard-constructors
 export-implements-contract
 filesystem-oracle
-hardcoded-credential
-hardcoded-secret
 identical-branch
 identical-branches
 identical-operands
@@ -48,7 +45,6 @@ no-console-log
 no-equality-on-reference
 no-explicit-rethrow
 no-general-exception
-no-hardcoded-jwt-secret
 no-ignored-test
 no-narrow-visibility
 no-nested-switch
