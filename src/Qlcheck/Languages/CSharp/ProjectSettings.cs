@@ -60,6 +60,21 @@ internal sealed record ProjectSettings(
 
     private const char SdkVersionSeparator = '/';
 
+    private const string NetPrefix = "net";
+
+    private const string NetCoreAppPrefix = "netcoreapp";
+
+    private const string NetStandardPrefix = "netstandard";
+
+    private const int FirstAnnotatedNet = 5;
+
+    private const int FirstAnnotatedNetCoreApp = 3;
+
+    // Whether the framework's own APIs carry nullable annotations for at least one target. Without
+    // them, nullable warnings bound against qlcheck's net10 references would not match the build.
+    // A project with no target listed is taken to be annotated.
+    public bool HasNullableAnnotatedTarget => TargetFrameworks.Count == 0 || TargetFrameworks.Any(IsAnnotated);
+
     public static ProjectSettings Load(string csproj)
     {
         var project = XDocument.Load(csproj);
@@ -153,6 +168,33 @@ internal sealed record ProjectSettings(
             "winexe" => OutputKind.WindowsApplication,
             _ => OutputKind.DynamicallyLinkedLibrary,
         };
+
+    // net5.0 and later, and netcoreapp3.x; not netstandard*, net4x (`net48`) or netcoreapp1-2.
+    private static bool IsAnnotated(string tfm)
+    {
+        var name = tfm.Split('-')[0].ToLowerInvariant();
+        if (name.StartsWith(NetStandardPrefix, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        if (name.StartsWith(NetCoreAppPrefix, StringComparison.Ordinal))
+        {
+            return MajorOf(name[NetCoreAppPrefix.Length..]) >= FirstAnnotatedNetCoreApp;
+        }
+
+        if (name.StartsWith(NetPrefix, StringComparison.Ordinal) && name.Contains('.', StringComparison.Ordinal))
+        {
+            return MajorOf(name[NetPrefix.Length..]) >= FirstAnnotatedNet;
+        }
+
+        return !name.StartsWith(NetPrefix, StringComparison.Ordinal);
+    }
+
+    private static int MajorOf(string version) =>
+        int.TryParse(version.Split('.')[0], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var major)
+            ? major
+            : 0;
 
     private static IReadOnlyList<string> TargetFrameworksOf(Dictionary<string, string> properties)
     {

@@ -13,6 +13,30 @@ internal static class CompilationEngine
         },
         new CompilationRow
         {
+            Id = "non-nullable-uninitialized",
+            Class = CheckClass.Compilation,
+            Apply = ctx => NullablePattern.Apply(ctx, "non-nullable-uninitialized", "CS8618"),
+        },
+        new CompilationRow
+        {
+            Id = "nullable-argument",
+            Class = CheckClass.Compilation,
+            Apply = ctx => NullablePattern.Apply(ctx, "nullable-argument", "CS8604"),
+        },
+        new CompilationRow
+        {
+            Id = "nullable-assignment",
+            Class = CheckClass.Compilation,
+            Apply = ctx => NullablePattern.Apply(ctx, "nullable-assignment", "CS8600", "CS8601", "CS8625"),
+        },
+        new CompilationRow
+        {
+            Id = "nullable-return",
+            Class = CheckClass.Compilation,
+            Apply = ctx => NullablePattern.Apply(ctx, "nullable-return", "CS8603"),
+        },
+        new CompilationRow
+        {
             Id = "unused-using",
             Class = CheckClass.Compilation,
             Apply = ctx => UnusedUsingPattern.Apply(ctx, "unused-using"),

@@ -908,6 +908,10 @@
     "message": "Threads should not lock on objects with weak identity."
   },
   {
+    "id": "non-nullable-uninitialized",
+    "message": "Non-nullable fields and properties should be set before the constructor exits; initialize them, mark them `required`, or make them nullable."
+  },
+  {
     "id": "normalize-uppercase",
     "message": "Strings should be normalized to uppercase."
   },
@@ -918,6 +922,18 @@
   {
     "id": "null-dereference",
     "message": "Null pointers should not be dereferenced."
+  },
+  {
+    "id": "nullable-argument",
+    "message": "Possibly null values should not be passed to non-nullable parameters."
+  },
+  {
+    "id": "nullable-assignment",
+    "message": "Null or possibly null values should not be assigned or converted to non-nullable types."
+  },
+  {
+    "id": "nullable-return",
+    "message": "Methods with a non-nullable return type should not return a possibly null value."
   },
   {
     "id": "one-statement-per-line",

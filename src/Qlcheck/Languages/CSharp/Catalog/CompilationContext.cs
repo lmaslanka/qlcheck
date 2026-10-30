@@ -15,9 +15,11 @@ internal sealed class CompilationContext
     public CompilationContext(
         Compilation compilation,
         IReadOnlySet<SyntaxTree> reportableTrees,
-        IReadOnlyDictionary<string, string> messages)
+        IReadOnlyDictionary<string, string> messages,
+        bool hasNullableAnnotatedTarget = true)
     {
         Compilation = compilation;
+        HasNullableAnnotatedTarget = hasNullableAnnotatedTarget;
         ReportableTrees = reportableTrees;
         _messages = messages;
         _diagnostics = new(() => compilation.GetDiagnostics());
@@ -34,6 +36,9 @@ internal sealed class CompilationContext
     // context: they are bound against but never reported on.
     public IReadOnlySet<SyntaxTree> ReportableTrees { get; }
 
+    // False for a project whose targets all lack framework nullable annotations (ProjectSettings).
+    public bool HasNullableAnnotatedTarget { get; }
+
     // One GetDiagnostics() per compilation, shared by every row that reads compiler diagnostics.
     public ImmutableArray<Diagnostic> Diagnostics => _diagnostics.Value;
 
@@ -42,6 +47,8 @@ internal sealed class CompilationContext
     public IReadOnlySet<SyntaxTree> ErrorTrees => _errorTrees.Value;
 
     public List<Finding> Findings { get; } = [];
+
+    public string Message(string id) => _messages[id];
 
     public void Report(string id, string path, Location location, string? replacement = null) =>
         Findings.Add(Finding.At(id, path, location, _messages[id], replacement));

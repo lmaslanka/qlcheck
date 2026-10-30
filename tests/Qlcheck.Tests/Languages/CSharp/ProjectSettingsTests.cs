@@ -114,6 +114,22 @@ public class ProjectSettingsTests
         Assert.Equal(["net8.0", "net10.0"], settings.TargetFrameworks);
     }
 
+    [Theory]
+    [InlineData("<TargetFramework>net10.0</TargetFramework>", true)]
+    [InlineData("<TargetFramework>net8.0-windows</TargetFramework>", true)]
+    [InlineData("<TargetFramework>netcoreapp3.1</TargetFramework>", true)]
+    [InlineData("<TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>", true)]
+    [InlineData("<TargetFrameworks>netstandard2.0;net48</TargetFrameworks>", false)]
+    [InlineData("<TargetFramework>netcoreapp2.1</TargetFramework>", false)]
+    [InlineData("<TargetFramework>net472</TargetFramework>", false)]
+    [InlineData("", true)]
+    public void HasNullableAnnotatedTarget_needs_one_target_whose_framework_is_annotated(string property, bool expected)
+    {
+        var settings = Load(Project($"<PropertyGroup>{property}</PropertyGroup>"));
+
+        Assert.Equal(expected, settings.HasNullableAnnotatedTarget);
+    }
+
     [Fact]
     public void Load_reads_the_sdk_attribute_without_its_version()
     {

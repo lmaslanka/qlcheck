@@ -27,7 +27,8 @@ internal static class CatalogRun
         }
 
         var reportable = sources.Select(source => trees[source.FullPath]).ToHashSet();
-        var compilationCtx = new CompilationContext(compilation, reportable, messages);
+        var annotated = string.IsNullOrEmpty(csproj) || ProjectSettings.Load(csproj).HasNullableAnnotatedTarget;
+        var compilationCtx = new CompilationContext(compilation, reportable, messages, annotated);
         CompilationEngine.Apply(compilationCtx, selected);
         findings.AddRange(compilationCtx.Findings);
 

@@ -9,9 +9,9 @@ namespace Qlcheck.Tests;
 
 public class CatalogTests
 {
-    private const int CatalogCount = 333;
+    private const int CatalogCount = 337;
 
-    private const int EnabledCatalogCount = 325;
+    private const int EnabledCatalogCount = 329;
 
     private const int UnimplementedCatalogCount = 7;
 

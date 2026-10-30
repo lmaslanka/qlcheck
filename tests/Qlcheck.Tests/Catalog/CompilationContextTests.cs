@@ -28,5 +28,5 @@ public class CompilationContextTests
     private static SyntaxTree Tree(string path, string source) => CSharpTrees.Parse(new SourceFile(path, source));
 
     private static CompilationContext Context(params SyntaxTree[] trees) =>
-        new(CSharpCompilations.Create("fixture", trees), trees.ToHashSet(), new Dictionary<string, string>());
+        new(CSharpCompilations.Create("context", trees), trees.ToHashSet(), new Dictionary<string, string>());
 }
