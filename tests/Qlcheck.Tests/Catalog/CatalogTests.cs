@@ -28,6 +28,8 @@ public class CatalogTests
 
     private const string FixtureFile = "fixtures.json";
 
+    private const string FixturesCompileBaseline = "FixturesCompile.txt";
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -146,6 +148,31 @@ public class CatalogTests
         }
 
         Assert.Empty(failures);
+    }
+
+    // G1: a fixture that does not compile proves nothing about the check, because the semantic model
+    // is full of error types. A placeholder row whose "call" names an attribute or property can only
+    // pass with such a fixture, so this guard keeps placeholders out (plan 01).
+    [Fact]
+    public void Fixtures_compile_without_errors()
+    {
+        var fixtures = LoadFixtures();
+        var failing = new List<string>();
+        foreach (var id in CatalogWalker.ImplementedIds)
+        {
+            if (CatalogWalker.TryClass(id, out var group) && group == CheckClass.Process)
+            {
+                continue;
+            }
+
+            var fixture = fixtures[id];
+            if (HasErrors(fixture.Bad, fixture.Path) || HasErrors(fixture.Good, fixture.Path))
+            {
+                failing.Add(id);
+            }
+        }
+
+        FixtureBaseline.Check(nameof(Fixtures_compile_without_errors), BaselinePath(FixturesCompileBaseline), failing);
     }
 
     [Fact]
@@ -439,6 +466,15 @@ public class CatalogTests
         var model = compilation.GetSemanticModel(tree);
         return CatalogWalker.Walk(file, tree, model, selected, messages);
     }
+
+    private static bool HasErrors(string source, string path)
+    {
+        var compilation = CSharpCompilations.Create("fixture", [CSharpTrees.Parse(new SourceFile(path, source))]);
+        return compilation.GetDiagnostics().Any(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+    }
+
+    private static string BaselinePath(string file) =>
+        Path.Combine(RepoRoot(), "tests", "Qlcheck.Tests", "Catalog", "Baseline", file);
 
     private static Dictionary<string, Fixture> LoadFixtures()
     {
