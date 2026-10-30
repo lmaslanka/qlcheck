@@ -271,6 +271,9 @@ See [ADR 0010](docs/adr/0010-repo-files-combine-like-gitignore.md).
   (`Row.Taint("sql-injection", ...)`, `Row.Handle("no-double-dispose", ...)`) pointing at a
   small, focused matcher function — see `*Engine.cs` under `Catalog/`.
 - **In-process, no subprocess per file.** One parse, one semantic model, every check walks it.
+- **Compilations mirror the build.** Each project's `Nullable`, `OutputType`, implicit usings and
+  ASP.NET Core framework reference are honoured, so restore or build the repository first: global
+  usings and package references are read from `obj/`.
 - The vocabulary (`Check`, `Finding`, `Language`, suppression semantics, …) is pinned down in
   [`CONTEXT.md`](CONTEXT.md). Design rationale lives in [`docs/adr/`](docs/adr).
 
