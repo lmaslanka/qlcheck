@@ -26,6 +26,18 @@ public class QlcheckAppTests : IDisposable
 
     private const string HumanFlag = "--human";
 
+    private const string InitCommand = "init";
+
+    private const string QuietFlag = "-q";
+
+    private const string AddCommand = "add";
+
+    private const string GitIgnore = ".gitignore";
+
+    private const string EnvFile = ".env";
+
+    private const string EnvBody = "A=1\n";
+
     private readonly string _dir = Directory.CreateTempSubdirectory(TempPrefix).FullName;
 
     public void Dispose()
@@ -270,14 +282,14 @@ public class QlcheckAppTests : IDisposable
     [Fact]
     public void Uncommitted_reports_modified_staged_and_untracked_files()
     {
-        Git("init", "-q");
+        Git(InitCommand, QuietFlag);
         Write("Committed.cs", Dirty);
         Write("Modified.cs", "class C {}\n");
-        Git("add", ".");
-        Git("commit", "-q", "-m", "init");
+        Git(AddCommand, ".");
+        Git("commit", QuietFlag, "-m", InitCommand);
         Write("Modified.cs", Dirty);
         Write("Staged.cs", Dirty);
-        Git("add", "Staged.cs");
+        Git(AddCommand, "Staged.cs");
         Write("Untracked.cs", Dirty);
 
         var stdout = new StringWriter();
@@ -294,10 +306,10 @@ public class QlcheckAppTests : IDisposable
     [Fact]
     public void Uncommitted_stats_count_only_changed_files()
     {
-        Git("init", "-q");
+        Git(InitCommand, QuietFlag);
         Write("Committed.cs", Dirty);
-        Git("add", ".");
-        Git("commit", "-q", "-m", "init");
+        Git(AddCommand, ".");
+        Git("commit", QuietFlag, "-m", InitCommand);
         Write("Untracked.cs", Dirty);
 
         var stdout = new StringWriter();
@@ -310,10 +322,10 @@ public class QlcheckAppTests : IDisposable
     [Fact]
     public void Uncommitted_is_clean_when_nothing_changed()
     {
-        Git("init", "-q");
+        Git(InitCommand, QuietFlag);
         Write("Committed.cs", Dirty);
-        Git("add", ".");
-        Git("commit", "-q", "-m", "init");
+        Git(AddCommand, ".");
+        Git("commit", QuietFlag, "-m", InitCommand);
 
         var stdout = new StringWriter();
         var code = QlcheckApp.Run(["--uncommitted", _dir], stdout, new StringWriter());
@@ -416,6 +428,31 @@ public class QlcheckAppTests : IDisposable
             int N() => 42;
         }
         """;
+
+    [Fact]
+    public void Tracked_lists_only_files_git_tracks()
+    {
+        Git(InitCommand, QuietFlag);
+        File.WriteAllText(Path.Combine(_dir, GitIgnore), "ignored.env\n");
+        var tracked = Write(EnvFile, EnvBody);
+        var untracked = Write(".env.local", EnvBody);
+        var ignored = Write("ignored.env", EnvBody);
+        Git(AddCommand, EnvFile, GitIgnore);
+
+        var files = GitChanges.Tracked(_dir);
+
+        Assert.Contains(Path.GetFullPath(tracked), files);
+        Assert.DoesNotContain(Path.GetFullPath(untracked), files);
+        Assert.DoesNotContain(Path.GetFullPath(ignored), files);
+    }
+
+    [Fact]
+    public void Tracked_is_empty_outside_a_repository_and_does_not_throw()
+    {
+        Write(EnvFile, EnvBody);
+
+        Assert.Empty(GitChanges.Tracked(_dir));
+    }
 
     private void Git(params string[] args)
     {
