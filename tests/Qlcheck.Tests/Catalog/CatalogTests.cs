@@ -33,6 +33,8 @@ public class CatalogTests
 
     private const string FixtureAssembly = "fixture";
 
+    private const string GoodFixtureTemplateBaseline = "GoodFixtureTemplate.txt";
+
     private static readonly HashSet<string> NameOnlyBuilders = new(StringComparer.Ordinal)
     {
         "Invoke", "Invokes", "Create", "Creates", "Member", "Members",
@@ -67,6 +69,13 @@ public class CatalogTests
         "release-lock-same-method",
         "identical-method",
     ];
+
+    // The two placeholder good fixtures, whitespace collapsed.
+    private static readonly HashSet<string> EmptyTemplates = new(StringComparer.Ordinal)
+    {
+        "namespace Sample { class C { void M() { return; } } }",
+        "class Holder { void M() { return; } }",
+    };
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -232,6 +241,21 @@ public class CatalogTests
             .ToHashSet(StringComparer.Ordinal);
 
         Assert.Equal(NameOnlyAllowlist.Order(StringComparer.Ordinal), rows.Order(StringComparer.Ordinal));
+    }
+
+    // G3: a good fixture whose only statement is a bare return never touches the API the check is
+    // about, so it cannot catch a check that also fires on compliant use. A good fixture should show
+    // that use (plan 01).
+    [Fact]
+    public void Good_fixture_is_not_the_empty_template()
+    {
+        var failing = LoadFixtures()
+            .Where(pair => EmptyTemplates.Contains(Collapse(pair.Value.Good)))
+            .Select(pair => pair.Key);
+
+        var problems = FixtureBaseline.Compare(
+            nameof(Good_fixture_is_not_the_empty_template), BaselinePath(GoodFixtureTemplateBaseline), failing);
+        Assert.True(problems.Length == 0, problems);
     }
 
     [Fact]
@@ -533,6 +557,9 @@ public class CatalogTests
     }
 
     private static string BaselinePath(string file) => Path.Combine(CatalogDir(), "Baseline", file);
+
+    private static string Collapse(string source) =>
+        string.Join(' ', source.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
 
     private static bool IsNameOnlyRow(InvocationExpressionSyntax invocation) =>
         invocation.Expression is MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.ValueText: "Row" } } member
