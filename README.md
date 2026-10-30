@@ -176,8 +176,8 @@ project found for `--coverage`).
 
 | Class | Checks | What it looks at |
 |---|---|---|
-| Syntax | 174 | Style, naming, structure — pure syntax tree shape |
-| Symbol | 98 | Anything needing type/symbol info — accessibility, overloads, member shape |
+| Syntax | 170 | Style, naming, structure — pure syntax tree shape |
+| Symbol | 102 | Anything needing type/symbol info — accessibility, overloads, member shape |
 | Taint | 27 | Dataflow from an untrusted source (a public parameter, `ReadLine`, etc.) to a sink |
 | Metric | 13 | Size/complexity thresholds (method length, nesting, parameter count) |
 | Flow | 11 | Control-flow shape (unreachable code, always-true conditions) |
@@ -203,7 +203,7 @@ And a few non-taint checks that show the range:
 
 | Check | Message |
 |---|---|
-| `no-weak-hash` | Weak hashing algorithms should not be used. |
+| `hardcoded-secret` | Do not hard-code a secret such as an API key, token or private key (the Finding says where to read it from instead and that the user must rotate it). |
 | `no-plaintext-password` | Passwords should not be stored in plaintext or with a fast hashing algorithm. |
 | `no-double-dispose` | Objects should not be disposed more than once. |
 | `dispose-own-members` | Classes should `Dispose` of members from the classes' own `Dispose` methods. |
