@@ -199,7 +199,7 @@ public class QlcheckAppTests : IDisposable
         Assert.DoesNotContain(FindingsProperty, text);
         Assert.Matches(@"Files checked\s+2", text);
         Assert.Matches(@"Lines checked\s+\d+", text);
-        Assert.Matches(@"Checks run\s+325", text);
+        Assert.Matches(@"Checks run\s+329", text);
         Assert.Matches(FindingsCountPattern, text);
         Assert.Matches(@"Files with findings\s+2", text);
         Assert.Matches(@"Clean files\s+0", text);
@@ -454,25 +454,7 @@ public class QlcheckAppTests : IDisposable
         Assert.Empty(GitChanges.Tracked(_dir));
     }
 
-    private void Git(params string[] args)
-    {
-        var info = new System.Diagnostics.ProcessStartInfo("git")
-        {
-            WorkingDirectory = _dir,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-        };
-        foreach (var arg in (string[])["-c", "user.name=qlcheck", "-c", "user.email=qlcheck@example.com", "-c", "commit.gpgsign=false", .. args])
-        {
-            info.ArgumentList.Add(arg);
-        }
-
-        using var process = System.Diagnostics.Process.Start(info)!;
-        var stderr = process.StandardError.ReadToEnd();
-        process.StandardOutput.ReadToEnd();
-        process.WaitForExit();
-        Assert.True(process.ExitCode == 0, stderr);
-    }
+    private void Git(params string[] args) => TestGit.Run(_dir, args);
 
     private string Write(string name, string text)
     {

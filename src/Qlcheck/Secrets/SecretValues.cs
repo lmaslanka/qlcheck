@@ -44,8 +44,8 @@ internal static partial class SecretValues
     public static bool HasExampleMarker(string value) =>
         ExampleMarkers.Any(marker => value.Contains(marker, StringComparison.OrdinalIgnoreCase));
 
-    // One Pascal, camel or snake word without digits, or the name itself
-    // (`"JwtSecurityTokenHandler"`, `const string Password = "Password"`).
+    // One Pascal, camel, snake or kebab word without digits, or the name itself
+    // (`"JwtSecurityTokenHandler"`, `"config-hardcoded-credential"`, `const string Password = "Password"`).
     public static bool LooksLikeIdentifier(string value, string? name) =>
         Matches(Identifier(), value) || string.Equals(value, name, StringComparison.OrdinalIgnoreCase);
 
@@ -111,7 +111,7 @@ internal static partial class SecretValues
     [GeneratedRegex(@"^your[-_ ].*[-_ ]here$", RegexOptions.IgnoreCase, TimeoutMilliseconds)]
     private static partial Regex YourValueHere();
 
-    [GeneratedRegex(@"^[A-Za-z_]+$", RegexOptions.None, TimeoutMilliseconds)]
+    [GeneratedRegex(@"^[A-Za-z_]+(?:-[A-Za-z_]+)*$", RegexOptions.None, TimeoutMilliseconds)]
     private static partial Regex Identifier();
 
     [GeneratedRegex(@"^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+$", RegexOptions.None, TimeoutMilliseconds)]

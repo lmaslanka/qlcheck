@@ -50,6 +50,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Languages\CSharp\Catalog\checks.json" />
+    <EmbeddedResource Include="Languages\Config\checks.json" />
   </ItemGroup>
 
 </Project>

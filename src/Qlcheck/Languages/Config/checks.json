@@ -1,0 +1,18 @@
+[
+  {
+    "id": "config-database-password",
+    "message": "Do not commit a connection string that contains a password. Remove the password from this file and supply the connection string at run time (user-secrets, or the environment variable `ConnectionStrings__<Name>`). Tell the user the database password must be rotated. You cannot rotate it yourself. If the user confirms it is not a real password, add a `qlcheck-ignore: config-database-password checked-on:<YYYY-MM-DD>` comment on this line or the line above (`//` in JSON, `#` in `.env` and YAML, `<!-- -->` in XML)."
+  },
+  {
+    "id": "config-hardcoded-credential",
+    "message": "Do not commit a password in a configuration file. Remove the value from this file (leave it empty or delete the key) and supply it at run time: `dotnet user-secrets` in development, an environment variable (`Section__Key`) or a secret store in production. The value is already in source control, so tell the user it must be rotated. You cannot rotate it yourself. If the user confirms it is not a real secret, add a `qlcheck-ignore: config-hardcoded-credential checked-on:<YYYY-MM-DD>` comment on this line or the line above (`//` in JSON, `#` in `.env` and YAML, `<!-- -->` in XML)."
+  },
+  {
+    "id": "config-hardcoded-jwt-secret",
+    "message": "Do not commit a JWT signing key in a configuration file. Remove it from this file and supply it at run time from user-secrets, an environment variable or a key vault. Anyone with this value can forge tokens, so tell the user the key must be rotated. You cannot rotate it yourself. If the user confirms it is not a real key, add a `qlcheck-ignore: config-hardcoded-jwt-secret checked-on:<YYYY-MM-DD>` comment on this line or the line above (`//` in JSON, `#` in `.env` and YAML, `<!-- -->` in XML)."
+  },
+  {
+    "id": "config-hardcoded-secret",
+    "message": "Do not commit a secret such as an API key, token or private key in a configuration file. Remove the value from this file and supply it at run time: `dotnet user-secrets` in development, an environment variable (`Section__Key`) or a secret store in production. The value is already in source control, so tell the user it must be revoked and rotated. You cannot do that yourself. If the user confirms it is not a real secret, add a `qlcheck-ignore: config-hardcoded-secret checked-on:<YYYY-MM-DD>` comment on this line or the line above (`//` in JSON, `#` in `.env` and YAML, `<!-- -->` in XML)."
+  }
+]

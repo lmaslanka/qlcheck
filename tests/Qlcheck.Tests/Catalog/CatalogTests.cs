@@ -17,6 +17,8 @@ public class CatalogTests
 
     private const int HouseEnabledCount = 0;
 
+    private const int ConfigEnabledCount = 4;
+
     private const string UnknownId = "nope";
 
     private const string ArchitectureId = "architecture-relationship";
@@ -117,10 +119,10 @@ public class CatalogTests
     }
 
     [Fact]
-    public void Enabled_count_is_house_plus_implemented_catalog()
+    public void Enabled_count_is_house_plus_implemented_catalog_plus_config()
     {
         var enabled = CheckDiscovery.All().Count(check => check.EnabledByDefault);
-        Assert.Equal(HouseEnabledCount + EnabledCatalogCount, enabled);
+        Assert.Equal(HouseEnabledCount + EnabledCatalogCount + ConfigEnabledCount, enabled);
     }
 
     [Fact]

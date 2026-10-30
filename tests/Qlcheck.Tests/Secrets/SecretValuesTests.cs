@@ -40,6 +40,7 @@ public class SecretValuesTests
     [Theory]
     [InlineData("JwtSecurityTokenHandler", null)]
     [InlineData("snake_case_word", null)]
+    [InlineData("config-hardcoded-credential", null)]
     [InlineData("DB_PASSWORD", null)]
     [InlineData("ConnectionStrings:Default", null)]
     [InlineData("Smtp__Password", null)]
