@@ -431,8 +431,7 @@ public class CatalogTests
 
         if (CatalogWalker.TryClass(id, out var group) && group == CheckClass.Compilation)
         {
-            var included = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { path };
-            var compilationCtx = new CompilationContext(compilation, included, messages);
+            var compilationCtx = new CompilationContext(compilation, new HashSet<SyntaxTree> { tree }, messages);
             CompilationEngine.Apply(compilationCtx, selected);
             return compilationCtx.Findings;
         }

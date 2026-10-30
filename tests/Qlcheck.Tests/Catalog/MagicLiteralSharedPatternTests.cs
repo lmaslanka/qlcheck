@@ -31,7 +31,8 @@ public class MagicLiteralSharedPatternTests
         var trees = files.Select(file => CSharpTrees.Parse(new SourceFile(file.Path, file.Source))).ToList();
         var compilation = CSharpCompilations.Create("fixture", trees);
         var messages = new Dictionary<string, string>(StringComparer.Ordinal) { [Id] = "message" };
-        var ctx = new CompilationContext(compilation, included.ToHashSet(StringComparer.OrdinalIgnoreCase), messages);
+        var reported = included.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var ctx = new CompilationContext(compilation, trees.Where(tree => reported.Contains(tree.FilePath)).ToHashSet(), messages);
         MagicLiteralSharedPattern.Apply(ctx, Id);
         return ctx.Findings;
     }

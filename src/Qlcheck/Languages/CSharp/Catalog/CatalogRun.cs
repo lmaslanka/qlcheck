@@ -12,8 +12,7 @@ internal static class CatalogRun
         IEnumerable<SourceScan.LoadedSource> group,
         string? csproj,
         IReadOnlyDictionary<string, SyntaxTree> trees,
-        IReadOnlyList<CatalogCheck> checks,
-        IReadOnlySet<string>? includedFiles = null)
+        IReadOnlyList<CatalogCheck> checks)
     {
         var sources = group.ToList();
         var compilation = Compile(sources, csproj, trees);
@@ -27,10 +26,8 @@ internal static class CatalogRun
             findings.AddRange(CatalogWalker.Walk(source.File, tree, model, selected, messages));
         }
 
-        var compilationCtx = new CompilationContext(
-            compilation,
-            includedFiles ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase),
-            messages);
+        var reportable = sources.Select(source => trees[source.FullPath]).ToHashSet();
+        var compilationCtx = new CompilationContext(compilation, reportable, messages);
         CompilationEngine.Apply(compilationCtx, selected);
         findings.AddRange(compilationCtx.Findings);
 

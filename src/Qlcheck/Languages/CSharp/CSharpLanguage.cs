@@ -65,13 +65,10 @@ internal sealed class CSharpLanguage : ILanguage
         }
 
         var trees = loaded.ToDictionary(source => source.FullPath, source => CSharpTrees.Parse(source.File));
-        var included = loaded
-            .Select(source => source.File.Path)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach (var group in loaded.GroupBy(source => CSharpCompilations.FindCsproj(source.FullPath) ?? string.Empty))
         {
             var csproj = string.IsNullOrEmpty(group.Key) ? null : group.Key;
-            findings.AddRange(CatalogRun.Execute(group, csproj, trees, catalog, included));
+            findings.AddRange(CatalogRun.Execute(group, csproj, trees, catalog));
         }
 
         return findings;

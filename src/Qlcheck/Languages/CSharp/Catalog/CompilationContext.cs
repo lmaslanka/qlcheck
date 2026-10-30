@@ -9,17 +9,19 @@ internal sealed class CompilationContext
 
     public CompilationContext(
         Compilation compilation,
-        IReadOnlySet<string> includedFiles,
+        IReadOnlySet<SyntaxTree> reportableTrees,
         IReadOnlyDictionary<string, string> messages)
     {
         Compilation = compilation;
-        IncludedFiles = includedFiles;
+        ReportableTrees = reportableTrees;
         _messages = messages;
     }
 
     public Compilation Compilation { get; }
 
-    public IReadOnlySet<string> IncludedFiles { get; }
+    // The scanned sources. Other trees in the compilation (such as the project's global usings) are
+    // context: they are bound against but never reported on.
+    public IReadOnlySet<SyntaxTree> ReportableTrees { get; }
 
     public List<Finding> Findings { get; } = [];
 
@@ -29,10 +31,7 @@ internal sealed class CompilationContext
     public void ReportCustom(string id, string path, Location location, string message, string? replacement = null) =>
         Findings.Add(Finding.At(id, path, location, message, replacement));
 
-    public bool Includes(SyntaxTree tree) =>
-        IncludedFiles.Count == 0
-        || IncludedFiles.Contains(PathOf(tree))
-        || IncludedFiles.Contains(tree.FilePath);
+    public bool Includes(SyntaxTree tree) => ReportableTrees.Contains(tree);
 
     public static string PathOf(SyntaxTree tree) => tree.FilePath.Replace('\\', '/');
 }

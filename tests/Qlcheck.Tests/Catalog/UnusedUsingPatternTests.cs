@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis;
 using Qlcheck.Languages.CSharp.Catalog;
 
 namespace Qlcheck.Tests;
@@ -6,18 +7,16 @@ public class UnusedUsingPatternTests
 {
     private const string CompilationName = "qlcheck";
 
-    private static IReadOnlyList<Finding> Run(string source, string path = "Repo.cs")
-    {
-        var included = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { path };
-        return RunWithIncluded(source, path, included);
-    }
+    private static IReadOnlyList<Finding> Run(string source, string path = "Repo.cs") =>
+        RunWithReportable(source, path, reportable: true);
 
-    private static IReadOnlyList<Finding> RunWithIncluded(string source, string path, HashSet<string> included)
+    private static IReadOnlyList<Finding> RunWithReportable(string source, string path, bool reportable)
     {
-        var file = new SourceFile(path, source);
-        var compilation = CSharpCompilations.Create(CompilationName, [CSharpTrees.Parse(file)]);
+        var tree = CSharpTrees.Parse(new SourceFile(path, source));
+        var compilation = CSharpCompilations.Create(CompilationName, [tree]);
         var messages = new Dictionary<string, string>(StringComparer.Ordinal) { ["unused-using"] = "message" };
-        var ctx = new CompilationContext(compilation, included, messages);
+        var trees = reportable ? new HashSet<SyntaxTree> { tree } : [];
+        var ctx = new CompilationContext(compilation, trees, messages);
         UnusedUsingPattern.Apply(ctx, "unused-using");
         return ctx.Findings;
     }
@@ -85,7 +84,7 @@ public class UnusedUsingPatternTests
     }
 
     [Fact]
-    public void Ignores_finding_not_in_the_included_files()
+    public void Ignores_finding_in_a_tree_outside_the_reportable_set()
     {
         var source = """
             using System.Text;
@@ -94,9 +93,8 @@ public class UnusedUsingPatternTests
             {
             }
             """;
-        var included = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Other.cs" };
 
-        Assert.Empty(RunWithIncluded(source, "Repo.cs", included));
+        Assert.Empty(RunWithReportable(source, "Repo.cs", reportable: false));
     }
 
     [Fact]
