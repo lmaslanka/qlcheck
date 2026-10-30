@@ -9,8 +9,9 @@ one finding — but only for one year from `checked-on` (`Run/Suppressions.cs`).
 finding resurfaces even though the comment is still there, forcing a fresh look rather than a
 permanent exemption; the code doesn't silently rot on a decision that might no longer hold
 (a cipher considered fine today may not be in five years). This differs from
-`no-inline-suppression`, which forbids permanently silencing a Check via `[SuppressMessage]` —
-a dated comment is a deferral with a forced re-review, not a silence.
+`no-inline-suppression`, a planned Check (not present today: its placeholder row was removed by
+plan 01) that would forbid permanently silencing a Check via `[SuppressMessage]` — a dated
+comment is a deferral with a forced re-review, not a silence.
 
 Filtering happens once, in `CheckRun.Execute`, against the flat `Finding` list and each file's
 raw text — not inside individual Check predicates, not Roslyn-trivia-based — so it applies

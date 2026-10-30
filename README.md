@@ -14,7 +14,7 @@ compiler model), not regex guesses, so they catch real bugs and skip the obvious
 │ Scan                                         │
 │   Files checked                            1 │
 │   Lines checked                           26 │
-│   Checks run                             501 │
+│   Checks run                             325 │
 │                                              │
 │ Results                                      │
 │   Findings                                 7 │
@@ -49,7 +49,7 @@ compiler model), not regex guesses, so they catch real bugs and skip the obvious
   `jwt-strong-signature` flags any signing call and tells the agent to *ask the user* whether
   the algorithm is strong enough, rather than silently guessing. Once a human has made that
   call, a dated suppression comment keeps the finding quiet for a year, then it resurfaces.
-- **509 checks, zero config.** Covers naming, style, resource management, exceptions,
+- **333 checks, zero config.** Covers naming, style, resource management, exceptions,
   concurrency, and ~20 taint-tracked injection classes (SQL, command, path, LDAP, XPath,
   log, SSRF, zip-slip, and more) out of the box.
 - **Fast.** In-process Roslyn parse/analysis — no external process per file, no network call.
@@ -172,15 +172,16 @@ project found for `--coverage`).
 
 ## What it checks
 
-509 checks across these classes:
+333 checks across these classes:
 
 | Class | Checks | What it looks at |
 |---|---|---|
-| Syntax | 264 | Style, naming, structure — pure syntax tree shape |
-| Symbol | 184 | Anything needing type/symbol info — accessibility, overloads, member shape |
+| Syntax | 174 | Style, naming, structure — pure syntax tree shape |
+| Symbol | 98 | Anything needing type/symbol info — accessibility, overloads, member shape |
 | Taint | 27 | Dataflow from an untrusted source (a public parameter, `ReadLine`, etc.) to a sink |
-| Metric | 14 | Size/complexity thresholds (method length, nesting, parameter count) |
+| Metric | 13 | Size/complexity thresholds (method length, nesting, parameter count) |
 | Flow | 11 | Control-flow shape (unreachable code, always-true conditions) |
+| Compilation | 2 | Whole-compilation facts (unused usings, literals shared across files) |
 | *(opt-in)* | 1 | `coverage` — test coverage gaps, via your own test run |
 
 A sample of the taint-tracked injection checks — each requires untrusted data to actually
@@ -202,7 +203,7 @@ And a few non-taint checks that show the range:
 
 | Check | Message |
 |---|---|
-| `hardcoded-secret` | Do not hard-code a secret. |
+| `no-weak-hash` | Weak hashing algorithms should not be used. |
 | `no-plaintext-password` | Passwords should not be stored in plaintext or with a fast hashing algorithm. |
 | `no-double-dispose` | Objects should not be disposed more than once. |
 | `dispose-own-members` | Classes should `Dispose` of members from the classes' own `Dispose` methods. |

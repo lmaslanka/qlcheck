@@ -105,3 +105,7 @@ method is a very plausible next case, given .NET's `BackgroundService.ExecuteAsy
 Option A: trivial, near-zero-risk, directly addresses the reported case as described. Option B:
 a modest, bounded refinement reusing existing controller-detection helpers already in
 `Patterns.cs`/`StylePatterns.cs` — not attempted here, proposed as a follow-up.
+
+Note (2026-10-29): the `http-verb-attribute` and `controller-route` rows referenced above were
+name-only placeholders and were removed by plan 01, so they can no longer be reused for controller
+detection. `Patterns.BaseController` remains.

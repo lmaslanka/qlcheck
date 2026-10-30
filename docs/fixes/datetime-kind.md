@@ -78,3 +78,7 @@ near-duplicate of that check. `datetime-kind`'s own scope, per its message, is s
 Clean, minimal, syntax-only fix (no semantic model needed — `Names.Creation` is already a
 syntactic type-name lookup). The only judgment call is not overlapping with
 `no-datetime-now-timing`, addressed above by scoping strictly to `new DateTime(...)`.
+
+Note (2026-10-29): the `no-datetime-now-timing` row referenced above was a name-only placeholder
+and was removed by plan 01. Its revival (on by default, decision D6) is planned in
+`docs/plans/01-placeholders/expressions.md`. `datetime-kind` should still not cover `DateTime.Now`.

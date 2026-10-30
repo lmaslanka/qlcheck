@@ -82,3 +82,12 @@ explicitly deferred, not guessed at:
   `Monitor.Enter` on `string`/`Type`/`Thread`/array/`MarshalByRefObject`/`ExecutionContext`
   arguments — CA2002's weak-identity set), since the two messages describe genuinely different
   anti-patterns once read closely.
+
+## Closing note: removed by plan 01
+
+The deferred rows named above were placeholders, and plan 01 (`docs/plans/01-placeholder-cleanup.md`)
+removed them on 2026-10-29 along with the rest of the 176 name-only rows triaged DEAD or NOISY. Their
+ids are no longer in `checks.json`. Each one's real implementation is planned in
+`docs/plans/01-placeholders/`. The exceptions are `identical-method` (reimplemented by plan 04) and
+`database-password`, `hardcoded-credential` and `hardcoded-secret` (rebuilt by plan 05), which stay
+in place until those plans land.
