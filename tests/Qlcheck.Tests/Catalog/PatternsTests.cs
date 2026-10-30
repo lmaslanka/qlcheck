@@ -21,30 +21,6 @@ public class PatternsTests
     }
 
     [Fact]
-    public void NullDeref_ignores_braceless_if_body()
-    {
-        var ctx = MatchFixtures.Context("class C { void M(object x) { if (x == null) M(x); } }");
-        Patterns.NullDeref(ctx, MatchFixtures.Id);
-        Assert.Empty(ctx.Findings);
-    }
-
-    [Fact]
-    public void NullDeref_ignores_condition_that_is_not_an_equality_check()
-    {
-        var ctx = MatchFixtures.Context("class C { void M(bool b) { if (b) { } } }");
-        Patterns.NullDeref(ctx, MatchFixtures.Id);
-        Assert.Empty(ctx.Findings);
-    }
-
-    [Fact]
-    public void NullDeref_ignores_comparison_to_a_non_null_literal()
-    {
-        var ctx = MatchFixtures.Context("class C { void M(int x) { if (x == 5) { } } }");
-        Patterns.NullDeref(ctx, MatchFixtures.Id);
-        Assert.Empty(ctx.Findings);
-    }
-
-    [Fact]
     public void LoopBound_ignores_for_loop_without_a_condition()
     {
         var ctx = MatchFixtures.Context("class C { void M() { for (var i = 0; ; i++) { } } }");

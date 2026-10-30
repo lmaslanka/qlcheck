@@ -17,7 +17,6 @@ internal static class FlowEngine
         Row.Handle("loop-must-change-counter", CheckClass.Flow, StylePatterns.ForNoCounter),
         Row.Invoke("matching-lock-release", CheckClass.Flow, "Exit", MonitorType),
         Row.Handle("no-infinite-loop", CheckClass.Flow, Patterns.Infinite),
-        Row.Handle("null-dereference", CheckClass.Flow, Patterns.NullDeref),
         Row.Handle("reachable-branch", CheckClass.Flow, Patterns.Unreachable),
         Row.Invoke("release-lock-same-method", CheckClass.Flow, "Enter", MonitorType),
     ];

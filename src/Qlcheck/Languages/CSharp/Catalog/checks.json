@@ -921,7 +921,7 @@
   },
   {
     "id": "null-dereference",
-    "message": "Null pointers should not be dereferenced."
+    "message": "Possibly null values should not be dereferenced; check for null or make the source non-nullable instead of adding `!`."
   },
   {
     "id": "nullable-argument",

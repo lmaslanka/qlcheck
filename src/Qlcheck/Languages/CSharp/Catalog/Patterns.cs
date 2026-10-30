@@ -448,8 +448,6 @@ internal static class Patterns
         }
     }
 
-    public static void NullDeref(WalkContext ctx, string id) => Report(ctx, id, SyntaxKind.IfStatement, IsNullDeref);
-
     public static void LoopBound(WalkContext ctx, string id) => Report(ctx, id, SyntaxKind.ForStatement, ForUsesParameter);
 
     public static void AllocDos(WalkContext ctx, string id) =>
@@ -929,38 +927,6 @@ internal static class Patterns
         }
 
         return null;
-    }
-
-    private static bool IsNullDeref(SyntaxNode node)
-    {
-        if (node is not IfStatementSyntax statement)
-        {
-            return false;
-        }
-
-        var name = NullName(statement.Condition);
-        if (name.Length == 0 || statement.Statement is not BlockSyntax block)
-        {
-            return false;
-        }
-
-        const string Dot = ".";
-        return block.ToString().Contains($"{name}{Dot}", StringComparison.Ordinal);
-    }
-
-    private static string NullName(ExpressionSyntax expression)
-    {
-        if (expression is not BinaryExpressionSyntax binary || !binary.IsKind(SyntaxKind.EqualsExpression))
-        {
-            return string.Empty;
-        }
-
-        if (binary.Right is LiteralExpressionSyntax literal && literal.IsKind(SyntaxKind.NullLiteralExpression))
-        {
-            return Names.Simple(binary.Left);
-        }
-
-        return string.Empty;
     }
 
     private static bool ForUsesParameter(SyntaxNode node)

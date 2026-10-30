@@ -19,6 +19,12 @@ internal static class CompilationEngine
         },
         new CompilationRow
         {
+            Id = "null-dereference",
+            Class = CheckClass.Compilation,
+            Apply = ctx => NullablePattern.Apply(ctx, "null-dereference", "CS8602", "CS8605", "CS8670"),
+        },
+        new CompilationRow
+        {
             Id = "nullable-argument",
             Class = CheckClass.Compilation,
             Apply = ctx => NullablePattern.Apply(ctx, "nullable-argument", "CS8604"),

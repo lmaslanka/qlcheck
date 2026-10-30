@@ -13,11 +13,13 @@ public sealed class NullablePatternTests : IDisposable
 
     private const string Uninitialized = "non-nullable-uninitialized";
 
+    private const string Dereference = "null-dereference";
+
     private const string Enabled = "<PropertyGroup><Nullable>enable</Nullable></PropertyGroup>";
 
     private const string PassesNullable = "class C { int M(string? s) => N(s); int N(string t) => t.Length; }";
 
-    private static readonly string[] Ids = [Argument, Return, Assignment, Uninitialized];
+    private static readonly string[] Ids = [Argument, Return, Assignment, Uninitialized, Dereference];
 
     private readonly DirectoryInfo _dir = Directory.CreateTempSubdirectory("qlcheck_nullable_");
 
@@ -34,6 +36,32 @@ public sealed class NullablePatternTests : IDisposable
         var finding = Assert.Single(Run(source));
 
         Assert.Equal(id, finding.Check);
+    }
+
+    [Fact]
+    public void A_possibly_null_value_that_is_dereferenced_gives_null_dereference()
+    {
+        const string source = """
+            class C
+            {
+                int M()
+                {
+                    string? s = System.Environment.GetEnvironmentVariable("X");
+                    return s.Length;
+                }
+            }
+            """;
+
+        Assert.Equal(Dereference, Assert.Single(Run(source, Project(Enabled))).Check);
+    }
+
+    [Theory]
+    [InlineData("class C { int M(string? s) { s?.Trim(); return s.Length; } }", 1)]
+    [InlineData("class C { int M(System.Collections.Generic.List<int>? x) { if (x == null) { x = new(); return x.Count; } return 0; } }", 0)]
+    [InlineData("class C { int M(string? s) { if (s == null) { return 0; } return s.Length; } }", 0)]
+    public void Null_dereference_follows_the_compilers_flow_analysis(string source, int expected)
+    {
+        Assert.Equal(expected, Run(source).Count(finding => finding.Check == Dereference));
     }
 
     [Fact]
