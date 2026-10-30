@@ -2,15 +2,16 @@
 using System.Text.Json;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Qlcheck.Languages.CSharp.Catalog;
 
 namespace Qlcheck.Tests;
 
 public class CatalogTests
 {
-    private const int CatalogCount = 509;
+    private const int CatalogCount = 333;
 
-    private const int EnabledCatalogCount = 501;
+    private const int EnabledCatalogCount = 325;
 
     private const int UnimplementedCatalogCount = 7;
 
@@ -31,6 +32,41 @@ public class CatalogTests
     private const string FixturesCompileBaseline = "FixturesCompile.txt";
 
     private const string FixtureAssembly = "fixture";
+
+    private static readonly HashSet<string> NameOnlyBuilders = new(StringComparer.Ordinal)
+    {
+        "Invoke", "Invokes", "Create", "Creates", "Member", "Members",
+        "Attribute", "Ident", "Token", "Trivia", "Kind", "Kinds",
+    };
+
+    // The name match is the whole check (WORKS), or another plan replaces the row (owned).
+    private static readonly string[] NameOnlyAllowlist =
+    [
+        "empty-statement",
+        "no-async-identifier",
+        "no-dangerous-get-handle",
+        "no-fixme",
+        "no-gc-collect",
+        "no-get-executing-assembly",
+        "no-goto",
+        "no-public-temp-file",
+        "no-todo",
+        "no-trace-write",
+        "no-unsafe",
+        "no-weak-hash",
+        "restrict-cors",
+        "secure-temp-file",
+
+        // Owned: secrets (plan 05), lock flow (plan 03), duplication (plan 04).
+        "hardcoded-secret",
+        "hardcoded-credential",
+        "database-password",
+        "no-hardcoded-jwt-secret",
+        "lock-released",
+        "matching-lock-release",
+        "release-lock-same-method",
+        "identical-method",
+    ];
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -177,6 +213,25 @@ public class CatalogTests
         var problems = FixtureBaseline.Compare(
             nameof(Fixtures_compile_without_errors), BaselinePath(FixturesCompileBaseline), failing);
         Assert.True(problems.Length == 0, problems);
+    }
+
+    // G2: a row built only from a name (an invocation, attribute, identifier, token, trivia or syntax
+    // kind) cannot see types or context, so it is either the whole check or a placeholder that fires
+    // on the wrong code. Each one must be listed here, where a reviewer sees it (plan 01).
+    [Fact]
+    public void Name_only_rows_are_allowlisted()
+    {
+        var engines = Directory.GetFiles(EngineDir(), "*Engine.cs");
+        var rows = engines
+            .SelectMany(engine => CSharpSyntaxTree.ParseText(File.ReadAllText(engine)).GetRoot().DescendantNodes())
+            .OfType<InvocationExpressionSyntax>()
+            .Where(IsNameOnlyRow)
+            .Select(invocation => invocation.ArgumentList.Arguments[0].Expression)
+            .OfType<LiteralExpressionSyntax>()
+            .Select(literal => literal.Token.ValueText)
+            .ToHashSet(StringComparer.Ordinal);
+
+        Assert.Equal(NameOnlyAllowlist.Order(StringComparer.Ordinal), rows.Order(StringComparer.Ordinal));
     }
 
     [Fact]
@@ -479,6 +534,13 @@ public class CatalogTests
 
     private static string BaselinePath(string file) => Path.Combine(CatalogDir(), "Baseline", file);
 
+    private static bool IsNameOnlyRow(InvocationExpressionSyntax invocation) =>
+        invocation.Expression is MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.ValueText: "Row" } } member
+        && NameOnlyBuilders.Contains(member.Name.Identifier.ValueText)
+        && invocation.ArgumentList.Arguments.Count > 0;
+
+    private static string EngineDir() => Path.Combine(RepoRoot(), "src", "Qlcheck", "Languages", "CSharp", "Catalog");
+
     private static string CatalogDir() => Path.Combine(RepoRoot(), "tests", "Qlcheck.Tests", "Catalog");
 
     private static Dictionary<string, Fixture> LoadFixtures()
@@ -490,7 +552,7 @@ public class CatalogTests
 
     private static string ReadCatalogJson()
     {
-        var path = Path.Combine(RepoRoot(), "src", "Qlcheck", "Languages", "CSharp", "Catalog", "checks.json");
+        var path = Path.Combine(EngineDir(), "checks.json");
         return File.ReadAllText(path);
     }
 
