@@ -1,13 +1,12 @@
 // Copyright (c) qlcheck contributors.
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Qlcheck.Scan;
 
 namespace Qlcheck.Languages.CSharp.Catalog;
 
 internal sealed class WalkContext
 {
-    private const string TestMarker = "Test";
-
     private readonly IReadOnlyDictionary<string, string> _messages;
 
     private readonly ILookup<SyntaxKind, SyntaxNode> _byKind;
@@ -26,7 +25,7 @@ internal sealed class WalkContext
         Model = model;
         _messages = messages;
         _byKind = byKind;
-        IsTestFile = path.Contains(TestMarker, StringComparison.OrdinalIgnoreCase);
+        IsTestFile = TestPaths.IsTest(path);
     }
 
     public string Path { get; }
