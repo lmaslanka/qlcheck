@@ -1,0 +1,22 @@
+{
+  "config-database-password": {
+    "bad": "<configuration>\n  <connectionStrings>\n    <add name=\"Default\" connectionString=\"Server=db;User Id=app;Password=Hunter2!\" />\n  </connectionStrings>\n</configuration>\n",
+    "good": "<configuration>\n  <connectionStrings>\n    <add name=\"Default\" connectionString=\"Server=db;Integrated Security=true\" />\n  </connectionStrings>\n</configuration>\n",
+    "path": "web.config"
+  },
+  "config-hardcoded-credential": {
+    "bad": "smtp:\n  host: mail.local\n  password: Hunter2!\n",
+    "good": "smtp:\n  host: mail.local\n  password: \"\"\n  passwordPolicy: strong\n",
+    "path": "deploy/smtp.yaml"
+  },
+  "config-hardcoded-jwt-secret": {
+    "bad": "{\n  \"Jwt\": {\n    \"Key\": \"my signing key phrase 2024\",\n    \"Issuer\": \"qlcheck\"\n  }\n}\n",
+    "good": "{\n  \"Jwt\": {\n    \"Key\": \"\",\n    \"Issuer\": \"qlcheck\"\n  }\n}\n",
+    "path": "appsettings.Production.json"
+  },
+  "config-hardcoded-secret": {
+    "bad": "{\n  \"GitHub\": {\n    \"Token\": \"{{fake:github}}\"\n  }\n}\n",
+    "good": "{\n  \"GitHub\": {\n    \"TokenEndpoint\": \"https://github.com/login/oauth/access_token\"\n  }\n}\n",
+    "path": "appsettings.json"
+  }
+}

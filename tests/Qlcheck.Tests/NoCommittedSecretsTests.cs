@@ -14,7 +14,7 @@ public class NoCommittedSecretsTests
     [Fact]
     public void No_committed_file_holds_a_known_token()
     {
-        var root = RepoRoot();
+        var root = RepoPaths.Root();
         var offenders = Roots
             .SelectMany(dir => Directory.EnumerateFiles(Path.Combine(root, dir), "*", SearchOption.AllDirectories))
             .Where(path => !Path.GetRelativePath(root, path).Split(Path.DirectorySeparatorChar).Any(BuildDirs.Contains))
@@ -23,16 +23,5 @@ public class NoCommittedSecretsTests
             .ToList();
 
         Assert.Empty(offenders);
-    }
-
-    private static string RepoRoot()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Qlcheck.slnx")))
-        {
-            dir = dir.Parent;
-        }
-
-        return dir?.FullName ?? throw new InvalidOperationException("Repo root was not found.");
     }
 }
