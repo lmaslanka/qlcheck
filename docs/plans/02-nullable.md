@@ -299,3 +299,10 @@ About 2 days:
 - **D14. `validate-public-arguments`:** owned by this plan, moved from the placeholder plan's api-design theme. It is
   revived as a semantic, default-on Flow row for externally visible members, in nullable-annotations-off code only, as
   specified in Design 6.
+
+## Follow-ups (not in this plan)
+
+- **`null-forgiving-needs-nullable` and `redundant-null-forgiving`** (D13). Plan 01 removed both placeholder rows. A
+  follow-up plan should revive them on the semantic model: a `!` in a nullable-disabled context (where it has no
+  effect), and a `!` on an expression whose flow state is already not-null
+  (`SemanticModel.GetTypeInfo(expr).Nullability.FlowState == NotNull` before the operator).

@@ -25,6 +25,10 @@ _Avoid_: dialect, plugin
 A numeric or string literal used two or more times in one file that should be a named const or enum member. Messages, long strings, SQL, and literals in attributes, consts or collections don't count.
 A **shared** magic literal is the same value fed to the same target (parameter, field, property or indexer) in another file, or a value that already has a const used for that target.
 
+**Nullable finding**:
+A Finding from the compiler's own nullable-reference warnings (`null-dereference`, `nullable-argument`, `nullable-return`, `nullable-assignment`, `non-nullable-uninitialized`). Reported only where the compiler would warn and the file has no compile errors.
+_Avoid_: null warning, nullability issue
+
 **String concatenation**:
 Joining strings with `+` or `string.Concat`. Use interpolation instead.
 
