@@ -16,7 +16,7 @@ internal static class UnusedUsingPattern
     public static void Apply(CompilationContext ctx, string id)
     {
         var models = new Dictionary<SyntaxTree, SemanticModel>();
-        var diagnostics = ctx.Compilation.GetDiagnostics();
+        var diagnostics = ctx.Diagnostics;
         var unresolvedTrees = diagnostics
             .Where(d => UnresolvedDiagnosticIds.Contains(d.Id))
             .Select(d => d.Location.SourceTree)
