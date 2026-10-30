@@ -19,6 +19,7 @@ internal static class FlowEngine
         Row.Handle("no-infinite-loop", CheckClass.Flow, Patterns.Infinite),
         Row.Handle("reachable-branch", CheckClass.Flow, Patterns.Unreachable),
         Row.Invoke("release-lock-same-method", CheckClass.Flow, "Enter", MonitorType),
+        Row.Handle("validate-public-arguments", CheckClass.Flow, PublicArgumentPattern.Apply),
     ];
 
     public static void Apply(WalkContext ctx, IReadOnlySet<string> selected)

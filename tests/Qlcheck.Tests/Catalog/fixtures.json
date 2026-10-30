@@ -1619,6 +1619,11 @@
     "good": "static class Holder\n{\n    public static void M()\n    {\n        return;\n    }\n}\n",
     "path": "Repo.cs"
   },
+  "validate-public-arguments": {
+    "bad": "#nullable disable\nnamespace Sample\n{\n    public class C\n    {\n        public int Length(string value)\n        {\n            return value.Length;\n        }\n    }\n}\n",
+    "good": "#nullable disable\nnamespace Sample\n{\n    using System;\n\n    public class C\n    {\n        public int Length(string value)\n        {\n            ArgumentNullException.ThrowIfNull(value);\n            return value.Length;\n        }\n    }\n}\n",
+    "path": "Repo.cs"
+  },
   "variant-type-parameter": {
     "bad": "class Holder<T>\n{\n}\n",
     "good": "class Holder<T>\n{\n    T Value;\n}\n",

@@ -1328,6 +1328,10 @@
     "message": "Utility classes should not have public constructors."
   },
   {
+    "id": "validate-public-arguments",
+    "message": "Arguments of public methods should be validated against null."
+  },
+  {
     "id": "variant-type-parameter",
     "message": "Generic type parameters should be co/contravariant when possible."
   },
