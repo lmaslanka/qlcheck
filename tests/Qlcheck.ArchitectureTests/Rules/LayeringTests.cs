@@ -43,6 +43,21 @@ public sealed class LayeringTests
         "Only GitChanges and CoverageRunner shell out to another process",
         "Everything else should be in-process (ADR 0002). If a check genuinely needs an external process, route it through one of the two sanctioned call sites instead of adding a new one.");
 
+    private static readonly Rule L7 = new(
+        "L7",
+        "Secrets depends on nothing else in qlcheck and on no Roslyn type",
+        "Qlcheck.Secrets is the string-only classifier every Language shares (ADR 0012). Work out names and slots in the Language that calls it and pass them in as plain values; never reach back into a Language or Roslyn from Secrets.");
+
+    private static readonly Rule L8 = new(
+        "L8",
+        "Languages do not depend on each other",
+        "Each Language parses its own files. Shared logic belongs in a Language-neutral namespace such as Qlcheck.Secrets or Qlcheck.Scan, not in another Language.");
+
+    private static readonly Rule L9 = new(
+        "L9",
+        "The config Language does not depend on Run, Report, or Cli",
+        "Config readers and Checks only read a file and report Findings; they must not know who called them or how results are shown. Orchestration belongs in Run.");
+
     [Fact]
     public void L1_CliDependsOnNothingElseInQlcheck()
     {
@@ -78,6 +93,26 @@ public sealed class LayeringTests
     public void L6_OnlyGitChangesAndCoverageRunnerShellOut()
     {
         Baseline.Check(L6, ProcessCreations());
+    }
+
+    [Fact]
+    public void L7_SecretsDependsOnNothingElseInQlcheckAndNoRoslyn()
+    {
+        Baseline.Check(L7, ForbiddenUsings("src/Qlcheck/Secrets/", "Qlcheck", "Microsoft.CodeAnalysis"));
+    }
+
+    [Fact]
+    public void L8_LanguagesDoNotDependOnEachOther()
+    {
+        Baseline.Check(L8, ForbiddenUsings("src/Qlcheck/Languages/Config/", "Qlcheck.Languages.CSharp")
+            .Concat(ForbiddenUsings("src/Qlcheck/Languages/CSharp/", "Qlcheck.Languages.Config")));
+    }
+
+    [Fact]
+    public void L9_TheConfigLanguageDoesNotDependOnRunReportOrCli()
+    {
+        Baseline.Check(L9, ForbiddenUsings(
+            "src/Qlcheck/Languages/Config/", "Qlcheck.Run", "Qlcheck.Report", "Qlcheck.Cli"));
     }
 
     private static IEnumerable<string> ForbiddenUsings(string folder, params string[] forbiddenPrefixes) =>
