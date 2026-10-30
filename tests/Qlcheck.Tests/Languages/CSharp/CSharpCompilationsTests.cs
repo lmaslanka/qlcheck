@@ -16,6 +16,10 @@ public class CSharpCompilationsTests
 
     private const string Unresolved = "CS0246";
 
+    private const string UsesHttpContext = "class C { Microsoft.AspNetCore.Http.HttpContext? Context; }";
+
+    private const string LoggingAbstractions = "Microsoft.Extensions.Logging.Abstractions";
+
     private const string AssemblyName = "Sample";
 
     private const string TempPrefix = "qlcheck_globals_";
@@ -157,6 +161,61 @@ public class CSharpCompilationsTests
         Assert.DoesNotContain(compilation.GetDiagnostics(), d => d.Id == "CS8805");
     }
 
+    [AspNetPackFact]
+    public void A_web_sdk_project_references_the_aspnetcore_pack()
+    {
+        const string project = "<Project Sdk=\"Microsoft.NET.Sdk.Web\"></Project>";
+
+        Assert.Empty(Errors(project, UsesHttpContext));
+    }
+
+    [AspNetPackFact]
+    public void A_framework_reference_to_aspnetcore_references_the_pack()
+    {
+        var project = Sdk("<ItemGroup><FrameworkReference Include=\"Microsoft.AspNetCore.App\" /></ItemGroup>");
+
+        Assert.Empty(Errors(project, UsesHttpContext));
+    }
+
+    [Fact]
+    public void A_library_project_does_not_reference_the_aspnetcore_pack()
+    {
+        Assert.Contains("CS0234", Errors(Sdk(string.Empty), UsesHttpContext));
+    }
+
+    [AspNetPackFact]
+    public void A_package_assembly_wins_over_the_pack_copy_of_the_same_file()
+    {
+        var dir = Directory.CreateTempSubdirectory(TempPrefix);
+        try
+        {
+            var dll = Path.Combine(dir.FullName, $"{LoggingAbstractions}.dll");
+            EmitLoggingAbstractions(dll);
+            var project = $"""
+                <Project Sdk="Microsoft.NET.Sdk.Web">
+                  <ItemGroup><Reference Include="{LoggingAbstractions}"><HintPath>{dll}</HintPath></Reference></ItemGroup>
+                </Project>
+                """;
+            var csproj = WriteProject(dir, project, null, default);
+            const string source = """
+                class C
+                {
+                    Microsoft.Extensions.Logging.ILogger? Logger;
+                    Microsoft.Extensions.Logging.PackageMarker? Marker;
+                }
+                """;
+            var tree = CSharpSyntaxTree.ParseText(source, path: Path.Combine(dir.FullName, "Repo.cs"));
+
+            var compilation = CSharpCompilations.CreateForProject(AssemblyName, csproj, [tree]);
+
+            Assert.DoesNotContain(compilation.GetDiagnostics(), d => d.Severity == DiagnosticSeverity.Error);
+        }
+        finally
+        {
+            dir.Delete(recursive: true);
+        }
+    }
+
     [Theory]
     [InlineData("Microsoft.NET.Sdk.Web", "Microsoft.AspNetCore.Http", true)]
     [InlineData("Microsoft.NET.Sdk.Web", "Microsoft.Extensions.Logging", true)]
@@ -246,5 +305,22 @@ public class CSharpCompilationsTests
         }
 
         return csproj;
+    }
+
+    private static void EmitLoggingAbstractions(string path)
+    {
+        const string source = """
+            namespace Microsoft.Extensions.Logging
+            {
+                public interface ILogger { }
+                public sealed class PackageMarker { }
+            }
+            """;
+        var compilation = CSharpCompilation.Create(
+            LoggingAbstractions,
+            [CSharpSyntaxTree.ParseText(source)],
+            [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)],
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        Assert.True(compilation.Emit(path).Success);
     }
 }

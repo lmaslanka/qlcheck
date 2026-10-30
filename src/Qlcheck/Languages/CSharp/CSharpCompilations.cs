@@ -29,7 +29,7 @@ internal static class CSharpCompilations
         var settings = ProjectSettings.Load(csproj);
         var globalUsings = ImplicitUsingsTree.For(csproj, settings);
         var all = globalUsings is null ? trees : trees.Append(globalUsings);
-        var references = Merge(PlatformReferences.Value, ProjectReferences.Load(csproj));
+        var references = Merge(PlatformReferences.Value, ProjectReferences.Load(csproj), SharedFrameworks.For(settings));
         return CreateWith(assemblyName, all, references, settings.Nullable, settings.OutputKind);
     }
 
@@ -67,16 +67,16 @@ internal static class CSharpCompilations
         return CSharpCompilation.Create(assemblyName, trees, references, options);
     }
 
-    private static MetadataReference[] Merge(
-        IEnumerable<MetadataReference> platform,
-        IEnumerable<MetadataReference> extra)
+    // Deduped by assembly file name, earlier sources first: a package's Microsoft.Extensions.* must
+    // not sit beside the shared framework's copy, or every type in it is ambiguous (CS0433).
+    private static MetadataReference[] Merge(params IEnumerable<MetadataReference>[] sources)
     {
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var refs = new List<MetadataReference>();
-        foreach (var reference in platform.Concat(extra))
+        foreach (var reference in sources.SelectMany(source => source))
         {
-            var path = reference.Display ?? string.Empty;
-            if (seen.Add(path))
+            var name = Path.GetFileName(reference.Display ?? string.Empty);
+            if (seen.Add(name))
             {
                 refs.Add(reference);
             }
