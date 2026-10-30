@@ -22,5 +22,7 @@ internal sealed class CatalogCheck : ICheck
 
     public string Language => CSharpLanguage.LanguageId;
 
-    public bool EnabledByDefault => CatalogWalker.IsImplemented(Id) && !OptInIds.Contains(Id);
+    public bool IsImplemented => CatalogWalker.IsImplemented(Id);
+
+    public bool EnabledByDefault => IsImplemented && !OptInIds.Contains(Id);
 }

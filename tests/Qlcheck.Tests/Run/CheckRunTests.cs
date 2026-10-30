@@ -156,6 +156,8 @@ public class CheckRunTests
 
         public string Id { get; }
 
+        public IReadOnlyList<ICheck> Checks => [new BoundCheck(Id, Id)];
+
         public bool Matches(string path) =>
             path.EndsWith(_extension, StringComparison.OrdinalIgnoreCase);
 

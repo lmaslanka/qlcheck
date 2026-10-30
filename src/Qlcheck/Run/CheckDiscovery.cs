@@ -1,6 +1,6 @@
 // Copyright (c) qlcheck contributors.
 using Qlcheck.Checks;
-using Qlcheck.Languages.CSharp.Catalog;
+using Qlcheck.Languages;
 using Qlcheck.Scan;
 
 namespace Qlcheck.Run;
@@ -11,8 +11,21 @@ public static class CheckDiscovery
 
     private const string NoImplementation = "has no implementation.";
 
-    public static IReadOnlyList<ICheck> All() =>
-        Catalog.Checks.OrderBy(c => c.Id, StringComparer.Ordinal).ToList();
+    public static IReadOnlyList<ICheck> All() => All(LanguageDiscovery.All());
+
+    // Ids are globally unique across Languages (ADR 0005), so a `.qlcheck_disable` line or a
+    // suppression comment names exactly one Check.
+    internal static IReadOnlyList<ICheck> All(IReadOnlyList<ILanguage> languages)
+    {
+        var checks = languages.SelectMany(language => language.Checks).OrderBy(c => c.Id, StringComparer.Ordinal).ToList();
+        var duplicate = checks.GroupBy(check => check.Id, StringComparer.Ordinal).FirstOrDefault(group => group.Count() > 1);
+        if (duplicate is not null)
+        {
+            throw new InvalidOperationException($"Duplicate check '{duplicate.Key}'.");
+        }
+
+        return checks;
+    }
 
     internal static bool TrySelect(
         IReadOnlyList<string> checkIds,
@@ -54,7 +67,7 @@ public static class CheckDiscovery
             return $"{UnknownPrefix}{id}";
         }
 
-        return check is CatalogCheck && !CatalogWalker.IsImplemented(id) ? $"Check '{id}' {NoImplementation}" : null;
+        return check.IsImplemented ? null : $"Check '{id}' {NoImplementation}";
     }
 
     private static bool SelectExplicit(
@@ -77,7 +90,7 @@ public static class CheckDiscovery
 
     private static bool RejectUnimplemented(IReadOnlyList<ICheck> checks, TextWriter stderr)
     {
-        var missing = checks.OfType<CatalogCheck>().Where(check => !CatalogWalker.IsImplemented(check.Id)).ToList();
+        var missing = checks.Where(check => !check.IsImplemented).ToList();
         if (missing.Count == 0)
         {
             return true;

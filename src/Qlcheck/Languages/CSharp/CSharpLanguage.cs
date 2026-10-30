@@ -26,6 +26,8 @@ internal sealed class CSharpLanguage : ILanguage
 
     public string Id => LanguageId;
 
+    public IReadOnlyList<ICheck> Checks => Catalog.Catalog.Checks;
+
     public bool Matches(string path) =>
         path.EndsWith(Extension, StringComparison.OrdinalIgnoreCase);
 

@@ -7,6 +7,9 @@ internal interface ILanguage
 {
     string Id { get; }
 
+    // Every Check this Language owns, implemented or not. Ids are unique across Languages.
+    IReadOnlyList<ICheck> Checks { get; }
+
     bool Matches(string path);
 
     RunResult Execute(
