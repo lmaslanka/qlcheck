@@ -14,7 +14,7 @@ compiler model), not regex guesses, so they catch real bugs and skip the obvious
 │ Scan                                         │
 │   Files checked                            1 │
 │   Lines checked                           26 │
-│   Checks run                             325 │
+│   Checks run                             329 │
 │                                              │
 │ Results                                      │
 │   Findings                                 7 │
@@ -49,9 +49,10 @@ compiler model), not regex guesses, so they catch real bugs and skip the obvious
   `jwt-strong-signature` flags any signing call and tells the agent to *ask the user* whether
   the algorithm is strong enough, rather than silently guessing. Once a human has made that
   call, a dated suppression comment keeps the finding quiet for a year, then it resurfaces.
-- **333 checks, zero config.** Covers naming, style, resource management, exceptions,
-  concurrency, and ~20 taint-tracked injection classes (SQL, command, path, LDAP, XPath,
-  log, SSRF, zip-slip, and more) out of the box.
+- **337 checks, zero config.** Covers naming, style, resource management, exceptions,
+  concurrency, ~20 taint-tracked injection classes (SQL, command, path, LDAP, XPath,
+  log, SSRF, zip-slip, and more), and hard-coded secrets in code and configuration files
+  out of the box.
 - **Fast.** In-process Roslyn parse/analysis — no external process per file, no network call.
 
 ## Install
@@ -172,7 +173,7 @@ project found for `--coverage`).
 
 ## What it checks
 
-333 checks across these classes:
+337 checks across these classes:
 
 | Class | Checks | What it looks at |
 |---|---|---|
@@ -182,6 +183,7 @@ project found for `--coverage`).
 | Metric | 13 | Size/complexity thresholds (method length, nesting, parameter count) |
 | Flow | 11 | Control-flow shape (unreachable code, always-true conditions) |
 | Compilation | 2 | Whole-compilation facts (unused usings, literals shared across files) |
+| Config | 4 | Hard-coded secrets in `appsettings*.json`, `*.config`, YAML, and git-tracked `.env*` files |
 | *(opt-in)* | 1 | `coverage` — test coverage gaps, via your own test run |
 
 A sample of the taint-tracked injection checks — each requires untrusted data to actually
@@ -266,8 +268,12 @@ See [ADR 0010](docs/adr/0010-repo-files-combine-like-gitignore.md).
 
 ## How it's built
 
-- **One language today: C#**, via Roslyn, with room to add more (`Language` is a first-class
-  concept — a `Check` only ever runs against files of its own language).
+- **Two languages: C# and config.** C# goes through Roslyn; the `config` language reads
+  `appsettings*.json`, `*.config` and YAML files in process and scans them for hard-coded
+  secrets. `.env*` files are scanned only when git tracks them, because an untracked `.env` is
+  where secrets belong (and outside a git repository they are not scanned at all). `Language`
+  is a first-class concept — a `Check` only ever runs against files of its own language, and
+  check ids are unique across languages.
 - **Checks are rows, not classes.** Almost every check is a declarative `Row` entry
   (`Row.Taint("sql-injection", ...)`, `Row.Handle("no-double-dispose", ...)`) pointing at a
   small, focused matcher function — see `*Engine.cs` under `Catalog/`.
