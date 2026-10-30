@@ -3,6 +3,7 @@ using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Qlcheck.Secrets;
 
 namespace Qlcheck.Languages.CSharp.Catalog.Queries;
 
@@ -85,7 +86,24 @@ internal static class LiteralContext
             return false;
         }
 
-        return !IsIgnoredContext(literal) && !IsCollectionElement(literal);
+        return !IsIgnoredContext(literal) && !IsCollectionElement(literal) && !IsSecret(literal, value);
+    }
+
+    // A secret, or anything stored under a password name, is left to the secret Checks: a magic
+    // literal Finding would print it and suggest gathering it into a const.
+    private static bool IsSecret(LiteralExpressionSyntax literal, string value)
+    {
+        var (name, keyPath) = SecretSlots.NameOf(null, literal);
+        if (SecretNames.Classify(name ?? SecretNames.LastSegment(keyPath)) == SecretNameKind.Password)
+        {
+            return true;
+        }
+
+        var context = new SecretContext(
+            IsTestPath: false,
+            IsConnectionStringSlot: SecretSlots.IsConnectionStringSlot(null, literal),
+            IsSigningKeySlot: false);
+        return SecretRules.Classify(name, keyPath, value, context) is not null;
     }
 
     private static bool IsEquality(BinaryExpressionSyntax binary) =>

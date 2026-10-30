@@ -262,4 +262,29 @@ public class MagicLiteralSharedPatternTests
         Assert.Equal("Box.Back", finding.Replacement);
         Assert.Contains("Magic number -5", finding.Message, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void Ignores_a_password_shared_across_files()
+    {
+        const string options = """
+            namespace Sample
+            {
+                class Options { public string Password { get; set; } }
+            }
+            """;
+        const string a = """
+            namespace Sample
+            {
+                class A { void M(Options o) => o.Password = "Hunter2!"; }
+            }
+            """;
+        const string b = """
+            namespace Sample
+            {
+                class B { void M(Options o) => o.Password = "Hunter2!"; }
+            }
+            """;
+
+        Assert.Empty(Run(("Options.cs", options), (FileA, a), (FileB, b)));
+    }
 }

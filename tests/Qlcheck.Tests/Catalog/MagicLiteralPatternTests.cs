@@ -374,4 +374,36 @@ public class MagicLiteralPatternTests
         Assert.Equal(Twice, findings.Count);
         Assert.Equal(MagicLiteralPattern.NumberMessage("2.5m", Twice), findings[0].Message);
     }
+
+    [Fact]
+    public void Ignores_a_repeated_password_so_the_message_never_prints_it()
+    {
+        const string source = """
+            class C
+            {
+                string Password { get; set; }
+                void M() => Password = "Hunter2!";
+                void N(Client c) => c.Login(password: "Hunter2!");
+            }
+
+            class Client { public void Login(string password) { } }
+            """;
+
+        Assert.Empty(Run(source));
+    }
+
+    [Fact]
+    public void Ignores_a_repeated_known_token()
+    {
+        var token = FakeSecrets.GitHub;
+        var source = $$"""
+            class C
+            {
+                string M() => "{{token}}";
+                string N() => "{{token}}";
+            }
+            """;
+
+        Assert.Empty(Run(source));
+    }
 }
