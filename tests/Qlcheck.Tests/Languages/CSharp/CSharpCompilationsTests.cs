@@ -16,6 +16,8 @@ public class CSharpCompilationsTests
 
     private const string Unresolved = "CS0246";
 
+    private const string AssemblyName = "Sample";
+
     private const string TempPrefix = "qlcheck_globals_";
 
     private static readonly DateTime Earlier = new(2019, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -124,6 +126,38 @@ public class CSharpCompilationsTests
     }
 
     [Theory]
+    [InlineData("enable", NullableContextOptions.Enable)]
+    [InlineData("disable", NullableContextOptions.Disable)]
+    [InlineData("warnings", NullableContextOptions.Warnings)]
+    [InlineData("annotations", NullableContextOptions.Annotations)]
+    public void A_project_compilation_uses_the_csproj_nullable_setting(string value, NullableContextOptions expected)
+    {
+        var compilation = CompileProject(Sdk($"<PropertyGroup><Nullable>{value}</Nullable></PropertyGroup>"), UsesList);
+
+        Assert.Equal(expected, compilation.Options.NullableContextOptions);
+    }
+
+    [Fact]
+    public void The_adhoc_compilation_enables_nullable()
+    {
+        var compilation = CSharpCompilations.Create(AssemblyName, [CSharpSyntaxTree.ParseText(UsesList)]);
+
+        Assert.Equal(NullableContextOptions.Enable, compilation.Options.NullableContextOptions);
+        Assert.Equal(OutputKind.DynamicallyLinkedLibrary, compilation.Options.OutputKind);
+    }
+
+    [Fact]
+    public void An_exe_project_compiles_top_level_statements()
+    {
+        var project = Sdk("<PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>");
+
+        var compilation = CompileProject(project, "System.Console.WriteLine(args.Length);\n");
+
+        Assert.Equal(OutputKind.ConsoleApplication, compilation.Options.OutputKind);
+        Assert.DoesNotContain(compilation.GetDiagnostics(), d => d.Id == "CS8805");
+    }
+
+    [Theory]
     [InlineData("Microsoft.NET.Sdk.Web", "Microsoft.AspNetCore.Http", true)]
     [InlineData("Microsoft.NET.Sdk.Web", "Microsoft.Extensions.Logging", true)]
     [InlineData("Microsoft.NET.Sdk.Worker", "Microsoft.Extensions.Hosting", true)]
@@ -171,16 +205,26 @@ public class CSharpCompilationsTests
         string? generated = null,
         DateTime generatedTime = default)
     {
+        var compilation = CompileProject(csprojXml, source, generated, generatedTime);
+        var tree = compilation.SyntaxTrees.First();
+        return compilation.GetDiagnostics()
+            .Where(d => d.Severity == DiagnosticSeverity.Error && d.Location.SourceTree == tree)
+            .Select(d => d.Id)
+            .ToList();
+    }
+
+    private static Compilation CompileProject(
+        string csprojXml,
+        string source,
+        string? generated = null,
+        DateTime generatedTime = default)
+    {
         var dir = Directory.CreateTempSubdirectory(TempPrefix);
         try
         {
             var csproj = WriteProject(dir, csprojXml, generated, generatedTime);
             var tree = CSharpSyntaxTree.ParseText(source, path: Path.Combine(dir.FullName, "Repo.cs"));
-            var compilation = CSharpCompilations.CreateForProject("Sample", csproj, [tree]);
-            return compilation.GetDiagnostics()
-                .Where(d => d.Severity == DiagnosticSeverity.Error && d.Location.SourceTree == tree)
-                .Select(d => d.Id)
-                .ToList();
+            return CSharpCompilations.CreateForProject(AssemblyName, csproj, [tree]);
         }
         finally
         {

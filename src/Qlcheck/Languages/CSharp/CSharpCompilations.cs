@@ -14,8 +14,14 @@ internal static class CSharpCompilations
 
     private static readonly Lazy<MetadataReference[]> PlatformReferences = new(LoadPlatform);
 
+    // Files outside any csproj compile as a nullable-enabled library (Plan 02 D2).
     public static Compilation Create(string assemblyName, IEnumerable<SyntaxTree> trees) =>
-        CreateWith(assemblyName, trees, PlatformReferences.Value);
+        CreateWith(
+            assemblyName,
+            trees,
+            PlatformReferences.Value,
+            NullableContextOptions.Enable,
+            OutputKind.DynamicallyLinkedLibrary);
 
     // The project's global usings join the scanned trees as a context tree: bound against, never reported.
     public static Compilation CreateForProject(string assemblyName, string csproj, IEnumerable<SyntaxTree> trees)
@@ -23,7 +29,8 @@ internal static class CSharpCompilations
         var settings = ProjectSettings.Load(csproj);
         var globalUsings = ImplicitUsingsTree.For(csproj, settings);
         var all = globalUsings is null ? trees : trees.Append(globalUsings);
-        return CreateWith(assemblyName, all, Merge(PlatformReferences.Value, ProjectReferences.Load(csproj)));
+        var references = Merge(PlatformReferences.Value, ProjectReferences.Load(csproj));
+        return CreateWith(assemblyName, all, references, settings.Nullable, settings.OutputKind);
     }
 
     public static string? FindCsproj(string filePath)
@@ -46,9 +53,12 @@ internal static class CSharpCompilations
     private static Compilation CreateWith(
         string assemblyName,
         IEnumerable<SyntaxTree> trees,
-        IEnumerable<MetadataReference> references)
+        IEnumerable<MetadataReference> references,
+        NullableContextOptions nullable,
+        OutputKind outputKind)
     {
-        var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+        var options = new CSharpCompilationOptions(outputKind)
+            .WithNullableContextOptions(nullable)
             .WithSpecificDiagnosticOptions(
                 new Dictionary<string, ReportDiagnostic>
                 {
