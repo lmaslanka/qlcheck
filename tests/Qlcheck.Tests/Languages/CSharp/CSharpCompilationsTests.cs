@@ -1,7 +1,29 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Qlcheck.Languages.CSharp.Catalog;
+
 namespace Qlcheck.Tests;
 
 public class CSharpCompilationsTests
 {
+    private const string ImplicitUsingsOn = "<PropertyGroup><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>";
+
+    private const string GeneratedStringBuilder = "global using global::System.Text;\n";
+
+    private const string UsesStringBuilder = "class C { object M() => new StringBuilder(); }";
+
+    private const string UsesList = "class C { object M() => new List<int>(); }";
+
+    private const string Unresolved = "CS0246";
+
+    private const string TempPrefix = "qlcheck_globals_";
+
+    private static readonly DateTime Earlier = new(2019, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+    private static readonly DateTime Later = new(2021, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+    private static readonly DateTime ProjectTime = new(2020, 6, 1, 0, 0, 0, DateTimeKind.Utc);
+
     [Fact]
     public void FindCsproj_locates_project_file_in_an_ancestor_directory()
     {
@@ -20,5 +42,165 @@ public class CSharpCompilationsTests
         {
             dir.Delete(recursive: true);
         }
+    }
+
+    [Fact]
+    public void Implicit_usings_resolve_sdk_namespaces_without_a_using()
+    {
+        const string source = """
+            class C
+            {
+                List<int> Items() => new();
+                string Name(string path) => Path.GetFileName(path);
+            }
+            """;
+
+        Assert.Empty(Errors(Sdk(ImplicitUsingsOn), source));
+    }
+
+    [Fact]
+    public void Without_implicit_usings_sdk_namespaces_stay_unresolved()
+    {
+        Assert.Contains(Unresolved, Errors(Sdk(string.Empty), UsesList));
+    }
+
+    [Fact]
+    public void Generated_global_usings_win_when_newer_than_the_csproj()
+    {
+        var errors = Errors(Sdk(string.Empty), UsesStringBuilder, generated: GeneratedStringBuilder, generatedTime: Later);
+
+        Assert.Empty(errors);
+    }
+
+    [Fact]
+    public void A_csproj_newer_than_the_generated_global_usings_is_synthesized()
+    {
+        var project = Sdk(ImplicitUsingsOn);
+
+        Assert.Contains(Unresolved, Errors(project, UsesStringBuilder, generated: GeneratedStringBuilder, generatedTime: Earlier));
+        Assert.Empty(Errors(project, UsesList, generated: GeneratedStringBuilder, generatedTime: Earlier));
+    }
+
+    [Fact]
+    public void Using_items_are_added_and_removed()
+    {
+        const string items = """
+            <ItemGroup>
+              <Using Include="Xunit" />
+              <Using Remove="System.Linq" />
+              <Using Include="System.Text.StringBuilder" Alias="Sb" />
+              <Using Include="System.Math" Static="true" />
+            </ItemGroup>
+            """;
+        var project = Sdk($"{ImplicitUsingsOn}{items}");
+        const string source = """
+            namespace Xunit { public sealed class StubAttribute : System.Attribute { } }
+
+            [Stub]
+            class C
+            {
+                object M() => new Sb();
+                double N() => Abs(-1.0);
+            }
+            """;
+        const string usesLinq = "class D { object M() => new int[0].Select(x => x); }";
+
+        Assert.Empty(Errors(project, source));
+        Assert.Contains("CS1061", Errors(project, usesLinq));
+    }
+
+    [Fact]
+    public void An_unknown_sdk_gets_only_using_items()
+    {
+        const string project = """
+            <Project Sdk="Custom.Sdk">
+              <PropertyGroup><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
+              <ItemGroup><Using Include="System.Text" /></ItemGroup>
+            </Project>
+            """;
+
+        Assert.Empty(Errors(project, UsesStringBuilder));
+        Assert.Contains(Unresolved, Errors(project, UsesList));
+    }
+
+    [Theory]
+    [InlineData("Microsoft.NET.Sdk.Web", "Microsoft.AspNetCore.Http", true)]
+    [InlineData("Microsoft.NET.Sdk.Web", "Microsoft.Extensions.Logging", true)]
+    [InlineData("Microsoft.NET.Sdk.Worker", "Microsoft.Extensions.Hosting", true)]
+    [InlineData("Microsoft.NET.Sdk.Worker", "Microsoft.AspNetCore.Http", false)]
+    [InlineData("Microsoft.NET.Sdk", "Microsoft.Extensions.Logging", false)]
+    public void Each_sdk_synthesizes_its_default_usings(string sdk, string ns, bool expected)
+    {
+        var settings = new ProjectSettings(
+            sdk, NullableContextOptions.Disable, OutputKind.DynamicallyLinkedLibrary, [], ImplicitUsings: true, [], []);
+
+        var text = ImplicitUsingsTree.Synthesize(settings);
+
+        Assert.Contains("global using global::System.Linq;", text, StringComparison.Ordinal);
+        Assert.Equal(expected, text.Contains($"global using global::{ns};", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void The_global_usings_tree_is_never_reported()
+    {
+        var dir = Directory.CreateTempSubdirectory(TempPrefix);
+        try
+        {
+            var csproj = WriteProject(dir, Sdk(string.Empty), GeneratedStringBuilder, Later);
+            var repoPath = Path.Combine(dir.FullName, "Repo.cs");
+            var file = new SourceFile("Repo.cs", "using System.IO;\n\nclass C { }\n");
+            var trees = new Dictionary<string, SyntaxTree> { [repoPath] = CSharpTrees.Parse(file) };
+            var checks = new List<CatalogCheck> { Catalog.Checks.First(check => check.Id == "unused-using") };
+
+            var findings = CatalogRun.Execute([new SourceScan.LoadedSource(repoPath, file)], csproj, trees, checks);
+
+            var finding = Assert.Single(findings);
+            Assert.Equal("Repo.cs", finding.File);
+        }
+        finally
+        {
+            dir.Delete(recursive: true);
+        }
+    }
+
+    private static string Sdk(string body) => $"<Project Sdk=\"Microsoft.NET.Sdk\">{body}</Project>";
+
+    private static List<string> Errors(
+        string csprojXml,
+        string source,
+        string? generated = null,
+        DateTime generatedTime = default)
+    {
+        var dir = Directory.CreateTempSubdirectory(TempPrefix);
+        try
+        {
+            var csproj = WriteProject(dir, csprojXml, generated, generatedTime);
+            var tree = CSharpSyntaxTree.ParseText(source, path: Path.Combine(dir.FullName, "Repo.cs"));
+            var compilation = CSharpCompilations.CreateForProject("Sample", csproj, [tree]);
+            return compilation.GetDiagnostics()
+                .Where(d => d.Severity == DiagnosticSeverity.Error && d.Location.SourceTree == tree)
+                .Select(d => d.Id)
+                .ToList();
+        }
+        finally
+        {
+            dir.Delete(recursive: true);
+        }
+    }
+
+    private static string WriteProject(DirectoryInfo dir, string csprojXml, string? generated, DateTime generatedTime)
+    {
+        var csproj = Path.Combine(dir.FullName, "Sample.csproj");
+        File.WriteAllText(csproj, csprojXml);
+        File.SetLastWriteTimeUtc(csproj, ProjectTime);
+        if (generated is not null)
+        {
+            var obj = Directory.CreateDirectory(Path.Combine(dir.FullName, "obj", "Debug", "net10.0"));
+            var path = Path.Combine(obj.FullName, "Sample.GlobalUsings.g.cs");
+            File.WriteAllText(path, generated);
+            File.SetLastWriteTimeUtc(path, generatedTime);
+        }
+
+        return csproj;
     }
 }

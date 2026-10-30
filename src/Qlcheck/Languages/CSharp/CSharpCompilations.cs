@@ -17,8 +17,14 @@ internal static class CSharpCompilations
     public static Compilation Create(string assemblyName, IEnumerable<SyntaxTree> trees) =>
         CreateWith(assemblyName, trees, PlatformReferences.Value);
 
-    public static Compilation CreateForProject(string assemblyName, string csproj, IEnumerable<SyntaxTree> trees) =>
-        CreateWith(assemblyName, trees, Merge(PlatformReferences.Value, ProjectReferences.Load(csproj)));
+    // The project's global usings join the scanned trees as a context tree: bound against, never reported.
+    public static Compilation CreateForProject(string assemblyName, string csproj, IEnumerable<SyntaxTree> trees)
+    {
+        var settings = ProjectSettings.Load(csproj);
+        var globalUsings = ImplicitUsingsTree.For(csproj, settings);
+        var all = globalUsings is null ? trees : trees.Append(globalUsings);
+        return CreateWith(assemblyName, all, Merge(PlatformReferences.Value, ProjectReferences.Load(csproj)));
+    }
 
     public static string? FindCsproj(string filePath)
     {
