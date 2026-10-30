@@ -30,6 +30,8 @@ public class CatalogTests
 
     private const string FixturesCompileBaseline = "FixturesCompile.txt";
 
+    private const string FixtureAssembly = "fixture";
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -172,7 +174,9 @@ public class CatalogTests
             }
         }
 
-        FixtureBaseline.Check(nameof(Fixtures_compile_without_errors), BaselinePath(FixturesCompileBaseline), failing);
+        var problems = FixtureBaseline.Compare(
+            nameof(Fixtures_compile_without_errors), BaselinePath(FixturesCompileBaseline), failing);
+        Assert.True(problems.Length == 0, problems);
     }
 
     [Fact]
@@ -452,7 +456,7 @@ public class CatalogTests
     {
         var file = new SourceFile(path, source);
         var tree = CSharpTrees.Parse(file);
-        var compilation = CSharpCompilations.Create("fixture", [tree]);
+        var compilation = CSharpCompilations.Create(FixtureAssembly, [tree]);
         var selected = new HashSet<string>(StringComparer.Ordinal) { id };
         var messages = new Dictionary<string, string>(StringComparer.Ordinal) { [id] = Catalog.Messages[id] };
 
@@ -469,16 +473,17 @@ public class CatalogTests
 
     private static bool HasErrors(string source, string path)
     {
-        var compilation = CSharpCompilations.Create("fixture", [CSharpTrees.Parse(new SourceFile(path, source))]);
+        var compilation = CSharpCompilations.Create(FixtureAssembly, [CSharpTrees.Parse(new SourceFile(path, source))]);
         return compilation.GetDiagnostics().Any(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
     }
 
-    private static string BaselinePath(string file) =>
-        Path.Combine(RepoRoot(), "tests", "Qlcheck.Tests", "Catalog", "Baseline", file);
+    private static string BaselinePath(string file) => Path.Combine(CatalogDir(), "Baseline", file);
+
+    private static string CatalogDir() => Path.Combine(RepoRoot(), "tests", "Qlcheck.Tests", "Catalog");
 
     private static Dictionary<string, Fixture> LoadFixtures()
     {
-        var path = Path.Combine(RepoRoot(), "tests", "Qlcheck.Tests", "Catalog", FixtureFile);
+        var path = Path.Combine(CatalogDir(), FixtureFile);
         var rows = JsonSerializer.Deserialize<Dictionary<string, Fixture>>(File.ReadAllText(path), JsonOptions);
         return rows ?? [];
     }

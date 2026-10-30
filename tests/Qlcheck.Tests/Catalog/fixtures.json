@@ -1005,8 +1005,8 @@
     "path": "Repo.cs"
   },
   "no-dangerous-get-handle": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            DangerousGetHandle();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "using System;\nusing System.Runtime.InteropServices;\n\nnamespace Sample\n{\n    class C\n    {\n        IntPtr M(SafeHandle handle)\n        {\n            return handle.DangerousGetHandle();\n        }\n    }\n}\n",
+    "good": "using System;\nusing System.Runtime.InteropServices;\n\nnamespace Sample\n{\n    class C\n    {\n        bool M(SafeHandle handle)\n        {\n            return handle.IsInvalid;\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "no-datetime-now-timing": {
@@ -1150,8 +1150,8 @@
     "path": "Repo.cs"
   },
   "no-gc-collect": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            GC.Collect();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "using System;\n\nnamespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            GC.Collect();\n        }\n    }\n}\n",
+    "good": "using System;\n\nnamespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            GC.KeepAlive(this);\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "no-general-exception": {
@@ -1160,8 +1160,8 @@
     "path": "Repo.cs"
   },
   "no-get-executing-assembly": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            GetExecutingAssembly();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "using System.Reflection;\n\nnamespace Sample\n{\n    class C\n    {\n        Assembly M()\n        {\n            return Assembly.GetExecutingAssembly();\n        }\n    }\n}\n",
+    "good": "using System.Reflection;\n\nnamespace Sample\n{\n    class C\n    {\n        Assembly M()\n        {\n            return typeof(C).Assembly;\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "no-goto": {
@@ -1400,8 +1400,8 @@
     "path": "Repo.cs"
   },
   "no-public-temp-file": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            GetTempPath();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "using System;\nusing System.IO;\n\nnamespace Sample\n{\n    class C\n    {\n        string M()\n        {\n            return Path.GetTempPath();\n        }\n    }\n}\n",
+    "good": "using System;\nusing System.IO;\n\nnamespace Sample\n{\n    class C\n    {\n        string M()\n        {\n            return Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "no-recursive-inheritance": {
@@ -1535,8 +1535,8 @@
     "path": "Repo.cs"
   },
   "no-trace-write": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Trace.WriteLine();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "using System.Diagnostics;\n\nnamespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Trace.WriteLine(\"done\");\n        }\n    }\n}\n",
+    "good": "using System.Diagnostics;\n\nnamespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Trace.Flush();\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "no-trace-write-line-if": {
@@ -1560,8 +1560,8 @@
     "path": "Repo.cs"
   },
   "no-unsafe": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            unsafe { }\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            unsafe\n            {\n            }\n        }\n    }\n}\n",
+    "good": "namespace Sample\n{\n    class C\n    {\n        void M(int[] items)\n        {\n            checked\n            {\n                items[0]++;\n            }\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "no-useless-bitwise": {
@@ -1585,8 +1585,8 @@
     "path": "Repo.cs"
   },
   "no-weak-hash": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            MD5.Create();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "using System.Security.Cryptography;\n\nnamespace Sample\n{\n    class C\n    {\n        HashAlgorithm M()\n        {\n            return MD5.Create();\n        }\n    }\n}\n",
+    "good": "using System.Security.Cryptography;\n\nnamespace Sample\n{\n    class C\n    {\n        HashAlgorithm M()\n        {\n            return SHA256.Create();\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "no-weak-lock": {
@@ -2010,8 +2010,8 @@
     "path": "Repo.cs"
   },
   "restrict-cors": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            AllowAnyOrigin();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "namespace Microsoft.AspNetCore.Cors.Infrastructure\n{\n    public class CorsPolicyBuilder\n    {\n        public CorsPolicyBuilder AllowAnyOrigin() => this;\n\n        public CorsPolicyBuilder WithOrigins(params string[] origins) => this;\n    }\n}\n\nnamespace Sample\n{\n    using Microsoft.AspNetCore.Cors.Infrastructure;\n\n    class C\n    {\n        CorsPolicyBuilder M(CorsPolicyBuilder builder)\n        {\n            return builder.AllowAnyOrigin();\n        }\n    }\n}\n",
+    "good": "namespace Microsoft.AspNetCore.Cors.Infrastructure\n{\n    public class CorsPolicyBuilder\n    {\n        public CorsPolicyBuilder AllowAnyOrigin() => this;\n\n        public CorsPolicyBuilder WithOrigins(params string[] origins) => this;\n    }\n}\n\nnamespace Sample\n{\n    using Microsoft.AspNetCore.Cors.Infrastructure;\n\n    class C\n    {\n        CorsPolicyBuilder M(CorsPolicyBuilder builder)\n        {\n            return builder.WithOrigins(\"https://example.com\");\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "restrict-deserialized-types": {
@@ -2070,8 +2070,8 @@
     "path": "Repo.cs"
   },
   "secure-temp-file": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            GetTempFileName();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "using System.IO;\n\nnamespace Sample\n{\n    class C\n    {\n        string M()\n        {\n            return Path.GetTempFileName();\n        }\n    }\n}\n",
+    "good": "using System.IO;\n\nnamespace Sample\n{\n    class C\n    {\n        string M()\n        {\n            return Path.GetRandomFileName();\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "serialization-callback": {

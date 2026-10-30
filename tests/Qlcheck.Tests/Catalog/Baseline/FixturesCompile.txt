@@ -107,7 +107,6 @@ no-colliding-interface-inherit
 no-conflicting-transparency
 no-console-log
 no-custom-crypto
-no-dangerous-get-handle
 no-datetime-now-timing
 no-datetime-primary-key
 no-delegate-subtraction
@@ -117,9 +116,7 @@ no-equality-on-reference
 no-expected-exception
 no-explicit-caller-info
 no-explicit-rethrow
-no-gc-collect
 no-general-exception
-no-get-executing-assembly
 no-hardcoded-jwt-secret
 no-hardcoded-uri
 no-ignored-initial-value
@@ -143,7 +140,6 @@ no-optional-ref
 no-params-on-override
 no-public-multidimensional
 no-public-pointer
-no-public-temp-file
 no-recursive-inheritance
 no-rooted-action-route
 no-self-assignment
@@ -154,11 +150,8 @@ nosql-injection
 no-stack-trace-disclosure
 no-suppress-finalize
 no-thread-static-initializer
-no-trace-write
 no-trace-write-line-if
-no-unsafe
 no-virtual-field-event
-no-weak-hash
 no-weak-tls
 no-world-accessible-file
 no-write-only-property
@@ -212,7 +205,6 @@ remove-obsolete
 request-size-limit
 request-validation
 required-value-input
-restrict-cors
 restrict-deserialized-types
 restrictive-csp
 reuse-client
@@ -220,7 +212,6 @@ robust-cipher
 route-constraint-type
 safe-cast
 secure-cipher-mode
-secure-temp-file
 serialization-callback
 service-and-operation-contract
 set-locale

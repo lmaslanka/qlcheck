@@ -57,8 +57,11 @@ internal static class CSharpCompilations
         NullableContextOptions nullable,
         OutputKind outputKind)
     {
+        // Unsafe code is always allowed: a project that has it sets AllowUnsafeBlocks for its own
+        // build, and CS0227 says nothing about the code a Check inspects.
         var options = new CSharpCompilationOptions(outputKind)
             .WithNullableContextOptions(nullable)
+            .WithAllowUnsafe(true)
             .WithSpecificDiagnosticOptions(
                 new Dictionary<string, ReportDiagnostic>
                 {

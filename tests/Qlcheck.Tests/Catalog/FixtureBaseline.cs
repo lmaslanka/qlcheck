@@ -2,10 +2,11 @@ namespace Qlcheck.Tests;
 
 // A shrink-only list of check ids exempt from a fixture guard, in the spirit of the architecture
 // ratchet (ADR 0009): an id that newly fails the guard fails the test, and so does a listed id that
-// now passes, so the file can only shrink. Lines starting with '#' are comments.
+// now passes, so the file can only shrink. Lines starting with '#' are comments. Compare returns
+// what is wrong, or an empty string when the ids match the file.
 internal static class FixtureBaseline
 {
-    public static void Check(string guard, string path, IEnumerable<string> failingIds)
+    public static string Compare(string guard, string path, IEnumerable<string> failingIds)
     {
         var actual = failingIds.ToHashSet(StringComparer.Ordinal);
         var baseline = File.ReadAllLines(path)
@@ -16,7 +17,7 @@ internal static class FixtureBaseline
         var fixedIds = baseline.Except(actual).Order(StringComparer.Ordinal).ToList();
         if (added.Count == 0 && fixedIds.Count == 0)
         {
-            return;
+            return string.Empty;
         }
 
         var message = $"{guard} failed.";
@@ -30,6 +31,6 @@ internal static class FixtureBaseline
             message += $"\n{fixedIds.Count} baselined id(s) now pass; delete them from {Path.GetFileName(path)}:\n  {string.Join("\n  ", fixedIds)}";
         }
 
-        Assert.Fail(message);
+        return message;
     }
 }
