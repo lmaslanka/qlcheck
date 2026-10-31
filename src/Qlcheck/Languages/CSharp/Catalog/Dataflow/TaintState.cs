@@ -50,6 +50,18 @@ internal sealed class TaintState
 
     public TaintState Clone() => new(new Dictionary<object, Taint>(_taints));
 
+    // Every taint any of the states holds: a flow-insensitive summary.
+    public static TaintState Union(IEnumerable<TaintState> states)
+    {
+        var union = new TaintState();
+        foreach (var state in states)
+        {
+            state.MergeInto(union);
+        }
+
+        return union;
+    }
+
     // Unions this state into `into` and reports whether any label there grew.
     public bool MergeInto(TaintState into)
     {

@@ -107,7 +107,6 @@
     "checks": [
       "sql-injection"
     ],
-    "pending": "phase 2",
     "source": "public class R { public void M(DbCommand c, string name) {\n  Action run = () => { c.CommandText = \"SELECT * FROM U WHERE n = '\" + name + \"'\"; c.ExecuteNonQuery(); }; run(); } }"
   },
   "sql_local_function": {
@@ -118,7 +117,6 @@
     "checks": [
       "sql-injection"
     ],
-    "pending": "phase 2",
     "source": "public class R { public void M(DbCommand c, string name) {\n  Run(\"SELECT * FROM U WHERE n = '\" + name + \"'\");\n  void Run(string sql) { c.CommandText = sql; c.ExecuteNonQuery(); } } }"
   },
   "sql_private_helper": {

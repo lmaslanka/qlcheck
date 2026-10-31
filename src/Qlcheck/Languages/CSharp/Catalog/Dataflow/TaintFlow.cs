@@ -29,6 +29,12 @@ internal sealed class TaintFlow
     // `x ??= e` into an assignment through such a capture, which must write to x.
     private readonly Dictionary<CaptureId, ILocalSymbol> _localAliases = [];
 
+    // The taint passed to each local-function parameter at its call sites (D6), and a counter that
+    // grows whenever one of them gains a label.
+    private readonly Dictionary<IParameterSymbol, Taint> _localArguments = new(SymbolEqualityComparer.Default);
+
+    private int _localArgumentsVersion;
+
     private TaintFlow(IReadOnlyList<Sink> sinks)
     {
         _sinks = sinks;
@@ -90,8 +96,54 @@ internal sealed class TaintFlow
             Flow(block.FallThroughSuccessor, Guarded(block, state, holds: !jumpsWhen), states, work);
         }
 
+        return AnalyzeNested(graph, TaintState.Union(states.Values));
+    }
+
+    // Lambdas and local functions are sub-graphs (D6). Each starts from everything the enclosing
+    // body's variables ever held (flow-insensitive capture); a local function's parameters also
+    // hold what its calls passed. A call from one local function to another can pass more, so the
+    // local functions run again until their parameters stop growing.
+    private bool AnalyzeNested(ControlFlowGraph graph, TaintState outer)
+    {
+        foreach (var lambda in Lambdas(graph))
+        {
+            if (!Analyze(graph.GetAnonymousFunctionControlFlowGraph(lambda), outer.Clone()))
+            {
+                return false;
+            }
+        }
+
+        for (var round = 0; round <= graph.LocalFunctions.Length; round++)
+        {
+            var version = _localArgumentsVersion;
+            foreach (var function in graph.LocalFunctions)
+            {
+                var entry = outer.Clone();
+                foreach (var parameter in function.Parameters)
+                {
+                    entry.Set(parameter, _localArguments.GetValueOrDefault(parameter));
+                }
+
+                if (!Analyze(graph.GetLocalFunctionControlFlowGraph(function), entry))
+                {
+                    return false;
+                }
+            }
+
+            if (version == _localArgumentsVersion)
+            {
+                break;
+            }
+        }
+
         return true;
     }
+
+    private static IEnumerable<IFlowAnonymousFunctionOperation> Lambdas(ControlFlowGraph graph) =>
+        graph.Blocks
+            .SelectMany(block => block.BranchValue is null ? block.Operations : block.Operations.Add(block.BranchValue))
+            .SelectMany(operation => operation.DescendantsAndSelf())
+            .OfType<IFlowAnonymousFunctionOperation>();
 
     // The state on the edge where the block's branch condition is `holds`.
     private static TaintState Guarded(BasicBlock block, TaintState state, bool holds)
@@ -117,13 +169,7 @@ internal sealed class TaintFlow
             return false;
         }
 
-        var union = new TaintState();
-        foreach (var state in states.Values)
-        {
-            state.MergeInto(union);
-        }
-
-        states[block] = union;
+        states[block] = TaintState.Union(states.Values);
         work.Enqueue(block);
         return true;
     }
@@ -372,17 +418,8 @@ internal sealed class TaintFlow
     {
         var method = invocation.TargetMethod;
         var receiver = invocation.Instance is { } instance ? Eval(instance, state) : Taint.None;
-        var shell = TaintModel.StartsShell(invocation.Arguments);
-        var arguments = Taint.None;
-        var sequence = Taint.None;
-        foreach (var argument in invocation.Arguments)
-        {
-            var taint = Eval(argument.Value, state);
-            arguments = arguments.Join(taint);
-            sequence = argument == invocation.Arguments[0] ? taint : sequence;
-            Check(method, argument.Parameter?.Name, taint, invocation.Syntax, shell);
-        }
-
+        var taints = Arguments(invocation, state);
+        var arguments = taints.Aggregate(Taint.None, (all, taint) => all.Join(taint));
         if (TaintModel.SourceOf(invocation) is { } origin)
         {
             return Taint.From(TaintModel.LabelFor(invocation.Type), origin);
@@ -390,7 +427,7 @@ internal sealed class TaintFlow
 
         if (TaintModel.IsLinq(method))
         {
-            return Result(invocation.Type, sequence);
+            return Result(invocation.Type, taints.FirstOrDefault());
         }
 
         if (TaintModel.MutatesReceiver(method) && Root(invocation.Instance) is { } root)
@@ -399,6 +436,38 @@ internal sealed class TaintFlow
         }
 
         return TaintModel.Propagates(method) ? Result(invocation.Type, receiver.Join(arguments)) : Taint.None;
+    }
+
+    // Each argument's taint, after checking it against the sinks and passing it to a local
+    // function's parameter.
+    private List<Taint> Arguments(IInvocationOperation invocation, TaintState state)
+    {
+        var method = invocation.TargetMethod;
+        var shell = TaintModel.StartsShell(invocation.Arguments);
+        var taints = new List<Taint>(invocation.Arguments.Length);
+        foreach (var argument in invocation.Arguments)
+        {
+            var taint = Eval(argument.Value, state);
+            taints.Add(taint);
+            Check(method, argument.Parameter?.Name, taint, invocation.Syntax, shell);
+            if (method.MethodKind == MethodKind.LocalFunction && argument.Parameter is { } parameter)
+            {
+                PassToLocalFunction(parameter.OriginalDefinition, taint);
+            }
+        }
+
+        return taints;
+    }
+
+    private void PassToLocalFunction(IParameterSymbol parameter, Taint taint)
+    {
+        var old = _localArguments.GetValueOrDefault(parameter);
+        var joined = old.Join(taint);
+        if (joined.Labels != old.Labels)
+        {
+            _localArguments[parameter] = joined;
+            _localArgumentsVersion++;
+        }
     }
 
     // The local, parameter or capture a call chain starts from: `builder` in

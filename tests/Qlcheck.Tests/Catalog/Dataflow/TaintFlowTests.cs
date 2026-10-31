@@ -149,6 +149,26 @@ public class TaintFlowTests
         Assert.Empty(Run($"public class R {{ string _query = \"\"; {members} }}"));
     }
 
+    [Theory]
+    [InlineData("Action run = () => { c.CommandText = \"SELECT \" + userId; }; run();")]
+    [InlineData("var query = \"SELECT \" + userId; Action run = () => c.CommandText = query; run();")]
+    [InlineData("Run(\"SELECT \" + userId); void Run(string sql) { c.CommandText = sql; }")]
+    [InlineData("var query = \"SELECT \" + userId; Run(); void Run() { c.CommandText = query; }")]
+    [InlineData("Outer(userId); void Outer(string a) { Inner(a); } void Inner(string b) { c.CommandText = b; }")]
+    [InlineData("Action outer = () => { Action inner = () => c.CommandText = userId; inner(); }; outer();")]
+    public void Lambdas_and_local_functions_see_captured_and_passed_taint(string body)
+    {
+        Assert.Single(Run($"public class R {{ public void M(DbCommand c, string userId) {{ {body} }} }}"));
+    }
+
+    [Theory]
+    [InlineData("Run(\"SELECT 1\"); void Run(string sql) { c.CommandText = sql; }")]
+    [InlineData("Action<string> run = sql => c.CommandText = sql; run(\"SELECT 1\");")]
+    public void Lambda_and_local_function_parameters_are_not_sources(string body)
+    {
+        Assert.Empty(Run($"public class R {{ public void M(DbCommand c, string userId) {{ {body} }} }}"));
+    }
+
     [Fact]
     public void A_numeric_parameter_carries_only_the_numeric_label_even_as_text()
     {
