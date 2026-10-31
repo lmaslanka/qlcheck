@@ -21,6 +21,14 @@ Probe corpus, scorer and throwaway prototype (all outside the repo):
   and lambdas and local functions as sub-graphs (D6). `Console.In.ReadLine` is a source. All phase 2 probes pass:
   41 pass; 23 are pending (phase 4: 14, phase 5: 8, and the out-of-scope `sql_private_helper`). Timing unchanged
   from phase 1.
+- **Phase 3 done** (2026-10-31, branch `taint-barriers`): `Parse`/`TryParse`/`Convert` relabel to Numeric (or clear,
+  for Guid, dates and enums), `Path.GetFileName` to FileName, `Math.Min/Clamp` with a constant bound clear Numeric;
+  edge guards for a constant upper bound, `StartsWith` after `GetFullPath` (ContainedPath) and `IUrlHelper.IsLocalUrl`.
+  **Moved to phase 4:** the encoders (`HtmlEncode`, `UrlEncode`, `EscapeDataString`, `HtmlEncoder.Encode`) and
+  `Regex.Escape` clear taint only for the XSS, redirect and regex rows, so they land with those rows rather than
+  making an encoded value clean for `sql-injection` too. The probes for these barriers sit on phase 4 rows, so no
+  probe changed. Side fix: `short-circuit` reported any `a & b` of two identifiers, flags enums included; it now
+  requires bool.
 - **Pulled forward from phase 3:** the edge guards `== const` and readonly-set `Contains` (so `sql_allowlist_column`
   does not regress to a false positive).
 - **Prefilter:** a body is built only when an identifier with a sink's name *binds* to that sink (`SinkFilter`). Names
