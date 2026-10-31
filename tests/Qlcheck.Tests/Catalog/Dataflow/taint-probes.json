@@ -1,0 +1,631 @@
+{
+  "sql_readme_shape": {
+    "tag": "direct",
+    "expect": [
+      "sql-injection"
+    ],
+    "checks": [
+      "sql-injection"
+    ],
+    "pending": "phase 1",
+    "source": "public class R { public void M(DbCommand command, string userId) { command.CommandText = userId; command.ExecuteReader(); } }"
+  },
+  "sql_local_concat": {
+    "tag": "local",
+    "expect": [
+      "sql-injection"
+    ],
+    "checks": [
+      "sql-injection"
+    ],
+    "pending": "phase 1",
+    "source": "public class R { public void M(DbCommand command, string userId) {\n  var query = \"SELECT * FROM U WHERE id = '\" + userId + \"'\";\n  command.CommandText = query;\n  command.ExecuteReader(); } }"
+  },
+  "sql_local_interp": {
+    "tag": "local",
+    "expect": [
+      "sql-injection"
+    ],
+    "checks": [
+      "sql-injection"
+    ],
+    "pending": "phase 1",
+    "source": "public class R { public void M(DbCommand c, string name) {\n  var q = $\"SELECT * FROM U WHERE n = '{name}'\"; c.CommandText = q; c.ExecuteNonQuery(); } }"
+  },
+  "sql_compound": {
+    "tag": "compound",
+    "expect": [
+      "sql-injection"
+    ],
+    "checks": [
+      "sql-injection"
+    ],
+    "pending": "phase 2",
+    "source": "public class R { public void M(DbCommand c, string name) {\n  var q = \"SELECT * FROM U WHERE n = '\"; q += name; q += \"'\"; c.CommandText = q; c.ExecuteNonQuery(); } }"
+  },
+  "sql_stringbuilder": {
+    "tag": "builder",
+    "expect": [
+      "sql-injection"
+    ],
+    "checks": [
+      "sql-injection"
+    ],
+    "pending": "phase 2",
+    "source": "public class R { public void M(DbCommand c, string name) {\n  var sb = new StringBuilder(\"SELECT * FROM U WHERE n = '\"); sb.Append(name).Append(\"'\");\n  c.CommandText = sb.ToString(); c.ExecuteNonQuery(); } }"
+  },
+  "sql_string_format": {
+    "tag": "format",
+    "expect": [
+      "sql-injection"
+    ],
+    "checks": [
+      "sql-injection"
+    ],
+    "pending": "phase 2",
+    "source": "public class R { public void M(DbCommand c, string name) {\n  var q = string.Format(\"SELECT * FROM U WHERE n = '{0}'\", name); c.CommandText = q; c.ExecuteNonQuery(); } }"
+  },
+  "sql_concat_join": {
+    "tag": "collection",
+    "expect": [
+      "sql-injection"
+    ],
+    "checks": [
+      "sql-injection"
+    ],
+    "pending": "phase 2",
+    "source": "public class R { public void M(DbCommand c, string[] ids) {\n  var list = new List<string>(); foreach (var id in ids) { list.Add(id); }\n  c.CommandText = \"SELECT * FROM U WHERE id IN (\" + string.Join(\",\", list) + \")\"; c.ExecuteNonQuery(); } }"
+  },
+  "sql_ternary": {
+    "tag": "ternary",
+    "expect": [
+      "sql-injection"
+    ],
+    "checks": [
+      "sql-injection"
+    ],
+    "pending": "phase 2",
+    "source": "public class R { public void M(DbCommand c, string name, bool all) {\n  var q = all ? \"SELECT * FROM U\" : \"SELECT * FROM U WHERE n = '\" + name + \"'\"; c.CommandText = q; c.ExecuteNonQuery(); } }"
+  },
+  "sql_async": {
+    "tag": "async",
+    "expect": [
+      "sql-injection"
+    ],
+    "checks": [
+      "sql-injection"
+    ],
+    "pending": "phase 2",
+    "source": "public class R { public async Task M(DbCommand c, string name) {\n  await Task.Yield(); var q = \"DELETE FROM U WHERE n = '\" + name + \"'\"; c.CommandText = q; await c.ExecuteNonQueryAsync(); } }"
+  },
+  "sql_readline_local": {
+    "tag": "source",
+    "expect": [
+      "sql-injection"
+    ],
+    "checks": [
+      "sql-injection"
+    ],
+    "pending": "phase 1",
+    "source": "public class R { public void M(DbCommand c) { var s = Console.ReadLine(); c.CommandText = \"SELECT \" + s; c.ExecuteNonQuery(); } }"
+  },
+  "sql_lambda": {
+    "tag": "lambda",
+    "expect": [
+      "sql-injection"
+    ],
+    "checks": [
+      "sql-injection"
+    ],
+    "pending": "phase 2",
+    "source": "public class R { public void M(DbCommand c, string name) {\n  Action run = () => { c.CommandText = \"SELECT * FROM U WHERE n = '\" + name + \"'\"; c.ExecuteNonQuery(); }; run(); } }"
+  },
+  "sql_local_function": {
+    "tag": "localfn",
+    "expect": [
+      "sql-injection"
+    ],
+    "checks": [
+      "sql-injection"
+    ],
+    "pending": "phase 2",
+    "source": "public class R { public void M(DbCommand c, string name) {\n  Run(\"SELECT * FROM U WHERE n = '\" + name + \"'\");\n  void Run(string sql) { c.CommandText = sql; c.ExecuteNonQuery(); } } }"
+  },
+  "sql_private_helper": {
+    "tag": "interproc-samefile",
+    "expect": [
+      "sql-injection"
+    ],
+    "checks": [
+      "sql-injection"
+    ],
+    "pending": "out of scope: cross-method taint",
+    "source": "public class R { public void M(DbCommand c, string name) { Exec(c, \"SELECT * FROM U WHERE n = '\" + name + \"'\"); }\n  private static void Exec(DbCommand c, string sql) { c.CommandText = sql; c.ExecuteNonQuery(); } }"
+  },
+  "sql_parameterized": {
+    "tag": "sanitizer",
+    "expect": [],
+    "checks": [
+      "sql-injection"
+    ],
+    "source": "public class R { public void M(DbCommand c, string name) {\n  c.CommandText = \"SELECT * FROM U WHERE n = @n\"; var prm = c.CreateParameter(); prm.ParameterName = \"@n\"; prm.Value = name;\n  c.Parameters.Add(prm); c.ExecuteNonQuery(); } }"
+  },
+  "sql_reassign_kill": {
+    "tag": "kill",
+    "expect": [],
+    "checks": [
+      "sql-injection"
+    ],
+    "source": "public class R { public void M(DbCommand c, string name) {\n  var q = \"SELECT * FROM U WHERE n = '\" + name + \"'\"; q = \"SELECT 1\"; c.CommandText = q; c.ExecuteNonQuery(); } }"
+  },
+  "sql_int_parse": {
+    "tag": "sanitizer",
+    "expect": [],
+    "checks": [
+      "sql-injection"
+    ],
+    "source": "public class R { public void M(DbCommand c, string id) {\n  var n = int.Parse(id); c.CommandText = \"SELECT * FROM U WHERE id = \" + n; c.ExecuteNonQuery(); } }"
+  },
+  "sql_guid_param": {
+    "tag": "safe-type",
+    "expect": [],
+    "checks": [
+      "sql-injection"
+    ],
+    "source": "public class R { public void M(DbCommand c, Guid id) { c.CommandText = $\"SELECT * FROM U WHERE id = '{id}'\"; c.ExecuteNonQuery(); } }"
+  },
+  "sql_private_method_only": {
+    "tag": "source",
+    "expect": [],
+    "checks": [
+      "sql-injection"
+    ],
+    "source": "public class R { private void M(DbCommand c, string name) { c.CommandText = \"SELECT \" + name; c.ExecuteNonQuery(); } }"
+  },
+  "sql_constant_only": {
+    "tag": "const",
+    "expect": [],
+    "checks": [
+      "sql-injection"
+    ],
+    "source": "public class R { const string T = \"U\"; public void M(DbCommand c) { var q = \"SELECT * FROM \" + T; c.CommandText = q; c.ExecuteNonQuery(); } }"
+  },
+  "sql_name_lookalike": {
+    "tag": "symbol",
+    "expect": [],
+    "checks": [
+      "sql-injection"
+    ],
+    "source": "public class Cmd { public void Execute(string id) { } }\npublic class R { public void M(Cmd c, string id) { c.Execute(id); } }"
+  },
+  "sql_allowlist_column": {
+    "tag": "guard",
+    "expect": [],
+    "checks": [
+      "sql-injection"
+    ],
+    "source": "public class R { static readonly HashSet<string> Cols = new() { \"name\", \"age\" };\n  public void M(DbCommand c, string col) { if (!Cols.Contains(col)) { throw new ArgumentException(nameof(col)); }\n    c.CommandText = \"SELECT * FROM U ORDER BY \" + col; c.ExecuteNonQuery(); } }"
+  },
+  "cmd_local_concat": {
+    "tag": "local",
+    "expect": [
+      "command-injection"
+    ],
+    "checks": [
+      "command-injection"
+    ],
+    "pending": "phase 1",
+    "source": "public class R { public void M(string arg) { var cmd = \"ls \" + arg; Process.Start(\"sh\", cmd); } }"
+  },
+  "cmd_direct": {
+    "tag": "direct",
+    "expect": [
+      "command-injection"
+    ],
+    "checks": [
+      "command-injection"
+    ],
+    "source": "public class R { public void M(string file) { Process.Start(file); } }"
+  },
+  "cmd_psi_initializer": {
+    "tag": "object-init",
+    "expect": [
+      "command-injection"
+    ],
+    "checks": [
+      "command-injection"
+    ],
+    "pending": "phase 1",
+    "source": "public class R { public void M(string file) { var psi = new ProcessStartInfo { FileName = file, UseShellExecute = true }; Process.Start(psi); } }"
+  },
+  "cmd_psi_property": {
+    "tag": "property-path",
+    "expect": [
+      "command-injection"
+    ],
+    "checks": [
+      "command-injection"
+    ],
+    "pending": "phase 1",
+    "source": "public class R { public void M(string args) { var p = new Process(); p.StartInfo.FileName = \"sh\"; p.StartInfo.Arguments = \"-c \" + args; p.Start(); } }"
+  },
+  "cmd_lookalike_start": {
+    "tag": "symbol",
+    "expect": [],
+    "checks": [
+      "command-injection"
+    ],
+    "pending": "phase 1",
+    "source": "public class Worker { public void Start(string name) { } }\npublic class R { private readonly Worker _w = new(); public void M(string name) { _w.Start(name); } }"
+  },
+  "cmd_allowlist_guard": {
+    "tag": "guard",
+    "expect": [],
+    "checks": [
+      "command-injection"
+    ],
+    "pending": "phase 3",
+    "source": "public class R { public void M(string tool) { if (tool != \"ls\" && tool != \"pwd\") { return; } Process.Start(tool); } }"
+  },
+  "cmd_constant": {
+    "tag": "const",
+    "expect": [],
+    "checks": [
+      "command-injection"
+    ],
+    "source": "public class R { public void M(string ignored) { var exe = \"dotnet\"; Process.Start(exe, \"--info\"); } }"
+  },
+  "cmd_reassign_kill": {
+    "tag": "kill",
+    "expect": [],
+    "checks": [
+      "command-injection"
+    ],
+    "source": "public class R { public void M(string arg) { var exe = arg; exe = \"dotnet\"; Process.Start(exe); } }"
+  },
+  "path_combine_direct": {
+    "tag": "direct",
+    "expect": [
+      "path-injection"
+    ],
+    "checks": [
+      "path-injection"
+    ],
+    "source": "public class R { public string M(string name) { return File.ReadAllText(Path.Combine(\"/data\", name)); } }"
+  },
+  "path_local_then_read": {
+    "tag": "sink-coverage",
+    "expect": [
+      "path-injection"
+    ],
+    "checks": [
+      "path-injection"
+    ],
+    "pending": "phase 4",
+    "source": "public class R { public string M(string name) { var full = \"/data/\" + name; return File.ReadAllText(full); } }"
+  },
+  "path_getfilename": {
+    "tag": "sanitizer",
+    "expect": [],
+    "checks": [
+      "path-injection"
+    ],
+    "source": "public class R { public string M(string name) { var safe = Path.GetFileName(name); return File.ReadAllText(Path.Combine(\"/data\", safe)); } }"
+  },
+  "path_lookalike_combine": {
+    "tag": "symbol",
+    "expect": [],
+    "checks": [
+      "path-injection"
+    ],
+    "pending": "phase 4",
+    "source": "public static class Url { public static string Combine(string a) => a; }\npublic class R { public string M(string seg) => Url.Combine(seg); }"
+  },
+  "path_startswith_guard": {
+    "tag": "guard",
+    "expect": [],
+    "checks": [
+      "path-injection"
+    ],
+    "pending": "phase 4",
+    "source": "public class R { public string M(string name) { var full = Path.GetFullPath(Path.Combine(\"/data\", name));\n  if (!full.StartsWith(\"/data/\", StringComparison.Ordinal)) { throw new UnauthorizedAccessException(); } return File.ReadAllText(full); } }"
+  },
+  "xss_console_write": {
+    "tag": "symbol",
+    "expect": [],
+    "checks": [
+      "reflected-xss",
+      "no-stack-trace-disclosure"
+    ],
+    "pending": "phase 4",
+    "source": "public class R { public void M(string s) { Console.Write(s); } }"
+  },
+  "xss_streamwriter_write": {
+    "tag": "symbol",
+    "expect": [],
+    "checks": [
+      "reflected-xss",
+      "no-stack-trace-disclosure"
+    ],
+    "pending": "phase 4",
+    "source": "public class R { public void M(StreamWriter w, string s) { w.Write(s); } }"
+  },
+  "stack_trace_to_writer": {
+    "tag": "source",
+    "expect": [
+      "no-stack-trace-disclosure"
+    ],
+    "checks": [
+      "no-stack-trace-disclosure"
+    ],
+    "pending": "phase 4",
+    "source": "public class Response { public void Write(string s) { } }\npublic class R { public void M(Response response) { try { Work(); } catch (Exception ex) { response.Write(ex.StackTrace); } } static void Work() { } }"
+  },
+  "reflection_local": {
+    "tag": "local",
+    "expect": [
+      "reflection-injection"
+    ],
+    "checks": [
+      "reflection-injection"
+    ],
+    "pending": "phase 4",
+    "source": "public class R { public object M(string type) { var name = \"App.\" + type; return Activator.CreateInstance(Type.GetType(name)); } }"
+  },
+  "reflection_object_gettype": {
+    "tag": "symbol",
+    "expect": [],
+    "checks": [
+      "reflection-injection"
+    ],
+    "source": "public class R { public string M(object o) => o.GetType().Name; }"
+  },
+  "regex_with_timeout": {
+    "tag": "sanitizer",
+    "expect": [],
+    "checks": [
+      "regex-dos"
+    ],
+    "pending": "phase 4",
+    "source": "public class R { public bool M(string pattern, string input) => new Regex(pattern, RegexOptions.None, TimeSpan.FromSeconds(1)).IsMatch(input); }"
+  },
+  "regex_static_ismatch": {
+    "tag": "sink-coverage",
+    "expect": [
+      "regex-dos"
+    ],
+    "checks": [
+      "regex-dos"
+    ],
+    "pending": "phase 4",
+    "source": "public class R { public bool M(string pattern, string input) => Regex.IsMatch(input, pattern); }"
+  },
+  "xpath_local": {
+    "tag": "local",
+    "expect": [
+      "xpath-injection"
+    ],
+    "checks": [
+      "xpath-injection"
+    ],
+    "pending": "phase 4",
+    "source": "public class R { public XmlNodeList M(XmlDocument doc, string user) { var xp = \"//user[@name='\" + user + \"']\"; return doc.SelectNodes(xp); } }"
+  },
+  "env_direct": {
+    "tag": "direct",
+    "expect": [
+      "untrusted-environment-variable"
+    ],
+    "checks": [
+      "untrusted-environment-variable"
+    ],
+    "source": "public class R { public void M(string v) { Environment.SetEnvironmentVariable(\"PATH\", v); } }"
+  },
+  "zip_entry_fullname": {
+    "tag": "source",
+    "expect": [
+      "zip-slip"
+    ],
+    "checks": [
+      "zip-slip"
+    ],
+    "pending": "phase 4",
+    "source": "public class R { public void M(ZipArchive archive, string dest) { foreach (var entry in archive.Entries) { entry.ExtractToFile(Path.Combine(dest, entry.FullName)); } } }"
+  },
+  "zip_entry_guarded": {
+    "tag": "guard",
+    "expect": [],
+    "checks": [
+      "zip-slip"
+    ],
+    "source": "public class R { public void M(ZipArchive archive) { foreach (var entry in archive.Entries) {\n  var target = Path.GetFullPath(Path.Combine(\"/out\", entry.FullName));\n  if (!target.StartsWith(\"/out/\", StringComparison.Ordinal)) { continue; } entry.ExtractToFile(target); } } }"
+  },
+  "loopbound_local": {
+    "tag": "local",
+    "expect": [
+      "loop-bound-injection"
+    ],
+    "checks": [
+      "loop-bound-injection"
+    ],
+    "pending": "phase 4",
+    "source": "public class R { public void M(string count) { var n = int.Parse(count); for (var i = 0; i < n; i++) { } } }"
+  },
+  "alloc_local": {
+    "tag": "local",
+    "expect": [
+      "allocation-dos"
+    ],
+    "checks": [
+      "allocation-dos"
+    ],
+    "pending": "phase 4",
+    "source": "public class R { public byte[] M(int size) { var n = size * 2; return new byte[n]; } }"
+  },
+  "alloc_clamped": {
+    "tag": "sanitizer",
+    "expect": [],
+    "checks": [
+      "allocation-dos"
+    ],
+    "source": "public class R { public byte[] M(int size) { var n = Math.Min(size, 4096); return new byte[n]; } }"
+  },
+  "aspnet_fromquery_private_action": {
+    "tag": "source",
+    "expect": [
+      "sql-injection"
+    ],
+    "checks": [
+      "sql-injection"
+    ],
+    "pending": "phase 4",
+    "source": "public class FromQueryAttribute : Attribute { }\npublic class ControllerBase { }\npublic class UsersController : ControllerBase { internal void Find(DbCommand c, [FromQuery] string name) { c.CommandText = \"SELECT \" + name; c.ExecuteNonQuery(); } }"
+  },
+  "env_var_source": {
+    "tag": "source",
+    "expect": [],
+    "checks": [
+      "command-injection"
+    ],
+    "source": "public class R { private void M() { var tool = Environment.GetEnvironmentVariable(\"TOOL\"); Process.Start(tool!); } }"
+  },
+  "flow_if_false": {
+    "tag": "flow",
+    "expect": [
+      "reachable-branch"
+    ],
+    "checks": [
+      "reachable-branch"
+    ],
+    "source": "public class R { void M() { if (false) { return; } } }"
+  },
+  "flow_if_const_false": {
+    "tag": "flow",
+    "expect": [
+      "reachable-branch"
+    ],
+    "checks": [
+      "reachable-branch"
+    ],
+    "pending": "phase 5",
+    "source": "public class R { const bool Enabled = false; void M() { if (Enabled) { Console.WriteLine(); } } }"
+  },
+  "flow_if_runtime": {
+    "tag": "flow",
+    "expect": [],
+    "checks": [
+      "reachable-branch"
+    ],
+    "source": "public class R { void M(bool b) { if (b) { Console.WriteLine(); } } }"
+  },
+  "flow_while_true_no_exit": {
+    "tag": "flow",
+    "expect": [
+      "no-infinite-loop"
+    ],
+    "checks": [
+      "no-infinite-loop"
+    ],
+    "source": "public class R { void M() { while (true) { Console.WriteLine(); } } }"
+  },
+  "flow_for_ever": {
+    "tag": "flow",
+    "expect": [
+      "no-infinite-loop"
+    ],
+    "checks": [
+      "no-infinite-loop"
+    ],
+    "pending": "phase 5",
+    "source": "public class R { void M() { for (;;) { Console.WriteLine(); } } }"
+  },
+  "flow_while_true_switch_break": {
+    "tag": "flow",
+    "expect": [
+      "no-infinite-loop"
+    ],
+    "checks": [
+      "no-infinite-loop"
+    ],
+    "pending": "phase 5",
+    "source": "public class R { void M(int x) { while (true) { switch (x) { case 1: break; } } } }"
+  },
+  "flow_while_true_lambda_return": {
+    "tag": "flow",
+    "expect": [
+      "no-infinite-loop"
+    ],
+    "checks": [
+      "no-infinite-loop"
+    ],
+    "pending": "phase 5",
+    "source": "public class R { void M() { while (true) { Func<int> f = () => { return 1; }; f(); } } }"
+  },
+  "flow_while_true_return": {
+    "tag": "flow",
+    "expect": [],
+    "checks": [
+      "no-infinite-loop"
+    ],
+    "source": "public class R { void M(Func<bool> done) { while (true) { if (done()) { return; } } } }"
+  },
+  "flow_while_true_cancel": {
+    "tag": "flow-decision",
+    "expect": [],
+    "checks": [
+      "no-infinite-loop"
+    ],
+    "pending": "phase 5",
+    "source": "public class R { void M(CancellationToken t) { while (true) { t.ThrowIfCancellationRequested(); Thread.Sleep(1); } } }"
+  },
+  "flow_lock_try_finally": {
+    "tag": "flow",
+    "expect": [],
+    "checks": [
+      "lock-released",
+      "release-lock-same-method"
+    ],
+    "pending": "phase 5",
+    "source": "public class R { readonly object _g = new(); void M() { Monitor.Enter(_g); try { Console.WriteLine(); } finally { Monitor.Exit(_g); } } }"
+  },
+  "flow_lock_early_return": {
+    "tag": "flow",
+    "expect": [
+      "lock-released"
+    ],
+    "checks": [
+      "lock-released"
+    ],
+    "source": "public class R { readonly object _g = new(); void M(bool b) { Monitor.Enter(_g); if (b) { return; } Monitor.Exit(_g); } }"
+  },
+  "flow_lock_never_released": {
+    "tag": "flow",
+    "expect": [
+      "release-lock-same-method"
+    ],
+    "checks": [
+      "release-lock-same-method"
+    ],
+    "source": "public class R { readonly object _g = new(); void M() { Monitor.Enter(_g); Console.WriteLine(); } }"
+  },
+  "flow_rwlock_mismatch": {
+    "tag": "flow",
+    "expect": [
+      "matching-lock-release"
+    ],
+    "checks": [
+      "matching-lock-release"
+    ],
+    "pending": "phase 5",
+    "source": "public class R { readonly ReaderWriterLockSlim _l = new(); void M() { _l.EnterReadLock(); try { } finally { _l.ExitWriteLock(); } } }"
+  },
+  "flow_monitor_exit_matched": {
+    "tag": "flow",
+    "expect": [],
+    "checks": [
+      "matching-lock-release"
+    ],
+    "pending": "phase 5",
+    "source": "public class R { readonly object _g = new(); void M() { Monitor.Enter(_g); try { } finally { Monitor.Exit(_g); } } }"
+  }
+}
