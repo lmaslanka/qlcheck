@@ -51,7 +51,15 @@ internal sealed record Sink(SinkKind Kind, string Type, string Member, string? P
     // The identifiers that can name this sink in source: the method or property name, each
     // alternative possibly ending in `*`, or a constructor sink's type name.
     public IEnumerable<string> NamePatterns() =>
-        Kind == SinkKind.Ctor ? [Type[(Type.LastIndexOf('.') + 1)..]] : Member.Split(Alternative);
+        Kind == SinkKind.Ctor ? [SimpleTypeName()] : Member.Split(Alternative);
+
+    // `System.Collections.Generic.List`1` is written `List`, `Outer+Inner` is written `Inner`.
+    private string SimpleTypeName()
+    {
+        var name = Type[(Type.LastIndexOfAny(['.', '+']) + 1)..];
+        var arity = name.IndexOf('`', StringComparison.Ordinal);
+        return arity < 0 ? name : name[..arity];
+    }
 
     public static bool IsWildcard(string pattern) => pattern.EndsWith(Wildcard);
 

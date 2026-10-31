@@ -35,6 +35,9 @@ internal sealed class TaintFlow
 
     private int _localArgumentsVersion;
 
+    // Variables assigned from Path.GetFullPath, flow-insensitively, for the StartsWith guard.
+    private readonly HashSet<object> _fullPaths = [];
+
     private TaintFlow(IReadOnlyList<Sink> sinks)
     {
         _sinks = sinks;
@@ -146,7 +149,7 @@ internal sealed class TaintFlow
             .OfType<IFlowAnonymousFunctionOperation>();
 
     // The state on the edge where the block's branch condition is `holds`.
-    private static TaintState Guarded(BasicBlock block, TaintState state, bool holds)
+    private TaintState Guarded(BasicBlock block, TaintState state, bool holds)
     {
         if (block.ConditionKind == ControlFlowConditionKind.None || block.BranchValue is null)
         {
@@ -154,7 +157,7 @@ internal sealed class TaintFlow
         }
 
         var guarded = state.Clone();
-        TaintGuards.Apply(block.BranchValue, holds, guarded);
+        TaintGuards.Apply(block.BranchValue, holds, guarded, _fullPaths);
         return guarded;
     }
 
@@ -201,7 +204,7 @@ internal sealed class TaintFlow
             ILocalReferenceOperation or IParameterReferenceOperation or IFlowCaptureReferenceOperation => state.Get(TaintState.KeyOf(operation)!),
             IFieldReferenceOperation field when TaintState.KeyOf(field) is { } key => state.Get(key),
             ILiteralOperation => Taint.None,
-            IConversionOperation conversion => Convert(conversion.Type, Eval(conversion.Operand, state)),
+            IConversionOperation conversion => TaintModel.Retype(conversion.Type, Eval(conversion.Operand, state)),
             IBinaryOperation binary => Binary(binary, state),
             IInterpolatedStringOperation interpolated => Interpolated(interpolated, state),
             IInterpolatedStringHandlerCreationOperation handler => Eval(handler.Content, state),
@@ -213,7 +216,7 @@ internal sealed class TaintFlow
             IPropertyReferenceOperation property => Read(property, state),
             IArrayInitializerOperation initializer => Elements(initializer, state),
             IInvocationOperation invocation => Invoke(invocation, state),
-            IAwaitOperation awaited => Result(awaited.Type, Eval(awaited.Operation, state)),
+            IAwaitOperation awaited => TaintModel.Retype(awaited.Type, Eval(awaited.Operation, state)),
             _ => Children(operation, state),
         };
 
@@ -239,17 +242,6 @@ internal sealed class TaintFlow
         return taint;
     }
 
-    // A conversion to a safe type ends the taint; to a numeric type it leaves only Numeric.
-    private static Taint Convert(ITypeSymbol? type, Taint taint)
-    {
-        if (TaintModel.IsNumeric(type))
-        {
-            return taint.Relabel(taint.IsNone ? TaintLabel.None : TaintLabel.Numeric);
-        }
-
-        return TaintModel.IsSafe(type) ? Taint.None : taint;
-    }
-
     private Taint Binary(IBinaryOperation binary, TaintState state) =>
         Combined(binary.Type, Eval(binary.LeftOperand, state).Join(Eval(binary.RightOperand, state)));
 
@@ -262,7 +254,7 @@ internal sealed class TaintFlow
             return taint;
         }
 
-        return TaintModel.IsNumeric(type) ? Convert(type, taint) : Taint.None;
+        return TaintModel.IsNumeric(type) ? TaintModel.Retype(type, taint) : Taint.None;
     }
 
     private Taint Interpolated(IInterpolatedStringOperation interpolated, TaintState state)
@@ -300,6 +292,11 @@ internal sealed class TaintFlow
         {
             case ILocalReferenceOperation local:
                 state.Set(local.Local, taint.Through(local.Local.Name));
+                if (TaintModel.IsFullPath(assignment.Value))
+                {
+                    _fullPaths.Add(local.Local);
+                }
+
                 break;
             case IFlowCaptureReferenceOperation capture when _localAliases.TryGetValue(capture.Id, out var aliased):
                 state.Set(capture.Id, taint);
@@ -400,7 +397,7 @@ internal sealed class TaintFlow
             Eval(argument.Value, state);
         }
 
-        return property.Property.IsIndexer || property.Property.Name == nameof(IEnumerator<object>.Current) ? Result(property.Type, instance) : Taint.None;
+        return property.Property.IsIndexer || property.Property.Name == nameof(IEnumerator<object>.Current) ? TaintModel.Retype(property.Type, instance) : Taint.None;
     }
 
     private Taint Elements(IArrayInitializerOperation initializer, TaintState state)
@@ -425,9 +422,15 @@ internal sealed class TaintFlow
             return Taint.From(TaintModel.LabelFor(invocation.Type), origin);
         }
 
+        if (TaintModel.Sanitize(invocation, InputOf(invocation, taints)) is { } sanitized)
+        {
+            StoreParsed(invocation, InputOf(invocation, taints), state);
+            return sanitized;
+        }
+
         if (TaintModel.IsLinq(method))
         {
-            return Result(invocation.Type, taints.FirstOrDefault());
+            return TaintModel.Retype(invocation.Type, taints.FirstOrDefault());
         }
 
         if (TaintModel.MutatesReceiver(method) && Root(invocation.Instance) is { } root)
@@ -435,7 +438,7 @@ internal sealed class TaintFlow
             Store(root, state.Get(root).Join(arguments), state);
         }
 
-        return TaintModel.Propagates(method) ? Result(invocation.Type, receiver.Join(arguments)) : Taint.None;
+        return TaintModel.Propagates(method) ? TaintModel.Retype(invocation.Type, receiver.Join(arguments)) : Taint.None;
     }
 
     // Each argument's taint, after checking it against the sinks and passing it to a local
@@ -459,6 +462,30 @@ internal sealed class TaintFlow
         return taints;
     }
 
+    // The taint of the arguments a call reads, leaving out `out` arguments it only writes.
+    private static Taint InputOf(IInvocationOperation invocation, List<Taint> taints) =>
+        invocation.Arguments
+            .Select((argument, index) => argument.Parameter?.RefKind == RefKind.Out ? Taint.None : taints[index])
+            .Aggregate(Taint.None, (all, taint) => all.Join(taint));
+
+    // `int.TryParse(s, out var n)`: n gets what parsing s leaves.
+    private static void StoreParsed(IInvocationOperation invocation, Taint input, TaintState state)
+    {
+        if (!TaintModel.IsParse(invocation.TargetMethod))
+        {
+            return;
+        }
+
+        foreach (var argument in invocation.Arguments.Where(argument => argument.Parameter?.RefKind == RefKind.Out))
+        {
+            var target = argument.Value is IDeclarationExpressionOperation declaration ? declaration.Expression : argument.Value;
+            if (TaintState.KeyOf(target) is { } key)
+            {
+                Store(key, TaintModel.Retype(argument.Parameter!.Type, input), state);
+            }
+        }
+    }
+
     private void PassToLocalFunction(IParameterSymbol parameter, Taint taint)
     {
         var old = _localArguments.GetValueOrDefault(parameter);
@@ -480,9 +507,6 @@ internal sealed class TaintFlow
             null => null,
             _ => TaintState.KeyOf(operation),
         };
-
-    // A propagated value of a safe type keeps only what Convert allows: Numeric for numbers.
-    private static Taint Result(ITypeSymbol? type, Taint taint) => TaintModel.IsSafe(type) ? Convert(type, taint) : taint;
 
     private static void Store(object key, Taint taint, TaintState state) =>
         state.Set(key, key is ILocalSymbol local ? taint.Through(local.Name) : taint);

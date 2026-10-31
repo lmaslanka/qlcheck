@@ -46,6 +46,18 @@ internal static class TaintModel
         "Append", "AppendLine", "AppendFormat", "AppendJoin", "Insert", "Replace",
     };
 
+    private const string ConvertType = "System.Convert";
+
+    private const string MathType = "System.Math";
+
+    private const string EnumType = "System.Enum";
+
+    private const string FullPathMethod = "GetFullPath";
+
+    private static readonly HashSet<string> ParseMethods = new(StringComparer.Ordinal) { "Parse", "TryParse", "ParseExact", "TryParseExact" };
+
+    private static readonly HashSet<string> FileNameMethods = new(StringComparer.Ordinal) { "GetFileName", "GetFileNameWithoutExtension" };
+
     private const string EnumerableType = "System.Collections.IEnumerable";
 
     private const string EnumeratorMethod = "GetEnumerator";
@@ -122,6 +134,60 @@ internal static class TaintModel
         || Symbols.QualifiedName(method.ContainingType) == BuilderType
         || Symbols.QualifiedName(method.ContainingType) == PathType && PathPropagators.Contains(method.Name)
         || TaskTypes.Contains(Symbols.QualifiedName(method.ContainingType)) && TaskPropagators.Contains(method.Name);
+
+    // A sanitizer (D7) keeps the source of its input but changes the labels: parsing or converting
+    // to a number leaves Numeric, to another safe type nothing; Path.GetFileName leaves FileName,
+    // which the path rows do not accept; Math.Min or Math.Clamp with a constant upper bound clears
+    // Numeric. Null when the call is not a sanitizer.
+    public static Taint? Sanitize(IInvocationOperation invocation, Taint input)
+    {
+        var method = invocation.TargetMethod;
+        var type = Symbols.QualifiedName(method.ContainingType);
+        if (IsParse(method) || type == ConvertType)
+        {
+            return Retype(invocation.Type, input);
+        }
+
+        if (type == PathType && FileNameMethods.Contains(method.Name))
+        {
+            return input.Relabel(input.IsNone ? TaintLabel.None : TaintLabel.FileName);
+        }
+
+        if (type != MathType)
+        {
+            return null;
+        }
+
+        return HasConstantBound(invocation) ? Taint.None : Retype(invocation.Type, input);
+    }
+
+    // `int.Parse`, `Guid.TryParse`, `Enum.Parse<T>` and their Exact forms.
+    public static bool IsParse(IMethodSymbol method) =>
+        ParseMethods.Contains(method.Name) && (IsSafe(method.ContainingType) || Symbols.QualifiedName(method.ContainingType) == EnumType);
+
+    // `Path.GetFullPath`, whose result a StartsWith check can prove contained (TaintGuards).
+    public static bool IsFullPath(IOperation operation) =>
+        operation is IInvocationOperation { TargetMethod: { Name: FullPathMethod } method } && Symbols.QualifiedName(method.ContainingType) == PathType;
+
+    // A value of this type keeps its taint, except that a number keeps only Numeric and another
+    // safe type keeps nothing.
+    public static Taint Retype(ITypeSymbol? type, Taint taint)
+    {
+        if (IsNumeric(type))
+        {
+            return taint.Relabel(taint.IsNone ? TaintLabel.None : TaintLabel.Numeric);
+        }
+
+        return IsSafe(type) ? Taint.None : taint;
+    }
+
+    private static bool HasConstantBound(IInvocationOperation invocation) =>
+        invocation.TargetMethod.Name switch
+        {
+            nameof(Math.Min) => invocation.Arguments.Any(argument => argument.Value.ConstantValue.HasValue),
+            nameof(Math.Clamp) => invocation.Arguments[^1].Value.ConstantValue.HasValue,
+            _ => false,
+        };
 
     // Calls that put their arguments' taint into the receiver: `builder.Append(x)`, `list.Add(x)`.
     public static bool MutatesReceiver(IMethodSymbol method) =>

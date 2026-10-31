@@ -77,6 +77,8 @@ public class SinkTests
         Assert.Equal(["Read*", "Write"], Sink.Call("System.IO.File", "Read*|Write", PathParameter).NamePatterns());
         Assert.Equal([CommandText], Sink.Set("System.Data.IDbCommand", CommandText).NamePatterns());
         Assert.Equal(["ProcessStartInfo"], Sink.Ctor(StartInfo, FileName).NamePatterns());
+        Assert.Equal(["List"], Sink.Ctor("System.Collections.Generic.List`1", "capacity").NamePatterns());
+        Assert.Equal(["KeyCollection"], Sink.Ctor("System.Collections.Generic.Dictionary`2+KeyCollection", "dictionary").NamePatterns());
     }
 
     private static IMethodSymbol Method(string type, string name, string parameter) =>

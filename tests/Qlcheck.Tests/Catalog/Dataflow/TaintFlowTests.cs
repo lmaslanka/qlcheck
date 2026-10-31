@@ -23,7 +23,18 @@ public class TaintFlowTests
         Sink.Call("System.Diagnostics.Process", "Start", "arguments").Shell(),
         Sink.Ctor(StartInfo, "arguments").Shell(),
         Sink.Set(StartInfo, "Arguments").Shell(),
+        Sink.Call("System.IO.File", "ReadAllText", "path"),
+        Sink.Ctor("System.Collections.Generic.List`1", "capacity"),
+        Sink.Call("Microsoft.AspNetCore.Mvc.ControllerBase", "Redirect", "url"),
     ];
+
+    private const string AspNetStubs = """
+        namespace Microsoft.AspNetCore.Mvc
+        {
+            public interface IUrlHelper { bool IsLocalUrl(string url); }
+            public abstract class ControllerBase { public IUrlHelper Url { get; set; } = null!; public object Redirect(string url) => url; }
+        }
+        """;
 
     [Fact]
     public void A_public_parameter_reaching_a_sink_is_a_hit_naming_its_source()
@@ -167,6 +178,55 @@ public class TaintFlowTests
     public void Lambda_and_local_function_parameters_are_not_sources(string body)
     {
         Assert.Empty(Run($"public class R {{ public void M(DbCommand c, string userId) {{ {body} }} }}"));
+    }
+
+    [Theory]
+    [InlineData("var n = int.Parse(userId);", "Numeric")]
+    [InlineData("int.TryParse(userId, out var n);", "Numeric")]
+    [InlineData("var n = Convert.ToInt32(userId);", "Numeric")]
+    [InlineData("var n = (int)decimal.Parse(userId);", "Numeric")]
+    [InlineData("var n = Math.Max(int.Parse(userId), 1);", "Numeric")]
+    [InlineData("var n = Math.Min(int.Parse(userId), int.Parse(userId));", "Numeric")]
+    [InlineData("var n = Math.Min(int.Parse(userId), 100);", "None")]
+    [InlineData("var n = Math.Clamp(int.Parse(userId), 0, 100);", "None")]
+    [InlineData("var n = int.Parse(userId); if (n > 100) { return; }", "None")]
+    [InlineData("var n = int.Parse(userId); if (100 < n) { throw new ArgumentException(); }", "None")]
+    [InlineData("var n = int.Parse(userId); if (n < 0) { return; }", "Numeric")]
+    public void Parsing_makes_numbers_and_a_constant_upper_bound_clears_them(string body, string label)
+    {
+        var hits = Run($"public class R {{ public void M(string userId) {{ {body} var list = new System.Collections.Generic.List<int>(n); }} }}");
+
+        Assert.Equal(label, hits.Count == 0 ? "None" : hits.Single().Labels.ToString());
+    }
+
+    [Theory]
+    [InlineData("var g = Guid.Parse(userId); System.IO.File.ReadAllText(g.ToString());")]
+    [InlineData("var d = DateTime.Parse(userId); System.IO.File.ReadAllText(d.ToString());")]
+    [InlineData("var k = Enum.Parse<DayOfWeek>(userId); System.IO.File.ReadAllText(k.ToString());")]
+    public void Parsing_into_a_safe_non_numeric_type_clears_taint(string body)
+    {
+        Assert.Empty(Run($"public class R {{ public void M(string userId) {{ {body} }} }}"));
+    }
+
+    [Theory]
+    [InlineData("var name = System.IO.Path.GetFileName(userId); System.IO.File.ReadAllText(name);", "FileName")]
+    [InlineData("var full = System.IO.Path.GetFullPath(System.IO.Path.Combine(\"/data\", userId)); if (!full.StartsWith(\"/data/\")) { return; } System.IO.File.ReadAllText(full);", "ContainedPath")]
+    [InlineData("var full = System.IO.Path.GetFullPath(System.IO.Path.Combine(\"/data\", userId)); System.IO.File.ReadAllText(full);", "Untrusted")]
+    [InlineData("var path = System.IO.Path.Combine(\"/data\", userId); if (!path.StartsWith(\"/data/\")) { return; } System.IO.File.ReadAllText(path);", "Untrusted")]
+    public void File_names_and_contained_paths_are_labelled_for_the_path_rows(string body, string label)
+    {
+        var hit = Assert.Single(Run($"public class R {{ public void M(string userId) {{ {body} }} }}"));
+
+        Assert.Equal(label, hit.Labels.ToString());
+    }
+
+    [Theory]
+    [InlineData("if (!Url.IsLocalUrl(returnUrl)) { return null!; } return Redirect(returnUrl);", 0)]
+    [InlineData("if (Url.IsLocalUrl(returnUrl)) { return Redirect(returnUrl); } return null!;", 0)]
+    [InlineData("return Redirect(returnUrl);", 1)]
+    public void A_local_url_check_cleans_the_redirect_target(string body, int hits)
+    {
+        Assert.Equal(hits, Run($"{AspNetStubs} public class R : Microsoft.AspNetCore.Mvc.ControllerBase {{ public object Go(string returnUrl) {{ {body} }} }}").Count);
     }
 
     [Fact]
