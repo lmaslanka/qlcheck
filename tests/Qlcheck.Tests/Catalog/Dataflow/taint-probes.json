@@ -67,7 +67,6 @@
     "checks": [
       "sql-injection"
     ],
-    "pending": "phase 2",
     "source": "public class R { public void M(DbCommand c, string[] ids) {\n  var list = new List<string>(); foreach (var id in ids) { list.Add(id); }\n  c.CommandText = \"SELECT * FROM U WHERE id IN (\" + string.Join(\",\", list) + \")\"; c.ExecuteNonQuery(); } }"
   },
   "sql_ternary": {

@@ -162,6 +162,8 @@ internal sealed class TaintFlow
             ICompoundAssignmentOperation compound => Compound(compound, state),
             IObjectCreationOperation creation => Create(creation, state),
             IArrayCreationOperation array => Array(array, state),
+            IArrayElementReferenceOperation element => Element(element, state),
+            IPropertyReferenceOperation property => Read(property, state),
             IArrayInitializerOperation initializer => Elements(initializer, state),
             IInvocationOperation invocation => Invoke(invocation, state),
             _ => Children(operation, state),
@@ -274,6 +276,17 @@ internal sealed class TaintFlow
             Eval(instance, state);
         }
 
+        foreach (var argument in property.Arguments)
+        {
+            Eval(argument.Value, state);
+        }
+
+        // `map[key] = value` puts the value's taint into the collection.
+        if (property.Property.IsIndexer && Root(property.Instance) is { } root)
+        {
+            Store(root, state.Get(root).Join(taint), state);
+        }
+
         var receiver = ReceiverKey(property.Instance);
         if (receiver is not null && TaintModel.IsProgram(property.Property) && TaintModel.IsShell(assignment.Value.ConstantValue))
         {
@@ -319,6 +332,29 @@ internal sealed class TaintFlow
         return array.Initializer is { } initializer ? Elements(initializer, state) : Taint.None;
     }
 
+    private Taint Element(IArrayElementReferenceOperation element, TaintState state)
+    {
+        foreach (var index in element.Indices)
+        {
+            Eval(index, state);
+        }
+
+        return Eval(element.ArrayReference, state);
+    }
+
+    // Reading an element (an indexer, or an enumerator's Current) gives the collection's taint; any
+    // other property read is clean.
+    private Taint Read(IPropertyReferenceOperation property, TaintState state)
+    {
+        var instance = property.Instance is { } receiver ? Eval(receiver, state) : Taint.None;
+        foreach (var argument in property.Arguments)
+        {
+            Eval(argument.Value, state);
+        }
+
+        return property.Property.IsIndexer || property.Property.Name == nameof(IEnumerator<object>.Current) ? Result(property.Type, instance) : Taint.None;
+    }
+
     private Taint Elements(IArrayInitializerOperation initializer, TaintState state)
     {
         var taint = Taint.None;
@@ -336,16 +372,23 @@ internal sealed class TaintFlow
         var receiver = invocation.Instance is { } instance ? Eval(instance, state) : Taint.None;
         var shell = TaintModel.StartsShell(invocation.Arguments);
         var arguments = Taint.None;
+        var sequence = Taint.None;
         foreach (var argument in invocation.Arguments)
         {
             var taint = Eval(argument.Value, state);
             arguments = arguments.Join(taint);
+            sequence = argument == invocation.Arguments[0] ? taint : sequence;
             Check(method, argument.Parameter?.Name, taint, invocation.Syntax, shell);
         }
 
-        if (TaintModel.SourceOf(method, invocation.Syntax) is { } source)
+        if (TaintModel.SourceOf(method, invocation.Syntax) is { } origin)
         {
-            return Taint.From(TaintModel.LabelFor(invocation.Type), source);
+            return Taint.From(TaintModel.LabelFor(invocation.Type), origin);
+        }
+
+        if (TaintModel.IsLinq(method))
+        {
+            return Result(invocation.Type, sequence);
         }
 
         if (TaintModel.MutatesReceiver(method) && Root(invocation.Instance) is { } root)

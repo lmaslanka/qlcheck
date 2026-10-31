@@ -81,6 +81,28 @@ public class TaintFlowTests
     }
 
     [Theory]
+    [InlineData("var list = new System.Collections.Generic.List<string>(); list.Add(userId); c.CommandText = list[0];")]
+    [InlineData("var map = new System.Collections.Generic.Dictionary<string, string>(); map[\"k\"] = userId; c.CommandText = map[\"k\"];")]
+    [InlineData("var list = new System.Collections.Generic.List<string>(); list.Add(userId); foreach (var item in list) { c.CommandText = item; }")]
+    [InlineData("var parts = userId.Split(','); foreach (var part in parts) { c.CommandText = part; }")]
+    [InlineData("var parts = userId.Split(','); c.CommandText = parts[0];")]
+    [InlineData("var parts = userId.Split(','); c.CommandText = System.Linq.Enumerable.First(parts);")]
+    [InlineData("var parts = userId.Split(','); c.CommandText = parts.Where(part => part.Length > 0).ToList()[0];")]
+    [InlineData("var list = new System.Collections.Generic.List<string>(); foreach (var part in userId.Split(',')) { list.Add(part); } c.CommandText = string.Join(\",\", list);")]
+    public void Taint_follows_collections_loops_indexers_and_linq(string body)
+    {
+        Assert.Single(Run($"using System.Linq; public class R {{ public void M(DbCommand c, string userId) {{ {body} }} }}"));
+    }
+
+    [Theory]
+    [InlineData("var list = new System.Collections.Generic.List<string>(); list.Add(\"SELECT 1\"); c.CommandText = list[0];")]
+    [InlineData("var list = new System.Collections.Generic.List<string>(); list.Add(userId); c.CommandText = \"SELECT \" + list.Count;")]
+    public void Clean_collections_and_counts_stay_clean(string body)
+    {
+        Assert.Empty(Run($"public class R {{ public void M(DbCommand c, string userId) {{ {body} }} }}"));
+    }
+
+    [Theory]
     [InlineData("var query = Helper(userId); c.CommandText = query;")]
     [InlineData("var query = userId.Contains('x') ? \"SELECT 1\" : \"SELECT 2\"; c.CommandText = query;")]
     [InlineData("var builder = new System.Text.StringBuilder(); builder.Append(userId); var other = new System.Text.StringBuilder(); c.CommandText = other.ToString();")]

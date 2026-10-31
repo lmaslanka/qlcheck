@@ -37,6 +37,17 @@ internal static class TaintModel
         "Append", "AppendLine", "AppendFormat", "AppendJoin", "Insert", "Replace",
     };
 
+    private const string EnumerableType = "System.Collections.IEnumerable";
+
+    private const string EnumeratorMethod = "GetEnumerator";
+
+    private static readonly HashSet<string> CollectionMutators = new(StringComparer.Ordinal)
+    {
+        "Add", "AddRange", "Insert", "InsertRange", "Push", "Enqueue", "TryAdd",
+    };
+
+    private static readonly HashSet<string> LinqTypes = new(StringComparer.Ordinal) { "System.Linq.Enumerable", "System.Linq.Queryable" };
+
     // Constructing one of these from tainted arguments gives a tainted object.
     private static readonly HashSet<string> CarrierTypes = new(StringComparer.Ordinal)
     {
@@ -80,16 +91,26 @@ internal static class TaintModel
             : null;
 
     // Calls whose result carries the taint of their receiver and arguments (D5): string methods,
-    // StringBuilder, the path-building Path methods and ToString. Any other call returns clean data.
+    // StringBuilder, the path-building Path methods, ToString and GetEnumerator (how foreach reads
+    // a collection). Any other call returns clean data.
     public static bool Propagates(IMethodSymbol method) =>
-        method.Name == nameof(ToString)
+        method.Name is nameof(ToString) or EnumeratorMethod
         || method.ContainingType.SpecialType == SpecialType.System_String
         || Symbols.QualifiedName(method.ContainingType) == BuilderType
         || Symbols.QualifiedName(method.ContainingType) == PathType && PathPropagators.Contains(method.Name);
 
-    // Calls that put their arguments' taint into the receiver: `builder.Append(x)`.
+    // Calls that put their arguments' taint into the receiver: `builder.Append(x)`, `list.Add(x)`.
     public static bool MutatesReceiver(IMethodSymbol method) =>
-        BuilderMutators.Contains(method.Name) && Symbols.QualifiedName(method.ContainingType) == BuilderType;
+        BuilderMutators.Contains(method.Name) && Symbols.QualifiedName(method.ContainingType) == BuilderType
+        || CollectionMutators.Contains(method.Name) && IsCollection(method.ContainingType);
+
+    // A LINQ operator: its result carries the taint of its source sequence, the first argument.
+    public static bool IsLinq(IMethodSymbol method) => LinqTypes.Contains(Symbols.QualifiedName(method.ContainingType));
+
+    // A collection holds the taint of what was put in it; reading an element, by indexer, foreach
+    // (Current) or LINQ, gives it back. A string is enumerable but immutable, so it is not one.
+    public static bool IsCollection(ITypeSymbol? type) =>
+        type is not null && type.SpecialType != SpecialType.System_String && Symbols.Is(type, EnumerableType);
 
     public static bool CarriesTaint(ITypeSymbol? type) => type is not null && CarrierTypes.Contains(Symbols.QualifiedName(type));
 
