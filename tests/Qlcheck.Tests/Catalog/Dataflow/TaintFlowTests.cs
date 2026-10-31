@@ -131,6 +131,24 @@ public class TaintFlowTests
         Assert.Empty(Run($"public class R {{ {member} }}"));
     }
 
+    [Theory]
+    [InlineData("_query = \"SELECT \" + userId; c.CommandText = _query;")]
+    [InlineData("this._query = \"SELECT \" + userId; c.CommandText = this._query;")]
+    [InlineData("Shared = userId; c.CommandText = Shared;")]
+    public void A_field_written_and_read_in_one_member_carries_taint(string body)
+    {
+        Assert.Single(Run($"public class R {{ string _query = \"\"; static string Shared = \"\"; public void M(DbCommand c, string userId) {{ {body} }} }}"));
+    }
+
+    [Theory]
+    [InlineData("public void Set(string userId) { _query = userId; } public void Use(DbCommand c) { c.CommandText = _query; }")]
+    [InlineData("public void M(DbCommand c, R other, string userId) { other._query = userId; c.CommandText = _query; }")]
+    [InlineData("public void M(DbCommand c, string userId) { _query = userId; _query = \"SELECT 1\"; c.CommandText = _query; }")]
+    public void Fields_across_members_or_objects_and_overwritten_fields_are_clean(string members)
+    {
+        Assert.Empty(Run($"public class R {{ string _query = \"\"; {members} }}"));
+    }
+
     [Fact]
     public void A_numeric_parameter_carries_only_the_numeric_label_even_as_text()
     {

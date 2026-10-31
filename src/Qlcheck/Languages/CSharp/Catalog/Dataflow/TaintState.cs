@@ -5,8 +5,8 @@ using Microsoft.CodeAnalysis.Operations;
 
 namespace Qlcheck.Languages.CSharp.Catalog.Dataflow;
 
-// The taint of each tracked storage location at one program point. Keys are locals, parameters and
-// the compiler's flow-capture ids. An absent key is untainted.
+// The taint of each tracked storage location at one program point. Keys are locals, parameters,
+// fields and the compiler's flow-capture ids. An absent key is untainted.
 internal sealed class TaintState
 {
     private readonly Dictionary<object, Taint> _taints;
@@ -21,13 +21,16 @@ internal sealed class TaintState
         _taints = taints;
     }
 
-    // The key a reference to a local, parameter or flow capture is tracked under; null otherwise.
+    // The key a reference to a local, parameter, flow capture, or a field of `this` or a static
+    // field, is tracked under; null otherwise. A field is only tracked within the member that
+    // writes it: every body starts with all fields clean.
     public static object? KeyOf(IOperation operation) =>
         operation switch
         {
             ILocalReferenceOperation local => local.Local,
             IParameterReferenceOperation parameter => parameter.Parameter,
             IFlowCaptureReferenceOperation capture => capture.Id,
+            IFieldReferenceOperation { Instance: null or IInstanceReferenceOperation } field => field.Field,
             _ => null,
         };
 

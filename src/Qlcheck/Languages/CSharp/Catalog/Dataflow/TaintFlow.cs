@@ -153,6 +153,7 @@ internal sealed class TaintFlow
         {
             IFlowCaptureOperation capture => Capture(capture, state),
             ILocalReferenceOperation or IParameterReferenceOperation or IFlowCaptureReferenceOperation => state.Get(TaintState.KeyOf(operation)!),
+            IFieldReferenceOperation field when TaintState.KeyOf(field) is { } key => state.Get(key),
             ILiteralOperation => Taint.None,
             IConversionOperation conversion => Convert(conversion.Type, Eval(conversion.Operand, state)),
             IBinaryOperation binary => Binary(binary, state),
@@ -258,8 +259,8 @@ internal sealed class TaintFlow
                 state.Set(capture.Id, taint);
                 state.Set(aliased, taint.Through(aliased.Name));
                 break;
-            case IParameterReferenceOperation or IFlowCaptureReferenceOperation:
-                state.Set(TaintState.KeyOf(assignment.Target)!, taint);
+            case var target when TaintState.KeyOf(target) is { } key:
+                state.Set(key, taint);
                 break;
             case IPropertyReferenceOperation property:
                 SetProperty(property, assignment, taint, state);
