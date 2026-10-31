@@ -23,7 +23,7 @@ internal sealed class TaintFlow
     // that only count as hits if it turns out to be one. Both ignore control flow.
     private readonly HashSet<object> _shells = [];
 
-    private readonly List<(Sink Sink, SyntaxNode Node, Taint Taint, object Receiver)> _shellCandidates = [];
+    private readonly List<(Sink Sink, SyntaxNode Node, string Target, Taint Taint, object Receiver)> _shellCandidates = [];
 
     private TaintFlow(IReadOnlyList<Sink> sinks)
     {
@@ -38,9 +38,9 @@ internal sealed class TaintFlow
             return [];
         }
 
-        foreach (var (sink, node, taint, _) in flow._shellCandidates.Where(candidate => flow._shells.Contains(candidate.Receiver)))
+        foreach (var (sink, node, target, taint, _) in flow._shellCandidates.Where(candidate => flow._shells.Contains(candidate.Receiver)))
         {
-            flow.Record(sink, node, taint);
+            flow.Record(sink, node, target, taint);
         }
 
         return [.. flow._hits.Values];
@@ -296,18 +296,27 @@ internal sealed class TaintFlow
         }
 
         var matching = _sinks.Where(sink => sink.Matches(member, parameter)).ToList();
+        var target = Target(member, parameter);
         foreach (var sink in matching.Where(sink => !sink.ShellOnly || shell))
         {
-            Record(sink, at, taint);
+            Record(sink, at, target, taint);
         }
 
         if (receiver is not null && !shell)
         {
-            _shellCandidates.AddRange(matching.Where(sink => sink.ShellOnly).Select(sink => (sink, at, taint, receiver)));
+            _shellCandidates.AddRange(matching.Where(sink => sink.ShellOnly).Select(sink => (sink, at, target, taint, receiver)));
         }
     }
 
-    private void Record(Sink sink, SyntaxNode at, Taint taint)
+    private static string Target(ISymbol member, string? parameter) =>
+        member switch
+        {
+            IMethodSymbol { MethodKind: MethodKind.Constructor } constructor => $"new {constructor.ContainingType.Name}({parameter})",
+            IMethodSymbol method => $"{method.ContainingType.Name}.{method.Name}({parameter})",
+            _ => $"{member.ContainingType.Name}.{member.Name}",
+        };
+
+    private void Record(Sink sink, SyntaxNode at, string target, Taint taint)
     {
         if (taint.Source is not { } source)
         {
@@ -317,6 +326,6 @@ internal sealed class TaintFlow
         var key = (sink, at);
         _hits[key] = _hits.TryGetValue(key, out var hit)
             ? hit with { Labels = hit.Labels | taint.Labels }
-            : new SinkHit(sink, at, taint.Labels, source, taint.Path);
+            : new SinkHit(sink, at, target, taint.Labels, source, taint.Path);
     }
 }

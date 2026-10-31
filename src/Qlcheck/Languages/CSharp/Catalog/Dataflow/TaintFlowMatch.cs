@@ -12,7 +12,15 @@ internal static class TaintFlowMatch
             .DistinctBy(hit => hit.Node);
         foreach (var hit in hits)
         {
-            ctx.Report(id, hit.Node);
+            ctx.Report(id, hit.Node, Detail(hit, spec.Hint));
         }
+    }
+
+    // For example "`userId` (parameter of public `Delete`, line 6) reaches `DbCommand.CommandText`
+    // via `query`.", then the row's fix hint.
+    private static string Detail(SinkHit hit, string hint)
+    {
+        var via = hit.Via.Count == 0 ? string.Empty : $" via {string.Join(", ", hit.Via.Select(local => $"`{local}`"))}";
+        return $"`{hit.Source.Name}` ({hit.Source.Description}, line {hit.Source.Line}) reaches `{hit.Target}`{via}. {hint}";
     }
 }
