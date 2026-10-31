@@ -18,8 +18,8 @@ internal sealed class DataflowCache(SyntaxTree tree, SemanticModel model)
     {
         if (!ReferenceEquals(sinks, _hitsFor))
         {
-            var names = sinks.SelectMany(sink => sink.Names()).ToHashSet(StringComparer.Ordinal);
-            _hits = [.. Graphs.Mentioning(names).SelectMany(body => TaintFlow.Run(body, sinks))];
+            var filter = new SinkFilter(sinks);
+            _hits = [.. Graphs.Containing(token => filter.Reaches(model, token)).SelectMany(body => TaintFlow.Run(body, sinks))];
             _hitsFor = sinks;
         }
 

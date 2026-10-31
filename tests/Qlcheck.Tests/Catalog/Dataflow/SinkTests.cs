@@ -72,11 +72,11 @@ public class SinkTests
     }
 
     [Fact]
-    public void Names_are_the_identifiers_a_body_must_contain_to_reach_the_sink()
+    public void Name_patterns_are_the_identifiers_that_can_name_the_sink()
     {
-        Assert.Equal(["Read", "Write"], Sink.Call("System.IO.File", "Read*|Write", PathParameter).Names());
-        Assert.Equal([CommandText], Sink.Set("System.Data.IDbCommand", CommandText).Names());
-        Assert.Equal(["ProcessStartInfo"], Sink.Ctor(StartInfo, FileName).Names());
+        Assert.Equal(["Read*", "Write"], Sink.Call("System.IO.File", "Read*|Write", PathParameter).NamePatterns());
+        Assert.Equal([CommandText], Sink.Set("System.Data.IDbCommand", CommandText).NamePatterns());
+        Assert.Equal(["ProcessStartInfo"], Sink.Ctor(StartInfo, FileName).NamePatterns());
     }
 
     private static IMethodSymbol Method(string type, string name, string parameter) =>

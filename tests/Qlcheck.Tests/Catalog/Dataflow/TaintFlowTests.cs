@@ -144,7 +144,7 @@ public class TaintFlowTests
         var model = CSharpCompilations.Create("taint", [tree]).GetSemanticModel(tree);
         var errors = model.GetDiagnostics().Where(diagnostic => diagnostic.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error);
         Assert.Empty(errors);
-        var names = Sinks.SelectMany(sink => sink.Names()).ToHashSet(StringComparer.Ordinal);
-        return new BodyGraphs(tree, model).Mentioning(names).SelectMany(body => TaintFlow.Run(body, Sinks)).ToList();
+        var filter = new SinkFilter(Sinks);
+        return new BodyGraphs(tree, model).Containing(token => filter.Reaches(model, token)).SelectMany(body => TaintFlow.Run(body, Sinks)).ToList();
     }
 }

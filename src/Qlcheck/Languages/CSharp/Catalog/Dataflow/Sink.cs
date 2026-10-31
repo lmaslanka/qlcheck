@@ -30,22 +30,31 @@ internal sealed record Sink(SinkKind Kind, string Type, string Member, string? P
     // `member` is the called method or constructor, or the set property; `parameter` is the name
     // of the parameter the tainted argument binds to (null for a property set).
     public bool Matches(ISymbol member, string? parameter) =>
+        Targets(member) && (Kind == SinkKind.Set || parameter == Parameter) && member is not ITypeSymbol;
+
+    // Whether `symbol` is this sink's method or property, whatever the argument; for a constructor
+    // sink, the constructor or the type itself (`new ProcessStartInfo(...)` names the type).
+    public bool Targets(ISymbol symbol) =>
         Kind switch
         {
-            SinkKind.Call => member is IMethodSymbol { MethodKind: not MethodKind.Constructor } method
-                && NameMatches(method.Name) && parameter == Parameter && Symbols.Is(method.ContainingType, Type),
-            SinkKind.Ctor => member is IMethodSymbol { MethodKind: MethodKind.Constructor } ctor
-                && parameter == Parameter && Symbols.Is(ctor.ContainingType, Type),
-            _ => member is IPropertySymbol property && property.Name == Member && Symbols.Is(property.ContainingType, Type),
+            SinkKind.Call => symbol is IMethodSymbol { MethodKind: not MethodKind.Constructor } method
+                && NamePatterns().Any(pattern => NameMatches(pattern, method.Name)) && Symbols.Is(method.ContainingType, Type),
+            SinkKind.Ctor => symbol switch
+            {
+                IMethodSymbol { MethodKind: MethodKind.Constructor } constructor => Symbols.Is(constructor.ContainingType, Type),
+                ITypeSymbol type => Symbols.Is(type, Type),
+                _ => false,
+            },
+            _ => symbol is IPropertySymbol property && property.Name == Member && Symbols.Is(property.ContainingType, Type),
         };
 
-    // The member names this sink can match, for a cheap syntactic prefilter: a body without one of
-    // these identifiers cannot reach the sink.
-    public IEnumerable<string> Names() =>
-        Kind == SinkKind.Ctor ? [Type[(Type.LastIndexOf('.') + 1)..]] : Member.Split(Alternative).Select(name => name.TrimEnd(Wildcard));
+    // The identifiers that can name this sink in source: the method or property name, each
+    // alternative possibly ending in `*`, or a constructor sink's type name.
+    public IEnumerable<string> NamePatterns() =>
+        Kind == SinkKind.Ctor ? [Type[(Type.LastIndexOf('.') + 1)..]] : Member.Split(Alternative);
 
-    private bool NameMatches(string name) =>
-        Member.Split(Alternative).Any(pattern => pattern.EndsWith(Wildcard)
-            ? name.StartsWith(pattern[..^1], StringComparison.Ordinal)
-            : name == pattern);
+    public static bool IsWildcard(string pattern) => pattern.EndsWith(Wildcard);
+
+    public static bool NameMatches(string pattern, string name) =>
+        pattern.EndsWith(Wildcard) ? name.StartsWith(pattern[..^1], StringComparison.Ordinal) : name == pattern;
 }

@@ -7,20 +7,20 @@ using Microsoft.CodeAnalysis.FlowAnalysis;
 namespace Qlcheck.Languages.CSharp.Catalog.Dataflow;
 
 // The control-flow graphs of one file's executable bodies, built lazily and cached. Binding a body
-// is the expensive part, so a body is only built when one of its identifiers is a name the caller
-// cares about (a sink member, say).
+// is the expensive part, so a body is only built when one of its tokens is one the caller cares
+// about (a name that binds to a sink, say).
 internal sealed class BodyGraphs(SyntaxTree tree, SemanticModel model)
 {
     private readonly Dictionary<SyntaxNode, BodyGraph?> _cache = [];
 
     private readonly Lazy<IReadOnlyList<SyntaxNode>> _bodies = new(() => Declarations(tree.GetRoot()));
 
-    // Graphs of the bodies that mention at least one of `names`.
-    public IEnumerable<BodyGraph> Mentioning(IReadOnlySet<string> names)
+    // Graphs of the bodies with at least one token the caller finds relevant.
+    public IEnumerable<BodyGraph> Containing(Func<SyntaxToken, bool> relevant)
     {
         foreach (var body in _bodies.Value)
         {
-            if (Mentions(body, names) && Graph(body) is { } graph)
+            if (Executable(body).Any(relevant) && Graph(body) is { } graph)
             {
                 yield return graph;
             }
@@ -54,11 +54,10 @@ internal sealed class BodyGraphs(SyntaxTree tree, SemanticModel model)
     // Only the parts that run count: the block or expression body, a constructor's `: base(...)`,
     // or the top-level statements, not the declaration's own name, parameters or neighbouring
     // types. A local function or lambda is part of its container's body, so its identifiers count.
-    private static bool Mentions(SyntaxNode body, IReadOnlySet<string> names) =>
+    private static IEnumerable<SyntaxToken> Executable(SyntaxNode body) =>
         body.ChildNodes()
             .Where(child => child is BlockSyntax or ArrowExpressionClauseSyntax or ConstructorInitializerSyntax or GlobalStatementSyntax)
-            .SelectMany(child => child.DescendantTokens())
-            .Any(token => token.IsKind(SyntaxKind.IdentifierToken) && names.Contains(token.ValueText));
+            .SelectMany(child => child.DescendantTokens());
 
     private BodyGraph? Graph(SyntaxNode body)
     {
