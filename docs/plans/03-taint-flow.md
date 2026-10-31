@@ -14,6 +14,13 @@ Probe corpus, scorer and throwaway prototype (all outside the repo):
   rows, so a probe that still misses carries `pending: "phase N"` and a second theory asserts it still misses.
   `env_var_source` now expects no Finding (D1). 35 probes pass; 29 are pending (phase 2: 6, phase 4: 14, phase 5: 8,
   and the cross-method `sql_private_helper`, out of scope).
+- **Phase 2 done** (2026-10-31, branch `taint-propagation`): compound assignment and `??=` (the compiler assigns
+  through a flow capture of the local), the D5 summaries (string methods, `string.Format/Concat/Join`, `StringBuilder`
+  and its `Append*` mutating the receiver, `Path.Combine/Join/GetFullPath/...`, `ToString`, `Task.FromResult`,
+  `ConfigureAwait`), collections (mutators, indexers, `foreach`, LINQ), `await`, fields of `this` within one member,
+  and lambdas and local functions as sub-graphs (D6). `Console.In.ReadLine` is a source. All phase 2 probes pass:
+  41 pass; 23 are pending (phase 4: 14, phase 5: 8, and the out-of-scope `sql_private_helper`). Timing unchanged
+  from phase 1.
 - **Pulled forward from phase 3:** the edge guards `== const` and readonly-set `Contains` (so `sql_allowlist_column`
   does not regress to a false positive).
 - **Prefilter:** a body is built only when an identifier with a sink's name *binds* to that sink (`SinkFilter`). Names
