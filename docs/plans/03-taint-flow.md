@@ -7,6 +7,25 @@ Probe corpus, scorer and throwaway prototype (all outside the repo):
 (`corpus/*.cs` = 64 probes, `manifest.json`, `tools/gen.py`, `tools/score.py`, `tools/score_proto.py`,
 `tools/proto/` = prototype, `baseline.txt`, `proto-vs-current.txt`).
 
+## Progress
+
+- **Phases 0 and 1 done** (2026-10-31, branch `taint-flow`). The probe corpus is the theory
+  `TaintProbeTests` over `tests/Qlcheck.Tests/Catalog/Dataflow/taint-probes.json`; xunit 2 cannot skip single theory
+  rows, so a probe that still misses carries `pending: "phase N"` and a second theory asserts it still misses.
+  `env_var_source` now expects no Finding (D1). 35 probes pass; 29 are pending (phase 2: 6, phase 4: 14, phase 5: 8,
+  and the cross-method `sql_private_helper`, out of scope).
+- **Pulled forward from phase 3:** the edge guards `== const` and readonly-set `Contains` (so `sql_allowlist_column`
+  does not regress to a false positive).
+- **Prefilter:** a body is built only when an identifier with a sink's name *binds* to that sink (`SinkFilter`). Names
+  alone sent 74 bodies of this repository through binding without one real sink.
+- **Timing** (release, median of 5, back to back with main): full run 8.41 s → 8.45 s; the 38 Taint and Flow rows alone
+  1.38 s → 1.74 s, the binder's one-time warm-up that a full run pays anyway.
+- **D12 triage** (jellyfin, bitwarden/server; shallow clones, no restore, so package sinks such as SqlClient, Dapper and
+  EF Core stay unresolved until the D2 fallback): the old rows gave 6 Findings, all false (`Start` methods of their
+  own, a `CancellationToken` passed to `ExecuteScalarAsync`). The new rows give 2: a public `GetKeyframeData(ffProbePath)`
+  and a public `Exec(cmd)` that run the program they are given. Both are what the Check says; both are deliberate exec
+  wrappers, so they are judgment calls rather than bugs. Constant `CommandText` and `ExecuteSqlRaw` stay quiet.
+
 ## Goal
 
 Make the Taint Checks find what they say they find, and make the Flow Checks use real control flow. Today a Taint
