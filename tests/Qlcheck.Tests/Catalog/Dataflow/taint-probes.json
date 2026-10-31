@@ -198,7 +198,6 @@
     "checks": [
       "sql-injection"
     ],
-    "pending": "phase 3",
     "source": "public class R { static readonly HashSet<string> Cols = new() { \"name\", \"age\" };\n  public void M(DbCommand c, string col) { if (!Cols.Contains(col)) { throw new ArgumentException(nameof(col)); }\n    c.CommandText = \"SELECT * FROM U ORDER BY \" + col; c.ExecuteNonQuery(); } }"
   },
   "cmd_local_concat": {
@@ -255,7 +254,6 @@
     "checks": [
       "command-injection"
     ],
-    "pending": "phase 3",
     "source": "public class R { public void M(string tool) { if (tool != \"ls\" && tool != \"pwd\") { return; } Process.Start(tool); } }"
   },
   "cmd_constant": {

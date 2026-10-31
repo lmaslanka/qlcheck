@@ -110,6 +110,28 @@ public class TaintFlowTests
         Assert.Empty(Run($"public class R {{ public void M(string args) {{ {body} }} }}"));
     }
 
+    [Theory]
+    [InlineData("if (file != \"ls\" && file != \"pwd\") { return; } Process.Start(file);")]
+    [InlineData("if (file == \"ls\") { Process.Start(file); }")]
+    [InlineData("if (!(\"ls\" != file)) { Process.Start(file); }")]
+    [InlineData("if (!Tools.Contains(file)) { throw new ArgumentException(nameof(file)); } Process.Start(file);")]
+    [InlineData("if (Tools.Contains(file)) { Process.Start(file); }")]
+    public void A_comparison_with_a_constant_or_a_read_only_set_cleans_the_guarded_path(string body)
+    {
+        Assert.Empty(Run($"public class R {{ static readonly System.Collections.Generic.HashSet<string> Tools = new() {{ \"ls\" }}; public void M(string file) {{ {body} }} }}"));
+    }
+
+    [Theory]
+    [InlineData("if (file == \"ls\") { return; } Process.Start(file);")]
+    [InlineData("if (file != \"ls\") { Process.Start(file); }")]
+    [InlineData("if (!Tools.Contains(file)) { Process.Start(file); }")]
+    [InlineData("if (Mutable.Contains(file)) { Process.Start(file); }")]
+    [InlineData("if (file == Other) { Process.Start(file); }")]
+    public void A_guard_cleans_only_the_path_where_it_holds(string body)
+    {
+        Assert.Single(Run($"public class R {{ static readonly System.Collections.Generic.HashSet<string> Tools = new() {{ \"ls\" }}; static System.Collections.Generic.HashSet<string> Mutable = new(); static string Other = \"ls\"; public void M(string file) {{ {body} }} }}"));
+    }
+
     [Fact]
     public void A_type_that_only_shares_the_sink_name_is_not_a_sink()
     {

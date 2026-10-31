@@ -46,15 +46,6 @@ internal sealed class TaintFlow
         return [.. flow._hits.Values];
     }
 
-    private static object? KeyOf(IOperation operation) =>
-        operation switch
-        {
-            ILocalReferenceOperation local => local.Local,
-            IParameterReferenceOperation parameter => parameter.Parameter,
-            IFlowCaptureReferenceOperation capture => capture.Id,
-            _ => null,
-        };
-
     // The object a property is set on, as a key: a local, parameter or flow capture, or a property
     // path from one (`p.StartInfo`). Null when it cannot be named.
     private static object? ReceiverKey(IOperation? operation) =>
@@ -63,7 +54,7 @@ internal sealed class TaintFlow
             IPropertyReferenceOperation property => ReceiverKey(property.Instance) is { } inner ? (inner, property.Property.Name) : null,
             IConversionOperation conversion => ReceiverKey(conversion.Operand),
             null => null,
-            _ => KeyOf(operation),
+            _ => TaintState.KeyOf(operation),
         };
 
     private bool Analyze(ControlFlowGraph graph, TaintState entry)
@@ -90,11 +81,25 @@ internal sealed class TaintFlow
                 Eval(branch, state);
             }
 
-            Flow(block.ConditionalSuccessor, state, states, work);
-            Flow(block.FallThroughSuccessor, state, states, work);
+            var jumpsWhen = block.ConditionKind == ControlFlowConditionKind.WhenTrue;
+            Flow(block.ConditionalSuccessor, Guarded(block, state, holds: jumpsWhen), states, work);
+            Flow(block.FallThroughSuccessor, Guarded(block, state, holds: !jumpsWhen), states, work);
         }
 
         return true;
+    }
+
+    // The state on the edge where the block's branch condition is `holds`.
+    private static TaintState Guarded(BasicBlock block, TaintState state, bool holds)
+    {
+        if (block.ConditionKind == ControlFlowConditionKind.None || block.BranchValue is null)
+        {
+            return state;
+        }
+
+        var guarded = state.Clone();
+        TaintGuards.Apply(block.BranchValue, holds, guarded);
+        return guarded;
     }
 
     // Finally and catch blocks are entered through exception-handling regions, not branches. Once
@@ -143,7 +148,7 @@ internal sealed class TaintFlow
         operation switch
         {
             IFlowCaptureOperation capture => Capture(capture, state),
-            ILocalReferenceOperation or IParameterReferenceOperation or IFlowCaptureReferenceOperation => state.Get(KeyOf(operation)!),
+            ILocalReferenceOperation or IParameterReferenceOperation or IFlowCaptureReferenceOperation => state.Get(TaintState.KeyOf(operation)!),
             ILiteralOperation => Taint.None,
             IConversionOperation conversion => Convert(conversion.Type, Eval(conversion.Operand, state)),
             IBinaryOperation binary => Binary(binary, state),
@@ -217,7 +222,7 @@ internal sealed class TaintFlow
                 state.Set(local.Local, taint.Through(local.Local.Name));
                 break;
             case IParameterReferenceOperation or IFlowCaptureReferenceOperation:
-                state.Set(KeyOf(assignment.Target)!, taint);
+                state.Set(TaintState.KeyOf(assignment.Target)!, taint);
                 break;
             case IPropertyReferenceOperation property:
                 SetProperty(property, assignment, taint, state);

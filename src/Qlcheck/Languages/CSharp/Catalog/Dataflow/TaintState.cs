@@ -1,4 +1,8 @@
 // Copyright (c) qlcheck contributors.
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.FlowAnalysis;
+using Microsoft.CodeAnalysis.Operations;
+
 namespace Qlcheck.Languages.CSharp.Catalog.Dataflow;
 
 // The taint of each tracked storage location at one program point. Keys are locals, parameters and
@@ -16,6 +20,16 @@ internal sealed class TaintState
     {
         _taints = taints;
     }
+
+    // The key a reference to a local, parameter or flow capture is tracked under; null otherwise.
+    public static object? KeyOf(IOperation operation) =>
+        operation switch
+        {
+            ILocalReferenceOperation local => local.Local,
+            IParameterReferenceOperation parameter => parameter.Parameter,
+            IFlowCaptureReferenceOperation capture => capture.Id,
+            _ => null,
+        };
 
     public Taint Get(object key) => _taints.TryGetValue(key, out var taint) ? taint : Taint.None;
 
