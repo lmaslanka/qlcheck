@@ -13,7 +13,7 @@ compiler model), not regex guesses, so they catch real bugs and skip the obvious
 ├──────────────────────────────────────────────┤
 │ Scan                                         │
 │   Files checked                            1 │
-│   Lines checked                           26 │
+│   Lines checked                           29 │
 │   Checks run                             334 │
 │                                              │
 │ Results                                      │
@@ -22,17 +22,17 @@ compiler model), not regex guesses, so they catch real bugs and skip the obvious
 │   Clean files                              0 │
 │                                              │
 │ By check                                     │
-│   catch-only-rethrow             1  (1 file) │
 │   field-private                  1  (1 file) │
 │   magic-literal                  2  (1 file) │
 │   no-general-exception           1  (1 file) │
 │   no-public-field                1  (1 file) │
+│   one-variable-per-line          1  (1 file) │
 │   sql-injection                  1  (1 file) │
 │                                              │
 │ By file                                      │
 │   Sample.cs                                7 │
 │                                              │
-│ Duration                              548 ms │
+│ Duration                              671 ms │
 ╰──────────────────────────────────────────────╯
 ```
 
@@ -42,9 +42,10 @@ compiler model), not regex guesses, so they catch real bugs and skip the obvious
   (`{check}:{file}:{line}:{column}`), a plain-language fix instruction, and sometimes a
   drop-in `replacement`. No severity levels to argue about, no suppressing-by-config-file
   rituals — just "here's what's wrong and here's one way to fix it."
-- **Semantic, not textual.** Security checks use Roslyn's semantic model to trace taint
-  through parameters, assignments, and interpolation — `sql-injection` only fires on an actual
-  `DbCommand`-derived receiver, not on any method named `Execute`.
+- **Semantic, not textual.** `sql-injection` and `command-injection` follow untrusted data
+  through each method's control flow (locals, reassignment, concatenation, interpolation) into
+  sinks resolved by symbol: `DbCommand.CommandText` fires, a method that merely happens to be
+  named `Execute` or `Start` does not. The Finding names the source and the path it took.
 - **Knows what it doesn't know.** Some findings genuinely need a human judgment call —
   `jwt-strong-signature` flags any signing call and tells the agent to *ask the user* whether
   the algorithm is strong enough, rather than silently guessing. Once a human has made that
@@ -81,20 +82,27 @@ dotnet run --project src/Qlcheck -- .   # run against the current directory
 
 ```csharp
 // Sample.cs
+using System;
+using System.Data.Common;
+
+namespace Sample;
+
 public class UserRepository
 {
     public int MaxRetries = 3, MaxRedirects = 3;
 
     public void DeleteUser(DbCommand command, string userId)
     {
-        command.ExecuteReader(userId);
+        var query = $"DELETE FROM Users WHERE Id = '{userId}'";
+        command.CommandText = query;
+        command.ExecuteNonQuery();
     }
 
     public void Load(DbCommand command)
     {
         try
         {
-            command.ExecuteReader("safe");
+            command.ExecuteReader();
         }
         catch (InvalidOperationException)
         {
@@ -109,31 +117,32 @@ $ qlcheck --human Sample.cs
 ```
 
 ```
-Sample.cs:12:9  sql-injection
-  Do not build a database query from untrusted input.
-
-Sample.cs:21:9  catch-only-rethrow
-  `catch` clauses should do more than rethrow.
-
-Sample.cs:23:13  no-general-exception
-  General or reserved exceptions should never be thrown.
-
-Sample.cs:8:5  field-private
+Sample.cs:9:5  field-private
   Fields should be private.
 
-Sample.cs:8:5  no-public-field
+Sample.cs:9:29  magic-literal
+  Magic number 3 is used 2 times in this file; make it a named const or enum member.
+
+Sample.cs:9:47  magic-literal
+  Magic number 3 is used 2 times in this file; make it a named const or enum member.
+
+Sample.cs:26:13  no-general-exception
+  General or reserved exceptions should never be thrown.
+
+Sample.cs:9:5  no-public-field
   Fields should not have public accessibility.
 
-Sample.cs:8:29  magic-literal
-  Magic number 3 is used 2 times in this file; make it a named const or enum member.
+Sample.cs:9:12  one-variable-per-line
+  Multiple variables should not be declared on the same line.
 
-Sample.cs:8:47  magic-literal
-  Magic number 3 is used 2 times in this file; make it a named const or enum member.
+Sample.cs:14:9  sql-injection
+  Do not build a database query from untrusted input. `userId` (parameter of public `DeleteUser`, line 11) reaches `DbCommand.CommandText` via `query`. Pass it as a `DbParameter` instead of building the SQL text from it.
 ```
 
-That `sql-injection` finding isn't a text match on `.Execute(...)` — it resolved `command`'s
-actual type against `System.Data.Common.DbCommand` (or any subtype) and traced `userId` back
-to a public method parameter before reporting anything.
+That `sql-injection` finding isn't a text match on a method name. The assignment's target
+resolves to `System.Data.Common.DbCommand.CommandText`, and `userId`, a parameter of a public
+method, is traced through the interpolated string in `query` before anything is reported.
+The `ExecuteNonQuery()` and `ExecuteReader()` calls take no SQL, so they are not sinks.
 
 ## Output modes
 
@@ -148,12 +157,12 @@ $ qlcheck Sample.cs
 {
   "findings": [
     {
-      "id": "sql-injection:Sample.cs:12:9",
+      "id": "sql-injection:Sample.cs:14:9",
       "check": "sql-injection",
       "file": "Sample.cs",
-      "line": 12,
+      "line": 14,
       "column": 9,
-      "message": "Do not build a database query from untrusted input."
+      "message": "Do not build a database query from untrusted input. `userId` (parameter of public `DeleteUser`, line 11) reaches `DbCommand.CommandText` via `query`. Pass it as a `DbParameter` instead of building the SQL text from it."
     }
   ]
 }
@@ -277,7 +286,7 @@ See [ADR 0010](docs/adr/0010-repo-files-combine-like-gitignore.md).
   is a first-class concept — a `Check` only ever runs against files of its own language, and
   check ids are unique across languages.
 - **Checks are rows, not classes.** Almost every check is a declarative `Row` entry
-  (`Row.Taint("sql-injection", ...)`, `Row.Handle("no-double-dispose", ...)`) pointing at a
+  (`Row.Flow("sql-injection", ...)`, `Row.Handle("no-double-dispose", ...)`) pointing at a
   small, focused matcher function — see `*Engine.cs` under `Catalog/`.
 - **In-process, no subprocess per file.** One parse, one semantic model, every check walks it.
 - **Compilations mirror the build.** Each project's `Nullable`, `OutputType`, implicit usings and
