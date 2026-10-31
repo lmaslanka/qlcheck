@@ -166,6 +166,7 @@ internal sealed class TaintFlow
             IPropertyReferenceOperation property => Read(property, state),
             IArrayInitializerOperation initializer => Elements(initializer, state),
             IInvocationOperation invocation => Invoke(invocation, state),
+            IAwaitOperation awaited => Result(awaited.Type, Eval(awaited.Operation, state)),
             _ => Children(operation, state),
         };
 
@@ -381,7 +382,7 @@ internal sealed class TaintFlow
             Check(method, argument.Parameter?.Name, taint, invocation.Syntax, shell);
         }
 
-        if (TaintModel.SourceOf(method, invocation.Syntax) is { } origin)
+        if (TaintModel.SourceOf(invocation) is { } origin)
         {
             return Taint.From(TaintModel.LabelFor(invocation.Type), origin);
         }

@@ -139,6 +139,25 @@ public class TaintFlowTests
         Assert.Equal([TaintLabel.Numeric, TaintLabel.Numeric], hits.Select(hit => hit.Labels));
     }
 
+    [Theory]
+    [InlineData("var query = await System.Threading.Tasks.Task.FromResult(userId); c.CommandText = query;")]
+    [InlineData("var query = await System.Threading.Tasks.Task.FromResult(userId).ConfigureAwait(false); c.CommandText = query;")]
+    [InlineData("var pending = System.Threading.Tasks.Task.FromResult(userId); var query = await pending; c.CommandText = query;")]
+    public void Await_gives_the_taint_of_the_awaited_task(string body)
+    {
+        Assert.Single(Run($"public class R {{ public async System.Threading.Tasks.Task M(DbCommand c, string userId) {{ {body} }} }}"));
+    }
+
+    [Theory]
+    [InlineData("var s = Console.In.ReadLine();", "Console.In.ReadLine()")]
+    [InlineData("var s = await Console.In.ReadLineAsync();", "Console.In.ReadLineAsync()")]
+    public void Console_in_is_a_source(string read, string name)
+    {
+        var hit = Assert.Single(Run($"public class R {{ async System.Threading.Tasks.Task M(DbCommand c) {{ {read} c.CommandText = s; }} }}"));
+
+        Assert.Equal(name, hit.Source.Name);
+    }
+
     [Fact]
     public void Console_input_is_a_source()
     {

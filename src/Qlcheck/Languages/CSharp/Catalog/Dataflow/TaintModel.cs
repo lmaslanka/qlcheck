@@ -23,7 +23,16 @@ internal static class TaintModel
         "sh", "bash", "zsh", "dash", "cmd", "powershell", "pwsh",
     };
 
+    private const string ConsoleInput = "In";
+
     private const string BuilderType = "System.Text.StringBuilder";
+
+    private static readonly HashSet<string> TaskTypes = new(StringComparer.Ordinal)
+    {
+        "System.Threading.Tasks.Task", "System.Threading.Tasks.Task`1", "System.Threading.Tasks.ValueTask", "System.Threading.Tasks.ValueTask`1",
+    };
+
+    private static readonly HashSet<string> TaskPropagators = new(StringComparer.Ordinal) { "FromResult", "ConfigureAwait" };
 
     private const string PathType = "System.IO.Path";
 
@@ -84,20 +93,35 @@ internal static class TaintModel
         return state;
     }
 
-    // The source a call stands for when it returns untrusted data, or null for any other call.
-    public static TaintSource? SourceOf(IMethodSymbol method, SyntaxNode at) =>
-        ConsoleReads.Contains(method.Name) && Symbols.QualifiedName(method.ContainingType) == ConsoleType
-            ? new TaintSource($"Console.{method.Name}()", "console input", at.GetLocation().GetLineSpan().StartLinePosition.Line + 1)
-            : null;
+    // The source a call stands for when it returns untrusted data, or null for any other call:
+    // `Console.ReadLine()` and `Console.In.ReadLine()`, and their async forms.
+    public static TaintSource? SourceOf(IInvocationOperation invocation)
+    {
+        var method = invocation.TargetMethod;
+        if (!ConsoleReads.Contains(method.Name))
+        {
+            return null;
+        }
+
+        var name = invocation.Instance switch
+        {
+            null when Symbols.QualifiedName(method.ContainingType) == ConsoleType => $"Console.{method.Name}()",
+            IPropertyReferenceOperation { Property.Name: ConsoleInput } input when Symbols.QualifiedName(input.Property.ContainingType) == ConsoleType =>
+                $"Console.{ConsoleInput}.{method.Name}()",
+            _ => null,
+        };
+        return name is null ? null : new TaintSource(name, "console input", invocation.Syntax.GetLocation().GetLineSpan().StartLinePosition.Line + 1);
+    }
 
     // Calls whose result carries the taint of their receiver and arguments (D5): string methods,
-    // StringBuilder, the path-building Path methods, ToString and GetEnumerator (how foreach reads
-    // a collection). Any other call returns clean data.
+    // StringBuilder, the path-building Path methods, ToString, GetEnumerator (how foreach reads a
+    // collection), and Task.FromResult and ConfigureAwait. Any other call returns clean data.
     public static bool Propagates(IMethodSymbol method) =>
         method.Name is nameof(ToString) or EnumeratorMethod
         || method.ContainingType.SpecialType == SpecialType.System_String
         || Symbols.QualifiedName(method.ContainingType) == BuilderType
-        || Symbols.QualifiedName(method.ContainingType) == PathType && PathPropagators.Contains(method.Name);
+        || Symbols.QualifiedName(method.ContainingType) == PathType && PathPropagators.Contains(method.Name)
+        || TaskTypes.Contains(Symbols.QualifiedName(method.ContainingType)) && TaskPropagators.Contains(method.Name);
 
     // Calls that put their arguments' taint into the receiver: `builder.Append(x)`, `list.Add(x)`.
     public static bool MutatesReceiver(IMethodSymbol method) =>
