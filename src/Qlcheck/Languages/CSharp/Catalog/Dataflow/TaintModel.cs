@@ -23,6 +23,26 @@ internal static class TaintModel
         "sh", "bash", "zsh", "dash", "cmd", "powershell", "pwsh",
     };
 
+    private const string BuilderType = "System.Text.StringBuilder";
+
+    private const string PathType = "System.IO.Path";
+
+    private static readonly HashSet<string> PathPropagators = new(StringComparer.Ordinal)
+    {
+        "Combine", "Join", "GetFullPath", "GetDirectoryName", "ChangeExtension", "GetRelativePath",
+    };
+
+    private static readonly HashSet<string> BuilderMutators = new(StringComparer.Ordinal)
+    {
+        "Append", "AppendLine", "AppendFormat", "AppendJoin", "Insert", "Replace",
+    };
+
+    // Constructing one of these from tainted arguments gives a tainted object.
+    private static readonly HashSet<string> CarrierTypes = new(StringComparer.Ordinal)
+    {
+        "System.String", BuilderType, "System.Uri",
+    };
+
     private static readonly HashSet<string> ConsoleReads = new(StringComparer.Ordinal) { "ReadLine", "ReadLineAsync" };
 
     private static readonly HashSet<string> SafeTypes = new(StringComparer.Ordinal)
@@ -58,6 +78,20 @@ internal static class TaintModel
         ConsoleReads.Contains(method.Name) && Symbols.QualifiedName(method.ContainingType) == ConsoleType
             ? new TaintSource($"Console.{method.Name}()", "console input", at.GetLocation().GetLineSpan().StartLinePosition.Line + 1)
             : null;
+
+    // Calls whose result carries the taint of their receiver and arguments (D5): string methods,
+    // StringBuilder, the path-building Path methods and ToString. Any other call returns clean data.
+    public static bool Propagates(IMethodSymbol method) =>
+        method.Name == nameof(ToString)
+        || method.ContainingType.SpecialType == SpecialType.System_String
+        || Symbols.QualifiedName(method.ContainingType) == BuilderType
+        || Symbols.QualifiedName(method.ContainingType) == PathType && PathPropagators.Contains(method.Name);
+
+    // Calls that put their arguments' taint into the receiver: `builder.Append(x)`.
+    public static bool MutatesReceiver(IMethodSymbol method) =>
+        BuilderMutators.Contains(method.Name) && Symbols.QualifiedName(method.ContainingType) == BuilderType;
+
+    public static bool CarriesTaint(ITypeSymbol? type) => type is not null && CarrierTypes.Contains(Symbols.QualifiedName(type));
 
     // A constant naming a command shell, with or without a directory or `.exe`.
     public static bool IsShell(Optional<object?> constant) =>

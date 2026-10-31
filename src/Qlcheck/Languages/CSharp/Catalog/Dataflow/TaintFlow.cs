@@ -161,6 +161,8 @@ internal sealed class TaintFlow
             ISimpleAssignmentOperation assignment => Assign(assignment, state),
             ICompoundAssignmentOperation compound => Compound(compound, state),
             IObjectCreationOperation creation => Create(creation, state),
+            IArrayCreationOperation array => Array(array, state),
+            IArrayInitializerOperation initializer => Elements(initializer, state),
             IInvocationOperation invocation => Invoke(invocation, state),
             _ => Children(operation, state),
         };
@@ -282,13 +284,16 @@ internal sealed class TaintFlow
     }
 
     // Constructor arguments can be sinks. Object initializers are lowered into separate property
-    // assignments on a flow capture, so their sinks are checked by Assign.
+    // assignments on a flow capture, so their sinks are checked by Assign. A string, StringBuilder
+    // or Uri built from tainted arguments is tainted.
     private Taint Create(IObjectCreationOperation creation, TaintState state)
     {
         var shell = TaintModel.StartsShell(creation.Arguments);
+        var arguments = Taint.None;
         foreach (var argument in creation.Arguments)
         {
             var taint = Eval(argument.Value, state);
+            arguments = arguments.Join(taint);
             if (creation.Constructor is { } constructor)
             {
                 Check(constructor, argument.Parameter?.Name, taint, creation.Syntax, shell);
@@ -300,26 +305,73 @@ internal sealed class TaintFlow
             Eval(initializer, state);
         }
 
-        return Taint.None;
+        return TaintModel.CarriesTaint(creation.Type) ? arguments : Taint.None;
+    }
+
+    // An array holds the taint of its elements.
+    private Taint Array(IArrayCreationOperation array, TaintState state)
+    {
+        foreach (var size in array.DimensionSizes)
+        {
+            Eval(size, state);
+        }
+
+        return array.Initializer is { } initializer ? Elements(initializer, state) : Taint.None;
+    }
+
+    private Taint Elements(IArrayInitializerOperation initializer, TaintState state)
+    {
+        var taint = Taint.None;
+        foreach (var element in initializer.ElementValues)
+        {
+            taint = taint.Join(Eval(element, state));
+        }
+
+        return taint;
     }
 
     private Taint Invoke(IInvocationOperation invocation, TaintState state)
     {
-        if (invocation.Instance is { } instance)
-        {
-            Eval(instance, state);
-        }
-
+        var method = invocation.TargetMethod;
+        var receiver = invocation.Instance is { } instance ? Eval(instance, state) : Taint.None;
         var shell = TaintModel.StartsShell(invocation.Arguments);
+        var arguments = Taint.None;
         foreach (var argument in invocation.Arguments)
         {
-            Check(invocation.TargetMethod, argument.Parameter?.Name, Eval(argument.Value, state), invocation.Syntax, shell);
+            var taint = Eval(argument.Value, state);
+            arguments = arguments.Join(taint);
+            Check(method, argument.Parameter?.Name, taint, invocation.Syntax, shell);
         }
 
-        return TaintModel.SourceOf(invocation.TargetMethod, invocation.Syntax) is { } source
-            ? Taint.From(TaintModel.LabelFor(invocation.Type), source)
-            : Taint.None;
+        if (TaintModel.SourceOf(method, invocation.Syntax) is { } source)
+        {
+            return Taint.From(TaintModel.LabelFor(invocation.Type), source);
+        }
+
+        if (TaintModel.MutatesReceiver(method) && Root(invocation.Instance) is { } root)
+        {
+            Store(root, state.Get(root).Join(arguments), state);
+        }
+
+        return TaintModel.Propagates(method) ? Result(invocation.Type, receiver.Join(arguments)) : Taint.None;
     }
+
+    // The local, parameter or capture a call chain starts from: `builder` in
+    // `builder.Append(a).Append(b)`.
+    private static object? Root(IOperation? operation) =>
+        operation switch
+        {
+            IInvocationOperation { Instance: { } instance } => Root(instance),
+            IConversionOperation conversion => Root(conversion.Operand),
+            null => null,
+            _ => TaintState.KeyOf(operation),
+        };
+
+    // A propagated value of a safe type keeps only what Convert allows: Numeric for numbers.
+    private static Taint Result(ITypeSymbol? type, Taint taint) => TaintModel.IsSafe(type) ? Convert(type, taint) : taint;
+
+    private static void Store(object key, Taint taint, TaintState state) =>
+        state.Set(key, key is ILocalSymbol local ? taint.Through(local.Name) : taint);
 
     // `shell` says whether the call starts a constant shell; for a property set it is not known
     // yet, so a shell-only sink waits on the receiver instead.

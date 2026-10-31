@@ -60,6 +60,35 @@ public class TaintFlowTests
         Assert.Equal(["query"], hit.Via);
     }
 
+    [Theory]
+    [InlineData("var query = userId.Length > 3 ? \"SELECT \" + userId : \"SELECT 1\"; c.CommandText = query;")]
+    [InlineData("var query = (userId.Length > 3 ? null : userId) ?? \"SELECT 1\"; c.CommandText = query;")]
+    [InlineData("var query = userId.Length switch { 0 => \"SELECT 1\", _ => userId }; c.CommandText = query;")]
+    [InlineData("var query = string.Format(\"SELECT {0}\", userId); c.CommandText = query;")]
+    [InlineData("var query = string.Concat(\"SELECT \", userId); c.CommandText = query;")]
+    [InlineData("var query = string.Join(\",\", new[] { \"SELECT \", userId }); c.CommandText = query;")]
+    [InlineData("var query = userId.Trim().Substring(1).ToUpperInvariant(); c.CommandText = query;")]
+    [InlineData("var query = new System.Text.StringBuilder(userId).ToString(); c.CommandText = query;")]
+    [InlineData("var builder = new System.Text.StringBuilder(\"SELECT \"); builder.Append(userId).Append(\"'\"); var query = builder.ToString(); c.CommandText = query;")]
+    [InlineData("var builder = new System.Text.StringBuilder(); builder.AppendFormat(\"SELECT {0}\", userId); var query = builder.ToString(); c.CommandText = query;")]
+    [InlineData("var query = System.IO.Path.Combine(\"/data\", userId); c.CommandText = query;")]
+    [InlineData("object boxed = userId; var query = boxed.ToString(); c.CommandText = query;")]
+    public void Taint_follows_known_string_builder_and_path_operations(string body)
+    {
+        var hit = Assert.Single(Run($"public class R {{ public void M(DbCommand c, string userId) {{ {body} }} }}"));
+
+        Assert.Contains("query", hit.Via);
+    }
+
+    [Theory]
+    [InlineData("var query = Helper(userId); c.CommandText = query;")]
+    [InlineData("var query = userId.Contains('x') ? \"SELECT 1\" : \"SELECT 2\"; c.CommandText = query;")]
+    [InlineData("var builder = new System.Text.StringBuilder(); builder.Append(userId); var other = new System.Text.StringBuilder(); c.CommandText = other.ToString();")]
+    public void Unknown_calls_and_other_builders_stay_clean(string body)
+    {
+        Assert.Empty(Run($"public class R {{ public void M(DbCommand c, string userId) {{ {body} }} static string Helper(string s) => s; }}"));
+    }
+
     [Fact]
     public void A_compound_set_of_a_sink_property_is_a_hit()
     {
@@ -81,11 +110,11 @@ public class TaintFlowTests
     }
 
     [Fact]
-    public void A_numeric_parameter_carries_the_numeric_label()
+    public void A_numeric_parameter_carries_only_the_numeric_label_even_as_text()
     {
-        var hit = Assert.Single(Run("public class R { public void M(DbCommand c, int n) { c.CommandText = \"SELECT \" + n.ToString(); c.CommandText = (string)(object)n; } }"));
+        var hits = Run("public class R { public void M(DbCommand c, int n) { c.CommandText = \"SELECT \" + n.ToString(); c.CommandText = (string)(object)n; } }");
 
-        Assert.Equal(TaintLabel.Numeric, hit.Labels);
+        Assert.Equal([TaintLabel.Numeric, TaintLabel.Numeric], hits.Select(hit => hit.Labels));
     }
 
     [Fact]

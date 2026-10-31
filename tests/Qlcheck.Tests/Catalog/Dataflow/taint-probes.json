@@ -47,7 +47,6 @@
     "checks": [
       "sql-injection"
     ],
-    "pending": "phase 2",
     "source": "public class R { public void M(DbCommand c, string name) {\n  var sb = new StringBuilder(\"SELECT * FROM U WHERE n = '\"); sb.Append(name).Append(\"'\");\n  c.CommandText = sb.ToString(); c.ExecuteNonQuery(); } }"
   },
   "sql_string_format": {
@@ -58,7 +57,6 @@
     "checks": [
       "sql-injection"
     ],
-    "pending": "phase 2",
     "source": "public class R { public void M(DbCommand c, string name) {\n  var q = string.Format(\"SELECT * FROM U WHERE n = '{0}'\", name); c.CommandText = q; c.ExecuteNonQuery(); } }"
   },
   "sql_concat_join": {
