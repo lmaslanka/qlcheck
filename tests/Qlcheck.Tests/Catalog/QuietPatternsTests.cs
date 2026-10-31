@@ -4,6 +4,17 @@ namespace Qlcheck.Tests;
 
 public class QuietPatternsTests
 {
+    [Theory]
+    [InlineData("bool a, bool b", 1)]
+    [InlineData("int a, int b", 0)]
+    [InlineData("System.IO.FileAccess a, System.IO.FileAccess b", 0)]
+    public void BitAndBool_reports_only_bool_operands(string parameters, int findings)
+    {
+        var ctx = MatchFixtures.Context($"class C {{ object M({parameters}) => a & b; }}");
+        QuietPatterns.BitAndBool(ctx, MatchFixtures.Id);
+        Assert.Equal(findings, ctx.Findings.Count);
+    }
+
     [Fact]
     public void CompareThenAssign_ignores_if_bodies_that_are_not_a_matching_assignment()
     {

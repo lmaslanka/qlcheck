@@ -160,7 +160,7 @@ internal static class QuietPatterns
         Flag(ctx, id, SyntaxKind.RightShiftExpression, ShiftByName);
 
     public static void BitAndBool(WalkContext ctx, string id) =>
-        Flag(ctx, id, SyntaxKind.BitwiseAndExpression, BoolOperands);
+        Flag(ctx, id, SyntaxKind.BitwiseAndExpression, node => BoolOperands(ctx, node));
 
     public static void AzureState(WalkContext ctx, string id) =>
         Flag(ctx, id, SyntaxKind.FieldDeclaration, FunctionHasField);
@@ -500,10 +500,13 @@ internal static class QuietPatterns
     private static bool ShiftByName(SyntaxNode node) =>
         node is BinaryExpressionSyntax binary && binary.Right is IdentifierNameSyntax;
 
-    private static bool BoolOperands(SyntaxNode node) =>
+    // `a & b` on two bool variables, where `&&` would skip b. On integers and flags enums `&` is
+    // the point.
+    private static bool BoolOperands(WalkContext ctx, SyntaxNode node) =>
         node is BinaryExpressionSyntax binary
         && binary.Left.IsKind(SyntaxKind.IdentifierName)
-        && binary.Right.IsKind(SyntaxKind.IdentifierName);
+        && binary.Right.IsKind(SyntaxKind.IdentifierName)
+        && ctx.Model.GetTypeInfo(binary).Type?.SpecialType == SpecialType.System_Boolean;
 
     private static bool FunctionHasField(SyntaxNode node)
     {
