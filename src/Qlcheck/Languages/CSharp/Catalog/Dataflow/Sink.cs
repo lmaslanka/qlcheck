@@ -21,6 +21,12 @@ internal sealed record Sink(SinkKind Kind, string Type, string Member, string? P
 
     public static Sink Ctor(string type, string parameter) => new(SinkKind.Ctor, type, WellKnownMemberNames.InstanceConstructorName, parameter);
 
+    // Only a sink when the program started is a constant command shell (`sh`, `cmd.exe`, ...): the
+    // `fileName` argument of the same call, or a `FileName` set earlier on the same object.
+    public bool ShellOnly { get; init; }
+
+    public Sink Shell() => this with { ShellOnly = true };
+
     // `member` is the called method or constructor, or the set property; `parameter` is the name
     // of the parameter the tainted argument binds to (null for a property set).
     public bool Matches(ISymbol member, string? parameter) =>

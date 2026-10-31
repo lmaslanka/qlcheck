@@ -209,7 +209,6 @@
     "checks": [
       "command-injection"
     ],
-    "pending": "phase 1",
     "source": "public class R { public void M(string arg) { var cmd = \"ls \" + arg; Process.Start(\"sh\", cmd); } }"
   },
   "cmd_direct": {
@@ -230,7 +229,6 @@
     "checks": [
       "command-injection"
     ],
-    "pending": "phase 1",
     "source": "public class R { public void M(string file) { var psi = new ProcessStartInfo { FileName = file, UseShellExecute = true }; Process.Start(psi); } }"
   },
   "cmd_psi_property": {
@@ -241,7 +239,6 @@
     "checks": [
       "command-injection"
     ],
-    "pending": "phase 1",
     "source": "public class R { public void M(string args) { var p = new Process(); p.StartInfo.FileName = \"sh\"; p.StartInfo.Arguments = \"-c \" + args; p.Start(); } }"
   },
   "cmd_lookalike_start": {
@@ -250,7 +247,6 @@
     "checks": [
       "command-injection"
     ],
-    "pending": "phase 1",
     "source": "public class Worker { public void Start(string name) { } }\npublic class R { private readonly Worker _w = new(); public void M(string name) { _w.Start(name); } }"
   },
   "cmd_allowlist_guard": {

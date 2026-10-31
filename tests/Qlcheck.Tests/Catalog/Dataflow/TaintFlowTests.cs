@@ -20,6 +20,9 @@ public class TaintFlowTests
         Sink.Call("System.Diagnostics.Process", "Start", FileName),
         Sink.Ctor(StartInfo, FileName),
         Sink.Set(StartInfo, "FileName"),
+        Sink.Call("System.Diagnostics.Process", "Start", "arguments").Shell(),
+        Sink.Ctor(StartInfo, "arguments").Shell(),
+        Sink.Set(StartInfo, "Arguments").Shell(),
     ];
 
     [Fact]
@@ -84,6 +87,27 @@ public class TaintFlowTests
         var hit = Assert.Single(Run($"public class R {{ public void M(string file) {{ {body} }} }}"));
 
         Assert.Equal(at, hit.Node.ToString());
+    }
+
+    [Theory]
+    [InlineData("Process.Start(\"sh\", \"-c \" + args);", "Process.Start(\"sh\", \"-c \" + args)")]
+    [InlineData("var psi = new ProcessStartInfo(\"/bin/bash\", args);", "new ProcessStartInfo(\"/bin/bash\", args)")]
+    [InlineData("var psi = new ProcessStartInfo { FileName = \"cmd.exe\", Arguments = \"/c \" + args };", "Arguments = \"/c \" + args")]
+    [InlineData("var p = new Process(); p.StartInfo.FileName = \"sh\"; p.StartInfo.Arguments = \"-c \" + args;", "p.StartInfo.Arguments = \"-c \" + args")]
+    public void Arguments_are_a_sink_when_the_program_is_a_constant_shell(string body, string at)
+    {
+        var hit = Assert.Single(Run($"public class R {{ public void M(string args) {{ {body} }} }}"));
+
+        Assert.Equal(at, hit.Node.ToString());
+    }
+
+    [Theory]
+    [InlineData("Process.Start(\"git\", args);")]
+    [InlineData("var psi = new ProcessStartInfo { FileName = \"git\", Arguments = args };")]
+    [InlineData("var p = new Process(); var q = new Process(); q.StartInfo.FileName = \"sh\"; p.StartInfo.Arguments = args;")]
+    public void Arguments_of_another_program_or_object_are_not_a_shell_sink(string body)
+    {
+        Assert.Empty(Run($"public class R {{ public void M(string args) {{ {body} }} }}"));
     }
 
     [Fact]

@@ -19,6 +19,12 @@ internal sealed class TaintFlow
 
     private readonly Dictionary<(Sink Sink, SyntaxNode Node), SinkHit> _hits = [];
 
+    // Receivers whose FileName was set to a constant shell, and the tainted sets on a receiver
+    // that only count as hits if it turns out to be one. Both ignore control flow.
+    private readonly HashSet<object> _shells = [];
+
+    private readonly List<(Sink Sink, SyntaxNode Node, Taint Taint, object Receiver)> _shellCandidates = [];
+
     private TaintFlow(IReadOnlyList<Sink> sinks)
     {
         _sinks = sinks;
@@ -27,7 +33,17 @@ internal sealed class TaintFlow
     public static IReadOnlyList<SinkHit> Run(BodyGraph body, IReadOnlyList<Sink> sinks)
     {
         var flow = new TaintFlow(sinks);
-        return flow.Analyze(body.Graph, TaintModel.Seed(body.Owner)) ? [.. flow._hits.Values] : [];
+        if (!flow.Analyze(body.Graph, TaintModel.Seed(body.Owner)))
+        {
+            return [];
+        }
+
+        foreach (var (sink, node, taint, _) in flow._shellCandidates.Where(candidate => flow._shells.Contains(candidate.Receiver)))
+        {
+            flow.Record(sink, node, taint);
+        }
+
+        return [.. flow._hits.Values];
     }
 
     private static object? KeyOf(IOperation operation) =>
@@ -37,6 +53,17 @@ internal sealed class TaintFlow
             IParameterReferenceOperation parameter => parameter.Parameter,
             IFlowCaptureReferenceOperation capture => capture.Id,
             _ => null,
+        };
+
+    // The object a property is set on, as a key: a local, parameter or flow capture, or a property
+    // path from one (`p.StartInfo`). Null when it cannot be named.
+    private static object? ReceiverKey(IOperation? operation) =>
+        operation switch
+        {
+            IPropertyReferenceOperation property => ReceiverKey(property.Instance) is { } inner ? (inner, property.Property.Name) : null,
+            IConversionOperation conversion => ReceiverKey(conversion.Operand),
+            null => null,
+            _ => KeyOf(operation),
         };
 
     private bool Analyze(ControlFlowGraph graph, TaintState entry)
@@ -193,12 +220,7 @@ internal sealed class TaintFlow
                 state.Set(KeyOf(assignment.Target)!, taint);
                 break;
             case IPropertyReferenceOperation property:
-                if (property.Instance is { } instance)
-                {
-                    Eval(instance, state);
-                }
-
-                Check(property.Property, null, taint, assignment.Syntax);
+                SetProperty(property, assignment, taint, state);
                 break;
             default:
                 Eval(assignment.Target, state);
@@ -208,16 +230,33 @@ internal sealed class TaintFlow
         return taint;
     }
 
+    private void SetProperty(IPropertyReferenceOperation property, ISimpleAssignmentOperation assignment, Taint taint, TaintState state)
+    {
+        if (property.Instance is { } instance)
+        {
+            Eval(instance, state);
+        }
+
+        var receiver = ReceiverKey(property.Instance);
+        if (receiver is not null && TaintModel.IsProgram(property.Property) && TaintModel.IsShell(assignment.Value.ConstantValue))
+        {
+            _shells.Add(receiver);
+        }
+
+        Check(property.Property, null, taint, assignment.Syntax, shell: false, receiver);
+    }
+
     // Constructor arguments can be sinks. Object initializers are lowered into separate property
     // assignments on a flow capture, so their sinks are checked by Assign.
     private Taint Create(IObjectCreationOperation creation, TaintState state)
     {
+        var shell = TaintModel.StartsShell(creation.Arguments);
         foreach (var argument in creation.Arguments)
         {
             var taint = Eval(argument.Value, state);
             if (creation.Constructor is { } constructor)
             {
-                Check(constructor, argument.Parameter?.Name, taint, creation.Syntax);
+                Check(constructor, argument.Parameter?.Name, taint, creation.Syntax, shell);
             }
         }
 
@@ -236,9 +275,10 @@ internal sealed class TaintFlow
             Eval(instance, state);
         }
 
+        var shell = TaintModel.StartsShell(invocation.Arguments);
         foreach (var argument in invocation.Arguments)
         {
-            Check(invocation.TargetMethod, argument.Parameter?.Name, Eval(argument.Value, state), invocation.Syntax);
+            Check(invocation.TargetMethod, argument.Parameter?.Name, Eval(argument.Value, state), invocation.Syntax, shell);
         }
 
         return TaintModel.SourceOf(invocation.TargetMethod, invocation.Syntax) is { } source
@@ -246,24 +286,37 @@ internal sealed class TaintFlow
             : Taint.None;
     }
 
-    private void Check(ISymbol member, string? parameter, Taint taint, SyntaxNode at)
+    // `shell` says whether the call starts a constant shell; for a property set it is not known
+    // yet, so a shell-only sink waits on the receiver instead.
+    private void Check(ISymbol member, string? parameter, Taint taint, SyntaxNode at, bool shell, object? receiver = null)
     {
-        if (taint is not { IsNone: false, Source: { } source })
+        if (taint.IsNone)
         {
             return;
         }
 
-        foreach (var sink in _sinks)
+        var matching = _sinks.Where(sink => sink.Matches(member, parameter)).ToList();
+        foreach (var sink in matching.Where(sink => !sink.ShellOnly || shell))
         {
-            if (!sink.Matches(member, parameter))
-            {
-                continue;
-            }
-
-            var key = (sink, at);
-            _hits[key] = _hits.TryGetValue(key, out var hit)
-                ? hit with { Labels = hit.Labels | taint.Labels }
-                : new SinkHit(sink, at, taint.Labels, source, taint.Path);
+            Record(sink, at, taint);
         }
+
+        if (receiver is not null && !shell)
+        {
+            _shellCandidates.AddRange(matching.Where(sink => sink.ShellOnly).Select(sink => (sink, at, taint, receiver)));
+        }
+    }
+
+    private void Record(Sink sink, SyntaxNode at, Taint taint)
+    {
+        if (taint.Source is not { } source)
+        {
+            return;
+        }
+
+        var key = (sink, at);
+        _hits[key] = _hits.TryGetValue(key, out var hit)
+            ? hit with { Labels = hit.Labels | taint.Labels }
+            : new SinkHit(sink, at, taint.Labels, source, taint.Path);
     }
 }

@@ -11,7 +11,17 @@ internal static class TaintEngine
         Row.Handle("allocation-dos", CheckClass.Taint, Patterns.AllocDos),
         Row.Taint("argument-injection", CheckClass.Taint, "ArgumentList"),
         Row.Taint("command-argument-injection", CheckClass.Taint, "Arguments"),
-        Row.Taint("command-injection", CheckClass.Taint, "Start"),
+        Row.Flow("command-injection", CheckClass.Taint, new TaintSpec(
+            TaintLabel.Untrusted,
+            [
+                Sink.Call("System.Diagnostics.Process", "Start", "fileName"),
+                Sink.Ctor("System.Diagnostics.ProcessStartInfo", "fileName"),
+                Sink.Set("System.Diagnostics.ProcessStartInfo", "FileName"),
+                Sink.Call("System.Diagnostics.Process", "Start", "arguments").Shell(),
+                Sink.Ctor("System.Diagnostics.ProcessStartInfo", "arguments").Shell(),
+                Sink.Set("System.Diagnostics.ProcessStartInfo", "Arguments").Shell(),
+            ],
+            "Run a fixed program and pass the input through `ProcessStartInfo.ArgumentList`, never through a shell.")),
         Row.Taint("connection-string-injection", CheckClass.Taint, "ConnectionString"),
         Row.Taint("deserialization-injection", CheckClass.Taint, "Deserialize"),
         Row.Taint("dynamic-code-injection", CheckClass.Taint, "Evaluate"),

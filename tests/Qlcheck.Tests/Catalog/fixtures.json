@@ -105,8 +105,8 @@
     "path": "Repo.cs"
   },
   "command-injection": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            Start(input);\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            Start(\"fixed\");\n        }\n    }\n}\n",
+    "bad": "using System.Diagnostics;\n\nnamespace Sample\n{\n    public class Tools\n    {\n        public void Run(string tool)\n        {\n            var info = new ProcessStartInfo { FileName = tool, UseShellExecute = false };\n            Process.Start(info);\n        }\n    }\n}\n",
+    "good": "using System.Diagnostics;\n\nnamespace Sample\n{\n    public class Tools\n    {\n        public void Log(string path)\n        {\n            var info = new ProcessStartInfo(\"git\") { UseShellExecute = false };\n            info.ArgumentList.Add(\"log\");\n            info.ArgumentList.Add(\"--\");\n            info.ArgumentList.Add(path);\n            Process.Start(info);\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "commented-code": {

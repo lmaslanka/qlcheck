@@ -10,7 +10,6 @@ catch-only-rethrow
 class-coupling
 collection-self-argument
 command-argument-injection
-command-injection
 connection-string-injection
 constructor-non-virtual
 controller-base

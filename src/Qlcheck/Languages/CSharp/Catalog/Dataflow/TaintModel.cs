@@ -1,5 +1,7 @@
 // Copyright (c) qlcheck contributors.
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Operations;
 using Qlcheck.Languages.CSharp.Catalog.Queries;
 
 namespace Qlcheck.Languages.CSharp.Catalog.Dataflow;
@@ -9,6 +11,17 @@ namespace Qlcheck.Languages.CSharp.Catalog.Dataflow;
 internal static class TaintModel
 {
     private const string ConsoleType = "System.Console";
+
+    private const string StartInfoType = "System.Diagnostics.ProcessStartInfo";
+
+    private const string ProgramParameter = "fileName";
+
+    private const string ProgramProperty = "FileName";
+
+    private static readonly HashSet<string> Shells = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "sh", "bash", "zsh", "dash", "cmd", "powershell", "pwsh",
+    };
 
     private static readonly HashSet<string> ConsoleReads = new(StringComparer.Ordinal) { "ReadLine", "ReadLineAsync" };
 
@@ -45,6 +58,18 @@ internal static class TaintModel
         ConsoleReads.Contains(method.Name) && Symbols.QualifiedName(method.ContainingType) == ConsoleType
             ? new TaintSource($"Console.{method.Name}()", "console input", at.GetLocation().GetLineSpan().StartLinePosition.Line + 1)
             : null;
+
+    // A constant naming a command shell, with or without a directory or `.exe`.
+    public static bool IsShell(Optional<object?> constant) =>
+        constant is { HasValue: true, Value: string program } && Shells.Contains(Path.GetFileNameWithoutExtension(program));
+
+    // A call or constructor whose `fileName` argument is a constant shell.
+    public static bool StartsShell(ImmutableArray<IArgumentOperation> arguments) =>
+        arguments.Any(argument => argument.Parameter?.Name == ProgramParameter && IsShell(argument.Value.ConstantValue));
+
+    // `ProcessStartInfo.FileName`, the program a process runs.
+    public static bool IsProgram(IPropertySymbol property) =>
+        property.Name == ProgramProperty && Symbols.Is(property.ContainingType, StartInfoType);
 
     // A value of this type cannot carry an injection: numbers, bool, enums, GUIDs, dates, time
     // spans, cancellation tokens and nullables of those. A char can still be a quote.
