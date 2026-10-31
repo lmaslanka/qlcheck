@@ -1,5 +1,6 @@
 // Copyright (c) qlcheck contributors.
 using Microsoft.CodeAnalysis.CSharp;
+using Qlcheck.Languages.CSharp.Catalog.Dataflow;
 
 namespace Qlcheck.Languages.CSharp.Catalog;
 
@@ -25,11 +26,17 @@ internal static class TaintEngine
         Row.Taint("reflected-xss", CheckClass.Taint, "Write"),
         Row.Taint("reflection-injection", CheckClass.Taint, "GetType"),
         Row.Taint("regex-dos", CheckClass.Taint, "Regex"),
-        Row.TaintOn(
-            "sql-injection",
-            CheckClass.Taint,
-            ["DbCommand"],
-            "Execute", "ExecuteAsync", "ExecuteReader", "ExecuteReaderAsync", "ExecuteScalar", "ExecuteScalarAsync"),
+        Row.Flow("sql-injection", CheckClass.Taint, new TaintSpec(
+            TaintLabel.Untrusted,
+            [
+                Sink.Set("System.Data.IDbCommand", "CommandText"),
+                Sink.Ctor("System.Data.Common.DbCommand", "cmdText"),
+                Sink.Ctor("System.Data.Common.DbDataAdapter", "selectCommandText"),
+                Sink.Call("Dapper.SqlMapper", "Query*|Execute*", "sql"),
+                Sink.Call("Microsoft.EntityFrameworkCore.RelationalQueryableExtensions", "FromSqlRaw", "sql"),
+                Sink.Call("Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions", "ExecuteSqlRaw*", "sql"),
+            ],
+            "Pass it as a `DbParameter` instead of building the SQL text from it.")),
         Row.Handle("ssrf", CheckClass.Taint, SsrfPatterns.Ssrf),
         Row.Handle("ssrf-traversal", CheckClass.Taint, SsrfPatterns.SsrfTraversal),
         Row.Taint("untrusted-environment-variable", CheckClass.Taint, "SetEnvironmentVariable"),
@@ -39,6 +46,10 @@ internal static class TaintEngine
         Row.Taint("xslt-injection", CheckClass.Taint, "Transform"),
         Row.Taint("zip-slip", CheckClass.Taint, "ExtractToFile"),
     ];
+
+    // Every sink of every Row.Flow row: the dataflow runs once per body for all of them.
+    public static IReadOnlyList<Sink> FlowSinks { get; } =
+        [.. Rows.Select(row => row.Taint).OfType<TaintSpec>().SelectMany(spec => spec.Sinks).Distinct()];
 
     public static void Apply(WalkContext ctx, IReadOnlySet<string> selected)
     {

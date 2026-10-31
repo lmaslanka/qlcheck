@@ -18,29 +18,6 @@ internal static class TaintMatch
         ReportAssignments(ctx, id, sinkSet);
     }
 
-    public static void ReportOnTypes(WalkContext ctx, string id, string[] receiverTypes, string[] sinks)
-    {
-        var types = new HashSet<string>(receiverTypes, StringComparer.Ordinal);
-        var sinkSet = new HashSet<string>(sinks, StringComparer.Ordinal);
-        foreach (var node in ctx.Nodes(SyntaxKind.InvocationExpression))
-        {
-            if (node is not InvocationExpressionSyntax invocation
-                || !sinkSet.Contains(Names.Invocation(invocation))
-                || invocation.Expression is not MemberAccessExpressionSyntax member)
-            {
-                continue;
-            }
-
-            var receiverType = Symbols.TypeOf(ctx, member.Expression);
-            if (receiverType is null || !types.Any(type => Symbols.DerivesFrom(receiverType, type)))
-            {
-                continue;
-            }
-
-            ReportIfTainted(ctx, id, invocation, invocation.ArgumentList);
-        }
-    }
-
     private static void ReportInvocations(WalkContext ctx, string id, HashSet<string> sinks)
     {
         foreach (var node in ctx.Nodes(SyntaxKind.InvocationExpression))

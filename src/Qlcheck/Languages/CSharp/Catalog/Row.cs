@@ -1,5 +1,6 @@
 // Copyright (c) qlcheck contributors.
 using Microsoft.CodeAnalysis.CSharp;
+using Qlcheck.Languages.CSharp.Catalog.Dataflow;
 
 namespace Qlcheck.Languages.CSharp.Catalog;
 
@@ -117,12 +118,13 @@ internal static class Row
             Apply = ctx => TaintMatch.Report(ctx, id, sinks),
         };
 
-    public static WalkRow TaintOn(string id, CheckClass group, string[] receiverTypes, params string[] sinks) =>
+    public static WalkRow Flow(string id, CheckClass group, TaintSpec spec) =>
         new()
         {
             Id = id,
             Class = group,
-            Apply = ctx => TaintMatch.ReportOnTypes(ctx, id, receiverTypes, sinks),
+            Taint = spec,
+            Apply = ctx => TaintFlowMatch.Report(ctx, id, spec),
         };
 
     public static WalkRow Handle(string id, CheckClass group, Action<WalkContext, string> apply) =>

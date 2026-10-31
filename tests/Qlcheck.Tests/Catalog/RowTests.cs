@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Qlcheck.Languages.CSharp.Catalog;
+using Qlcheck.Languages.CSharp.Catalog.Dataflow;
 
 namespace Qlcheck.Tests;
 
@@ -69,5 +70,19 @@ public class RowTests
         var row = Row.Token(MatchFixtures.Id, CheckClass.Syntax, "value");
         row.Apply(ctx);
         Assert.Single(ctx.Findings);
+    }
+
+    [Theory]
+    [InlineData(true, 1)]
+    [InlineData(false, 0)]
+    public void Flow_row_carries_its_spec_and_reports_hits_with_an_accepted_label(bool acceptsUntrusted, int findings)
+    {
+        var ctx = MatchFixtures.Context(
+            "public class C { public void M(System.Data.Common.DbCommand c, string id) { var q = \"SELECT \" + id; c.CommandText = q; } }");
+        var spec = new TaintSpec(acceptsUntrusted ? TaintLabel.Untrusted : TaintLabel.Numeric, [Sink.Set("System.Data.IDbCommand", "CommandText")], "hint");
+        var row = Row.Flow(MatchFixtures.Id, CheckClass.Taint, spec);
+        row.Apply(ctx);
+        Assert.Same(spec, row.Taint);
+        Assert.Equal(findings, ctx.Findings.Count);
     }
 }

@@ -1,6 +1,7 @@
 // Copyright (c) qlcheck contributors.
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Qlcheck.Languages.CSharp.Catalog.Dataflow;
 using Qlcheck.Scan;
 
 namespace Qlcheck.Languages.CSharp.Catalog;
@@ -10,6 +11,8 @@ internal sealed class WalkContext
     private readonly IReadOnlyDictionary<string, string> _messages;
 
     private readonly ILookup<SyntaxKind, SyntaxNode> _byKind;
+
+    private readonly Lazy<DataflowCache> _dataflow;
 
     internal WalkContext(
         string path,
@@ -26,6 +29,7 @@ internal sealed class WalkContext
         _messages = messages;
         _byKind = byKind;
         IsTestFile = TestPaths.IsTest(path);
+        _dataflow = new Lazy<DataflowCache>(() => new DataflowCache(tree, model));
     }
 
     public string Path { get; }
@@ -39,6 +43,9 @@ internal sealed class WalkContext
     public bool IsTestFile { get; }
 
     public List<Finding> Findings { get; } = [];
+
+    // Control-flow graphs and taint hits of this file, built on first use and shared by rows.
+    public DataflowCache Dataflow => _dataflow.Value;
 
     public static WalkContext Create(
         SourceFile file,
