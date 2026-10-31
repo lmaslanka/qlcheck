@@ -50,6 +50,25 @@ public class TaintFlowTests
     }
 
     [Theory]
+    [InlineData("var query = \"SELECT \"; query += userId; c.CommandText = query;")]
+    [InlineData("var query = \"SELECT \"; query += userId; query += \"'\"; c.CommandText = query;")]
+    [InlineData("var query = (string?)null; query ??= userId; c.CommandText = query;")]
+    public void Compound_assignment_adds_to_the_taint(string body)
+    {
+        var hit = Assert.Single(Run($"public class R {{ public void M(DbCommand c, string userId) {{ {body} }} }}"));
+
+        Assert.Equal(["query"], hit.Via);
+    }
+
+    [Fact]
+    public void A_compound_set_of_a_sink_property_is_a_hit()
+    {
+        var hit = Assert.Single(Run("public class R { public void M(DbCommand c, string userId) { c.CommandText = \"SELECT \"; c.CommandText += userId; } }"));
+
+        Assert.Equal("c.CommandText += userId", hit.Node.ToString());
+    }
+
+    [Theory]
     [InlineData("public void M(DbCommand c, string userId) { var q = userId; q = \"SELECT 1\"; c.CommandText = q; }")]
     [InlineData("public void M(DbCommand c, string userId) { c.CommandText = \"SELECT 1\"; }")]
     [InlineData("public void M(DbCommand c, Guid userId) { c.CommandText = \"SELECT \" + userId; }")]

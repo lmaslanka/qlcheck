@@ -25,6 +25,10 @@ internal sealed class TaintFlow
 
     private readonly List<(Sink Sink, SyntaxNode Node, string Target, Taint Taint, object Receiver)> _shellCandidates = [];
 
+    // Flow captures that stand for a local or parameter rather than its value: the compiler lowers
+    // `x ??= e` into an assignment through such a capture, which must write to x.
+    private readonly Dictionary<CaptureId, ILocalSymbol> _localAliases = [];
+
     private TaintFlow(IReadOnlyList<Sink> sinks)
     {
         _sinks = sinks;
@@ -155,6 +159,7 @@ internal sealed class TaintFlow
             IInterpolatedStringOperation interpolated => Interpolated(interpolated, state),
             IInterpolatedStringHandlerCreationOperation handler => Eval(handler.Content, state),
             ISimpleAssignmentOperation assignment => Assign(assignment, state),
+            ICompoundAssignmentOperation compound => Compound(compound, state),
             IObjectCreationOperation creation => Create(creation, state),
             IInvocationOperation invocation => Invoke(invocation, state),
             _ => Children(operation, state),
@@ -172,6 +177,11 @@ internal sealed class TaintFlow
 
     private Taint Capture(IFlowCaptureOperation capture, TaintState state)
     {
+        if (capture.Value is ILocalReferenceOperation local)
+        {
+            _localAliases[capture.Id] = local.Local;
+        }
+
         var taint = Eval(capture.Value, state);
         state.Set(capture.Id, taint);
         return taint;
@@ -188,15 +198,19 @@ internal sealed class TaintFlow
         return TaintModel.IsSafe(type) ? Taint.None : taint;
     }
 
-    private Taint Binary(IBinaryOperation binary, TaintState state)
+    private Taint Binary(IBinaryOperation binary, TaintState state) =>
+        Combined(binary.Type, Eval(binary.LeftOperand, state).Join(Eval(binary.RightOperand, state)));
+
+    // The result of an operator over tainted operands: a string keeps the taint, a number keeps
+    // only Numeric, and anything else (a comparison, say) is clean.
+    private static Taint Combined(ITypeSymbol? type, Taint taint)
     {
-        var taint = Eval(binary.LeftOperand, state).Join(Eval(binary.RightOperand, state));
-        if (binary.Type?.SpecialType == SpecialType.System_String)
+        if (type?.SpecialType == SpecialType.System_String)
         {
             return taint;
         }
 
-        return TaintModel.IsNumeric(binary.Type) ? Convert(binary.Type, taint) : Taint.None;
+        return TaintModel.IsNumeric(type) ? Convert(type, taint) : Taint.None;
     }
 
     private Taint Interpolated(IInterpolatedStringOperation interpolated, TaintState state)
@@ -216,10 +230,28 @@ internal sealed class TaintFlow
     private Taint Assign(ISimpleAssignmentOperation assignment, TaintState state)
     {
         var taint = Eval(assignment.Value, state);
+        Store(assignment, taint, state);
+        return taint;
+    }
+
+    // `x += e` keeps what x held and adds e. A sink property set this way is still a sink.
+    private Taint Compound(ICompoundAssignmentOperation compound, TaintState state)
+    {
+        var taint = Combined(compound.Type, Eval(compound.Target, state).Join(Eval(compound.Value, state)));
+        Store(compound, taint, state);
+        return taint;
+    }
+
+    private void Store(IAssignmentOperation assignment, Taint taint, TaintState state)
+    {
         switch (assignment.Target)
         {
             case ILocalReferenceOperation local:
                 state.Set(local.Local, taint.Through(local.Local.Name));
+                break;
+            case IFlowCaptureReferenceOperation capture when _localAliases.TryGetValue(capture.Id, out var aliased):
+                state.Set(capture.Id, taint);
+                state.Set(aliased, taint.Through(aliased.Name));
                 break;
             case IParameterReferenceOperation or IFlowCaptureReferenceOperation:
                 state.Set(TaintState.KeyOf(assignment.Target)!, taint);
@@ -231,11 +263,9 @@ internal sealed class TaintFlow
                 Eval(assignment.Target, state);
                 break;
         }
-
-        return taint;
     }
 
-    private void SetProperty(IPropertyReferenceOperation property, ISimpleAssignmentOperation assignment, Taint taint, TaintState state)
+    private void SetProperty(IPropertyReferenceOperation property, IAssignmentOperation assignment, Taint taint, TaintState state)
     {
         if (property.Instance is { } instance)
         {

@@ -37,7 +37,6 @@
     "checks": [
       "sql-injection"
     ],
-    "pending": "phase 2",
     "source": "public class R { public void M(DbCommand c, string name) {\n  var q = \"SELECT * FROM U WHERE n = '\"; q += name; q += \"'\"; c.CommandText = q; c.ExecuteNonQuery(); } }"
   },
   "sql_stringbuilder": {
