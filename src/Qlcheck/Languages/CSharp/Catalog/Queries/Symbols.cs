@@ -58,6 +58,36 @@ internal static class Symbols
         return false;
     }
 
+    // The type, one of its base types or one of its interfaces has this fully qualified metadata
+    // name (`System.Data.Common.DbCommand`, `System.Collections.Generic.List`1`, `Outer+Inner`).
+    // Generic types match by their definition, so `List<int>` is `List`1`. Unlike DerivesFrom, a
+    // user type that merely shares the simple name does not match.
+    public static bool Is(ITypeSymbol? type, string qualifiedName)
+    {
+        for (var current = type; current is not null; current = current.BaseType)
+        {
+            if (QualifiedName(current) == qualifiedName)
+            {
+                return true;
+            }
+        }
+
+        return type is not null && type.AllInterfaces.Any(item => QualifiedName(item) == qualifiedName);
+    }
+
+    public static string QualifiedName(ITypeSymbol type)
+    {
+        var definition = type.OriginalDefinition;
+        if (definition.ContainingType is { } outer)
+        {
+            return $"{QualifiedName(outer)}+{definition.MetadataName}";
+        }
+
+        return definition.ContainingNamespace is { IsGlobalNamespace: false } ns
+            ? $"{ns.ToDisplayString()}.{definition.MetadataName}"
+            : definition.MetadataName;
+    }
+
     public static int InheritanceDepth(WalkContext ctx, SyntaxNode node)
     {
         var symbol = Declared(ctx, node) as INamedTypeSymbol;

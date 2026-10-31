@@ -9,6 +9,10 @@ namespace Qlcheck.Tests;
 
 public class SymbolsTests
 {
+    private const string AssemblyName = "symbols";
+
+    private const string ListName = "System.Collections.Generic.List`1";
+
     [Fact]
     public void SymbolOf_resolves_the_referenced_symbol()
     {
@@ -28,7 +32,7 @@ public class SymbolsTests
     [Fact]
     public void Implements_is_true_when_type_itself_matches()
     {
-        var compilation = CSharpCompilations.Create("fixture", []);
+        var compilation = CSharpCompilations.Create(AssemblyName, []);
         var type = compilation.GetTypeByMetadataName("System.IDisposable");
         Assert.True(Symbols.Implements(type, "IDisposable"));
     }
@@ -41,11 +45,49 @@ public class SymbolsTests
         Assert.False(Symbols.IsDisposable(ctx, node));
     }
 
+    [Theory]
+    [InlineData("System.IO.FileStream", "System.IO.FileStream")]
+    [InlineData("System.IO.FileStream", "System.IO.Stream")]
+    [InlineData("System.IO.FileStream", "System.IDisposable")]
+    [InlineData(ListName, "System.Collections.Generic.IEnumerable`1")]
+    [InlineData("System.Collections.Generic.Dictionary`2+KeyCollection", "System.Collections.Generic.Dictionary`2+KeyCollection")]
+    public void Is_matches_the_type_its_bases_and_its_interfaces_by_qualified_name(string type, string qualifiedName)
+    {
+        var compilation = CSharpCompilations.Create(AssemblyName, []);
+
+        Assert.True(Symbols.Is(compilation.GetTypeByMetadataName(type), qualifiedName));
+    }
+
+    [Fact]
+    public void Is_matches_a_constructed_generic_by_its_definition()
+    {
+        var compilation = CSharpCompilations.Create(AssemblyName, []);
+        var list = compilation.GetTypeByMetadataName(ListName)!;
+
+        Assert.True(Symbols.Is(list.Construct(compilation.GetSpecialType(SpecialType.System_Int32)), ListName));
+    }
+
+    [Fact]
+    public void Is_does_not_match_a_type_with_the_same_simple_name()
+    {
+        var ctx = CreateContext("namespace App { class DbCommand { } }");
+        var type = (ITypeSymbol)Symbols.Declared(ctx, ctx.Tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().Single())!;
+
+        Assert.False(Symbols.Is(type, "System.Data.Common.DbCommand"));
+        Assert.True(Symbols.Is(type, "App.DbCommand"));
+    }
+
+    [Fact]
+    public void Is_is_false_for_null_type()
+    {
+        Assert.False(Symbols.Is(null, "System.Object"));
+    }
+
     private static WalkContext CreateContext(string source)
     {
         var file = new SourceFile("Repo.cs", source);
         var tree = CSharpTrees.Parse(file);
-        var compilation = CSharpCompilations.Create("fixture", [tree]);
+        var compilation = CSharpCompilations.Create(AssemblyName, [tree]);
         var model = compilation.GetSemanticModel(tree);
         return WalkContext.Create(file, tree, model, new Dictionary<string, string>());
     }
