@@ -1,6 +1,14 @@
 # Plan 07: redundant null checks on never-null results
 
-Status: Agreed 2026-10-29 · Depends on: 02 (nullable) · Scheduled after 06
+Status: Done 2026-10-31 (agreed 2026-10-29) · Depends on: 02 (nullable) · Scheduled after 06
+
+## Progress
+
+- **Done** (2026-10-31, branch `redundant-null-check`): steps 1-4. Counts are 335 catalog / 334 enabled.
+- **Self-scan:** no Findings in qlcheck's own code.
+- **Real code:** Jellyfin and bitwarden/server give none, but without a restore nearly every file there has compile
+  errors, which this Check skips (ADR 0003), so precision on real code is still unmeasured; re-check on a restored
+  repository.
 
 ## Goal
 

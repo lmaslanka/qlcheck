@@ -14,7 +14,7 @@ compiler model), not regex guesses, so they catch real bugs and skip the obvious
 │ Scan                                         │
 │   Files checked                            1 │
 │   Lines checked                           29 │
-│   Checks run                             335 │
+│   Checks run                             338 │
 │                                              │
 │ Results                                      │
 │   Findings                                 7 │
@@ -32,7 +32,7 @@ compiler model), not regex guesses, so they catch real bugs and skip the obvious
 │ By file                                      │
 │   Sample.cs                                7 │
 │                                              │
-│ Duration                              690 ms │
+│ Duration                              709 ms │
 ╰──────────────────────────────────────────────╯
 ```
 
@@ -51,7 +51,7 @@ compiler model), not regex guesses, so they catch real bugs and skip the obvious
   `jwt-strong-signature` flags any signing call and tells the agent to *ask the user* whether
   the algorithm is strong enough, rather than silently guessing. Once a human has made that
   call, a dated suppression comment keeps the finding quiet for a year, then it resurfaces.
-- **338 checks, zero config.** Covers naming, style, resource management, exceptions,
+- **339 checks, zero config.** Covers naming, style, resource management, exceptions,
   concurrency, ~20 taint-tracked injection classes (SQL, command, path, LDAP, XPath,
   log, SSRF, zip-slip, and more), and hard-coded secrets in code and configuration files
   out of the box.
@@ -184,12 +184,12 @@ project found for `--coverage`).
 
 ## What it checks
 
-338 checks across these classes:
+339 checks across these classes:
 
 | Class | Checks | What it looks at |
 |---|---|---|
 | Syntax | 169 | Style, naming, structure — pure syntax tree shape |
-| Symbol | 102 | Anything needing type/symbol info — accessibility, overloads, member shape |
+| Symbol | 103 | Anything needing type/symbol info — accessibility, overloads, member shape |
 | Taint | 27 | Dataflow within each method, over its control-flow graph, from an untrusted source (request input, console input, and for some Checks a public method's parameter) to a sink resolved by symbol |
 | Metric | 13 | Size/complexity thresholds (method length, nesting, parameter count) |
 | Flow | 11 | Control flow from the compiler's analysis (unreachable branches, loops that never end, locks not released on every path) |
@@ -223,6 +223,7 @@ And a few non-taint checks that show the range:
 |---|---|
 | `hardcoded-secret` | Do not hard-code a secret such as an API key, token or private key (the Finding says where to read it from instead and that the user must rotate it). |
 | `no-plaintext-password` | Passwords should not be stored in plaintext or with a fast hashing algorithm. |
+| `redundant-null-check` | Results of methods that never return null should not be checked for null. |
 | `no-double-dispose` | Objects should not be disposed more than once. |
 | `dispose-own-members` | Classes should `Dispose` of members from the classes' own `Dispose` methods. |
 | `string-concat` | String concatenation should be string interpolation. |
