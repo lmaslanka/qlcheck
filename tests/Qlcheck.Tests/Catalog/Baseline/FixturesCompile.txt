@@ -55,7 +55,6 @@ prefer-contains
 prefer-exists
 prefer-set-min-max
 prefer-trueforall
-reachable-branch
 readonly-not-mutable
 release-lock-same-method
 reuse-client

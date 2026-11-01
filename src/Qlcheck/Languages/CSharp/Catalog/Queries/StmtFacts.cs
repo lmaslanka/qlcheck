@@ -122,31 +122,6 @@ internal static class StmtFacts
         return false;
     }
 
-    public static bool InfiniteWhile(SyntaxNode node)
-    {
-        if (node is not WhileStatementSyntax statement)
-        {
-            return false;
-        }
-
-        if (!IsTrue(statement.Condition))
-        {
-            return false;
-        }
-
-        return !HasExit(statement.Statement);
-    }
-
-    public static bool UnreachableIf(SyntaxNode node)
-    {
-        if (node is not IfStatementSyntax statement)
-        {
-            return false;
-        }
-
-        return IsFalse(statement.Condition);
-    }
-
     public static bool MissingSwitchDefault(SyntaxNode node)
     {
         if (node is not SwitchStatementSyntax statement)
@@ -204,23 +179,4 @@ internal static class StmtFacts
             FixedStatementSyntax statement => statement.Statement,
             _ => null,
         };
-
-    private static bool IsTrue(ExpressionSyntax expression) =>
-        expression is LiteralExpressionSyntax literal && literal.IsKind(SyntaxKind.TrueLiteralExpression);
-
-    private static bool IsFalse(ExpressionSyntax expression) =>
-        expression is LiteralExpressionSyntax literal && literal.IsKind(SyntaxKind.FalseLiteralExpression);
-
-    private static bool HasExit(StatementSyntax statement)
-    {
-        foreach (var node in statement.DescendantNodesAndSelf())
-        {
-            if (node is BreakStatementSyntax or ReturnStatementSyntax or ThrowStatementSyntax)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
 }

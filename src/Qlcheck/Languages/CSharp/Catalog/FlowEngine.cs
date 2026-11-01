@@ -1,5 +1,6 @@
 // Copyright (c) qlcheck contributors.
 using Microsoft.CodeAnalysis.CSharp;
+using Qlcheck.Languages.CSharp.Catalog.Dataflow;
 
 namespace Qlcheck.Languages.CSharp.Catalog;
 
@@ -16,8 +17,8 @@ internal static class FlowEngine
         Row.Handle("loop-more-than-once", CheckClass.Flow, StylePatterns.ForOnce),
         Row.Handle("loop-must-change-counter", CheckClass.Flow, StylePatterns.ForNoCounter),
         Row.Invoke("matching-lock-release", CheckClass.Flow, "Exit", MonitorType),
-        Row.Handle("no-infinite-loop", CheckClass.Flow, Patterns.Infinite),
-        Row.Handle("reachable-branch", CheckClass.Flow, Patterns.Unreachable),
+        Row.Handle("no-infinite-loop", CheckClass.Flow, Reach.InfiniteLoop),
+        Row.Handle("reachable-branch", CheckClass.Flow, Reach.UnreachableBranch),
         Row.Invoke("release-lock-same-method", CheckClass.Flow, "Enter", MonitorType),
         Row.Handle("validate-public-arguments", CheckClass.Flow, PublicArgumentPattern.Apply),
     ];

@@ -815,8 +815,8 @@
     "path": "Repo.cs"
   },
   "no-infinite-loop": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            while (true)\n            {\n            }\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            while (true)\n            {\n                break;\n            }\n        }\n    }\n}\n",
+    "bad": "using System;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public void Poll()\n        {\n            for (;;)\n            {\n                Console.WriteLine(\"tick\");\n            }\n        }\n    }\n}\n",
+    "good": "using System;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public void Poll(Func<bool> done)\n        {\n            for (;;)\n            {\n                if (done())\n                {\n                    return;\n                }\n\n                Console.WriteLine(\"tick\");\n            }\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "no-interface-cast": {
@@ -1275,8 +1275,8 @@
     "path": "Repo.cs"
   },
   "reachable-branch": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            if (false)\n            {\n                return;\n            }\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            if (flag)\n            {\n                return;\n            }\n        }\n    }\n}\n",
+    "bad": "using System;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        private const bool Verbose = false;\n\n        public void Log(string message)\n        {\n            if (Verbose)\n            {\n                Console.WriteLine(message);\n            }\n        }\n    }\n}\n",
+    "good": "using System;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public void Log(string message, bool verbose)\n        {\n            if (verbose)\n            {\n                Console.WriteLine(message);\n            }\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "readonly-field-assignment": {

@@ -144,25 +144,6 @@ public class StmtFactsTests
     }
 
     [Fact]
-    public void InfiniteWhile_is_false_for_non_while_node()
-    {
-        Assert.False(StmtFacts.InfiniteWhile(Expression("1")));
-    }
-
-    [Fact]
-    public void InfiniteWhile_is_false_when_condition_is_not_literal_true()
-    {
-        var node = FirstNode<WhileStatementSyntax>("class C { void M(bool b) { while (b) { } } }");
-        Assert.False(StmtFacts.InfiniteWhile(node));
-    }
-
-    [Fact]
-    public void UnreachableIf_is_false_for_non_if_node()
-    {
-        Assert.False(StmtFacts.UnreachableIf(Expression("1")));
-    }
-
-    [Fact]
     public void MissingSwitchDefault_is_false_for_non_switch_node()
     {
         Assert.False(StmtFacts.MissingSwitchDefault(Expression("1")));

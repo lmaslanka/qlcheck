@@ -474,7 +474,6 @@
     "checks": [
       "reachable-branch"
     ],
-    "pending": "phase 5",
     "source": "public class R { const bool Enabled = false; void M() { if (Enabled) { Console.WriteLine(); } } }"
   },
   "flow_if_runtime": {
@@ -503,7 +502,6 @@
     "checks": [
       "no-infinite-loop"
     ],
-    "pending": "phase 5",
     "source": "public class R { void M() { for (;;) { Console.WriteLine(); } } }"
   },
   "flow_while_true_switch_break": {
@@ -514,7 +512,6 @@
     "checks": [
       "no-infinite-loop"
     ],
-    "pending": "phase 5",
     "source": "public class R { void M(int x) { while (true) { switch (x) { case 1: break; } } } }"
   },
   "flow_while_true_lambda_return": {
@@ -525,7 +522,6 @@
     "checks": [
       "no-infinite-loop"
     ],
-    "pending": "phase 5",
     "source": "public class R { void M() { while (true) { Func<int> f = () => { return 1; }; f(); } } }"
   },
   "flow_while_true_return": {
@@ -542,7 +538,6 @@
     "checks": [
       "no-infinite-loop"
     ],
-    "pending": "phase 5",
     "source": "public class R { void M(CancellationToken t) { while (true) { t.ThrowIfCancellationRequested(); Thread.Sleep(1); } } }"
   },
   "flow_lock_try_finally": {

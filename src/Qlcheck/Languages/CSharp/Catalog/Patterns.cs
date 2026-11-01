@@ -233,12 +233,6 @@ internal static class Patterns
     public static void LockLocal(WalkContext ctx, string id) =>
         Report(ctx, id, SyntaxKind.LockStatement, StmtFacts.LockOnLocal);
 
-    public static void Infinite(WalkContext ctx, string id) =>
-        Report(ctx, id, SyntaxKind.WhileStatement, StmtFacts.InfiniteWhile);
-
-    public static void Unreachable(WalkContext ctx, string id) =>
-        Report(ctx, id, SyntaxKind.IfStatement, StmtFacts.UnreachableIf);
-
     public static void DisposeCreated(WalkContext ctx, string id)
     {
         foreach (var node in ctx.Nodes(SyntaxKind.ObjectCreationExpression))
