@@ -9,6 +9,9 @@ namespace Qlcheck;
 
 public static class QlcheckApp
 {
+    // The architecture Checks' ids; the applied file is shown only when one of them ran.
+    private const string ArchitecturePrefix = "architecture-";
+
     public static ExitCode Run(IReadOnlyList<string> args, TextWriter stdout, TextWriter stderr)
     {
         var options = Cli.Cli.TryParse(args, stderr);
@@ -69,9 +72,13 @@ public static class QlcheckApp
         }
 
         var output = stdout;
+        run = run with { Architecture = Applied(checks, architecture) };
         Report.Report.Write(options, reported, checks, run, disabled.Disabled.ToList(), timer.Elapsed, output);
         return run.Findings.Count == 0 ? ExitCode.Clean : ExitCode.Findings;
     }
+
+    private static IReadOnlyList<ArchitectureFile> Applied(IReadOnlyList<ICheck> checks, ArchitectureFiles architecture) =>
+        checks.Any(check => check.Id.StartsWith(ArchitecturePrefix, StringComparison.Ordinal)) ? architecture.Files : [];
 
     // A Check disabled for every loaded file is not run at all; one disabled for only some files still
     // runs, and CheckRun drops its Findings in the disabled trees.

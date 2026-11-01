@@ -23,6 +23,10 @@ internal static class Report
 
     private const string DisabledHeading = "Disabled";
 
+    private const string ArchitectureHeading = "Architecture";
+
+    private const string ConstraintNoun = "constraint";
+
     private const string FileNoun = "file";
 
     private const string DurationLabel = "Duration";
@@ -49,6 +53,7 @@ internal static class Report
         TextWriter stdout)
     {
         var findings = run.Findings;
+        var architecture = run.Architecture ?? [];
         if (options.Human)
         {
             WriteHuman(findings, stdout);
@@ -57,7 +62,7 @@ internal static class Report
         var jsonOnly = !options.Human && !options.Stats;
         if (jsonOnly)
         {
-            var payload = new Payload(findings, DisabledJson(disabled), ToJson(run.Coverage, loaded));
+            var payload = new Payload(findings, DisabledJson(disabled), ToJson(run.Coverage, loaded), ArchitectureJson(architecture));
             stdout.WriteLine(JsonSerializer.Serialize(payload, JsonOptions));
         }
 
@@ -71,7 +76,7 @@ internal static class Report
             stdout.WriteLine();
         }
 
-        WriteStats(loaded.Select(l => l.File).ToList(), checks, findings, disabled, duration, stdout);
+        WriteStats(loaded.Select(l => l.File).ToList(), checks, findings, disabled, architecture, duration, stdout);
     }
 
     private static void WriteHuman(IReadOnlyList<Finding> findings, TextWriter stdout)
@@ -98,6 +103,7 @@ internal static class Report
         IReadOnlyList<ICheck> checks,
         IReadOnlyList<Finding> findings,
         IReadOnlyList<DisableFiles.Entry> disabled,
+        IReadOnlyList<ArchitectureFile> architecture,
         TimeSpan duration,
         TextWriter stdout)
     {
@@ -137,41 +143,34 @@ internal static class Report
         stdout.WriteLine(BoxRow("  Checks run", checks.Count, inner));
         stdout.WriteLine(Box(string.Empty, inner));
         WriteDisabled(disabled, inner, stdout);
+        WriteArchitecture(architecture, inner, stdout);
         stdout.WriteLine(Box(ResultsHeading, inner));
         stdout.WriteLine(BoxRow("  Findings", findings.Count, inner));
         stdout.WriteLine(BoxRow("  Files with findings", filesWithFindings, inner));
         stdout.WriteLine(BoxRow("  Clean files", files.Count - filesWithFindings, inner));
         stdout.WriteLine(Box(string.Empty, inner));
-        stdout.WriteLine(Box("By check", inner));
-        if (byCheck.Count == 0)
-        {
-            stdout.WriteLine(Box("  (none)", inner));
-        }
-        else
-        {
-            foreach (var row in byCheck)
-            {
-                stdout.WriteLine(BoxRow($"  {row.Check}", $"{row.Count}  ({Plural(row.Files, FileNoun)})", inner));
-            }
-        }
-
+        WriteBreakdown("By check", byCheck.Select(row => (Label: $"  {row.Check}", Value: $"{row.Count}  ({Plural(row.Files, FileNoun)})")), inner, stdout);
         stdout.WriteLine(Box(string.Empty, inner));
-        stdout.WriteLine(Box("By file", inner));
-        if (byFile.Count == 0)
-        {
-            stdout.WriteLine(Box("  (none)", inner));
-        }
-        else
-        {
-            foreach (var row in byFile)
-            {
-                stdout.WriteLine(BoxRow($"  {row.File}", row.Count, inner));
-            }
-        }
-
+        WriteBreakdown("By file", byFile.Select(row => (Label: $"  {row.File}", Value: row.Count.ToString(NumberFormat, CultureInfo.InvariantCulture))), inner, stdout);
         stdout.WriteLine(Box(string.Empty, inner));
         stdout.WriteLine(BoxRow(DurationLabel, FormatDuration(duration), inner));
         stdout.WriteLine($"╰{new string('─', inner)}╯");
+    }
+
+    private static void WriteBreakdown(string heading, IEnumerable<(string Label, string Value)> rows, int inner, TextWriter stdout)
+    {
+        stdout.WriteLine(Box(heading, inner));
+        var any = false;
+        foreach (var (label, value) in rows)
+        {
+            stdout.WriteLine(BoxRow(label, value, inner));
+            any = true;
+        }
+
+        if (!any)
+        {
+            stdout.WriteLine(Box("  (none)", inner));
+        }
     }
 
     private static void WriteDisabled(IReadOnlyList<DisableFiles.Entry> disabled, int inner, TextWriter stdout)
@@ -188,6 +187,33 @@ internal static class Report
         }
 
         stdout.WriteLine(Box(string.Empty, inner));
+    }
+
+    // The architecture files that applied, so a clean run can't be mistaken for an unchecked one.
+    private static void WriteArchitecture(IReadOnlyList<ArchitectureFile> architecture, int inner, TextWriter stdout)
+    {
+        if (architecture.Count == 0)
+        {
+            return;
+        }
+
+        stdout.WriteLine(Box(ArchitectureHeading, inner));
+        foreach (var file in architecture)
+        {
+            stdout.WriteLine(BoxRow($"  {DisplayPath(file.Path)}", Plural(file.Constraints.Count, ConstraintNoun), inner));
+        }
+
+        stdout.WriteLine(Box(string.Empty, inner));
+    }
+
+    private static IReadOnlyList<ArchitecturePayload>? ArchitectureJson(IReadOnlyList<ArchitectureFile> architecture) =>
+        architecture.Count == 0 ? null : architecture.Select(file => new ArchitecturePayload(DisplayPath(file.Path), file.Constraints.Count)).ToList();
+
+    // Relative to the working folder when it is below it, like Finding paths.
+    private static string DisplayPath(string path)
+    {
+        var relative = Path.GetRelativePath(Directory.GetCurrentDirectory(), path).Replace('\\', '/');
+        return relative.StartsWith("..", StringComparison.Ordinal) ? path : relative;
     }
 
     private static int LineCount(SourceFile file)
@@ -346,7 +372,10 @@ internal static class Report
     private sealed record Payload(
         IReadOnlyList<Finding> Findings,
         IReadOnlyList<DisabledPayload>? Disabled,
-        IReadOnlyList<FilePayload>? Coverage);
+        IReadOnlyList<FilePayload>? Coverage,
+        IReadOnlyList<ArchitecturePayload>? Architecture);
+
+    private sealed record ArchitecturePayload(string File, int Constraints);
 
     private sealed record DisabledPayload(string Check, string Under);
 

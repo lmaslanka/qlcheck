@@ -9,6 +9,8 @@ public sealed class ArchitectureRunTests : IDisposable
 
     private const string Writer = "Writer";
 
+    private const string ArchitectureKey = "architecture";
+
     private const string Report = "src/Report/Writer.cs";
 
     private const string Engine = "src/Core/Engine.cs";
@@ -72,6 +74,30 @@ public sealed class ArchitectureRunTests : IDisposable
 
         Assert.Equal(ExitCode.Findings, code);
         Assert.Contains("closes the cycle", stdout.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_applied_file_is_shown_in_json_and_stats_and_absent_without_one()
+    {
+        Write(Report, User("App.Report", Writer));
+
+        using var json = JsonDocument.Parse(Output(_dir));
+        var applied = Assert.Single(json.RootElement.GetProperty(ArchitectureKey).EnumerateArray());
+        Assert.EndsWith(ArchitectureFiles.FileName, applied.GetProperty("file").GetString(), StringComparison.Ordinal);
+        Assert.Equal(1, applied.GetProperty("constraints").GetInt32());
+        Assert.Matches(@"Architecture\s+│", Output("--stats", _dir));
+
+        File.Delete(Path.Combine(_dir, ArchitectureFiles.FileName));
+        using var bare = JsonDocument.Parse(Output(_dir));
+        Assert.False(bare.RootElement.TryGetProperty(ArchitectureKey, out _));
+    }
+
+    private static string Output(params string[] args)
+    {
+        using var stdout = new StringWriter();
+        using var stderr = new StringWriter();
+        QlcheckApp.Run(args, stdout, stderr);
+        return stdout.ToString();
     }
 
     private static string User(string ns, string type) => $"namespace {ns} {{ class {type} {{ App.Run.Job j = new(); }} }}\n";
