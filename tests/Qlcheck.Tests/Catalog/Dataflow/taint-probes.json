@@ -446,7 +446,6 @@
     "checks": [
       "sql-injection"
     ],
-    "pending": "phase 4",
     "source": "public class FromQueryAttribute : Attribute { }\npublic class ControllerBase { }\npublic class UsersController : ControllerBase { internal void Find(DbCommand c, [FromQuery] string name) { c.CommandText = \"SELECT \" + name; c.ExecuteNonQuery(); } }"
   },
   "env_var_source": {

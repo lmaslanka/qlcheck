@@ -36,7 +36,14 @@ public class TaintFlowTests
         namespace Microsoft.AspNetCore.Mvc
         {
             public interface IUrlHelper { bool IsLocalUrl(string url); }
-            public abstract class ControllerBase { public IUrlHelper Url { get; set; } = null!; public object Redirect(string url) => url; }
+            public abstract class ControllerBase { public IUrlHelper Url { get; set; } = null!; public object Redirect(string url) => url; public Microsoft.AspNetCore.Http.HttpRequest Request { get; } = null!; }
+            public class FromQueryAttribute : System.Attribute { }
+            public class ApiControllerAttribute : System.Attribute { }
+            public class NonActionAttribute : System.Attribute { }
+        }
+        namespace Microsoft.AspNetCore.Http
+        {
+            public abstract class HttpRequest { public abstract System.Collections.Generic.IDictionary<string, string> Query { get; } public abstract string Path { get; } }
         }
         """;
 
@@ -223,6 +230,36 @@ public class TaintFlowTests
         var hit = Assert.Single(Run($"public class R {{ public void M(string userId) {{ {body} }} }}"));
 
         Assert.Equal(label, hit.Labels.ToString());
+    }
+
+    [Theory]
+    [InlineData("public class R : Microsoft.AspNetCore.Mvc.ControllerBase { public object Go(string returnUrl) => Redirect(returnUrl); }", "parameter of action `Go`")]
+    [InlineData("[Microsoft.AspNetCore.Mvc.ApiController] public class R { public object Go(string returnUrl, Microsoft.AspNetCore.Mvc.ControllerBase c) => c.Redirect(returnUrl); }", "parameter of action `Go`")]
+    [InlineData("class R { object Go([Microsoft.AspNetCore.Mvc.FromQuery] string returnUrl, Microsoft.AspNetCore.Mvc.ControllerBase c) => c.Redirect(returnUrl); }", "`[FromQuery]` parameter of `Go`")]
+    [InlineData("public class R : Microsoft.AspNetCore.Mvc.ControllerBase { public object Go() => Redirect(Request.Query[\"next\"]); }", "request input")]
+    [InlineData("public class R : Microsoft.AspNetCore.Mvc.ControllerBase { public object Go() => Redirect(Request.Path); }", "request input")]
+    public void Asp_net_requests_are_entry_points(string source, string description)
+    {
+        var hit = Assert.Single(Run($"{AspNetStubs} {source}"));
+
+        Assert.False(hit.Source.PublicParameter);
+        Assert.Equal(description, hit.Source.Description);
+    }
+
+    [Theory]
+    [InlineData("int size", 1)]
+    [InlineData("[System.ComponentModel.DataAnnotations.Range(1, 4096)] int size", 0)]
+    public void A_range_attribute_bounds_a_numeric_action_parameter(string parameter, int hits)
+    {
+        Assert.Equal(hits, Run($"{AspNetStubs} public class R : Microsoft.AspNetCore.Mvc.ControllerBase {{ public byte[] Go({parameter}) => new byte[size]; }}").Count);
+    }
+
+    [Theory]
+    [InlineData("public class R : Microsoft.AspNetCore.Mvc.ControllerBase { [Microsoft.AspNetCore.Mvc.NonAction] public object Go(string returnUrl) => Redirect(returnUrl); }")]
+    [InlineData("public class R : Microsoft.AspNetCore.Mvc.ControllerBase { protected object Go(string returnUrl) => Redirect(returnUrl); }")]
+    public void Non_actions_are_not_entry_points(string source)
+    {
+        Assert.True(Assert.Single(Run($"{AspNetStubs} {source}")).Source.PublicParameter);
     }
 
     [Theory]

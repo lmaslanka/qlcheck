@@ -548,7 +548,8 @@ The user settled these on 2026-10-29.
     string, or a helper taking an argument list, is the norm); `command-argument-injection` and
     `untrusted-environment-variable` accept both.
   - ASP.NET entry points: `[From*]` parameters, controller-action parameters, and
-    `HttpRequest.Query/Form/Headers/Cookies/RouteValues/Path/Body`.
+    `HttpRequest.Query/Form/Headers/Cookies/RouteValues/Path/Body`. A `[Range]` attribute on a numeric parameter
+    bounds it like `Math.Clamp` (added 2026-10-31: model validation).
   - `Console.ReadLine`.
   - row-scoped sources: `ZipArchiveEntry.FullName` for `zip-slip`, and `Exception.StackTrace/ToString()` for
     `no-stack-trace-disclosure`.

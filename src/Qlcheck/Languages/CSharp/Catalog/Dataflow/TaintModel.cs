@@ -25,6 +25,25 @@ internal static class TaintModel
 
     private const string ConsoleInput = "In";
 
+    private const string AttributeSuffix = "Attribute";
+
+    private const string RangeAttribute = "Range";
+
+    private const string NonActionAttribute = "NonAction";
+
+    private const string ApiControllerAttribute = "ApiController";
+
+    private const string ControllerBaseType = "ControllerBase";
+
+    private const string RequestType = "HttpRequest";
+
+    private static readonly string[] BindingAttributes = ["FromQuery", "FromRoute", "FromForm", "FromBody", "FromHeader"];
+
+    private static readonly HashSet<string> RequestParts = new(StringComparer.Ordinal)
+    {
+        "Query", "Form", "Headers", "Cookies", "RouteValues", "Path", "QueryString", "Body",
+    };
+
     private const string ExceptionType = "System.Exception";
 
     private const string ExceptionDetail = "exception detail";
@@ -101,29 +120,69 @@ internal static class TaintModel
         "System.Threading.CancellationToken", "System.Enum",
     };
 
-    // The entry state: every parameter of a method visible outside the assembly (it and every
-    // containing type public or protected) is untrusted, with its source marked PublicParameter,
-    // except those of a safe type and those of test methods. A numeric parameter is Numeric, which only the allocation and
-    // loop-bound rows accept.
+    // The entry state (D1). Entry points: a parameter bound from the request (`[FromQuery]` and
+    // the like) or of a controller action. Otherwise a parameter of a method visible outside the
+    // assembly (it and every containing type public or protected) is untrusted with its source
+    // marked PublicParameter. Safe types and test methods' parameters start clean, and a numeric
+    // parameter starts Numeric unless a `[Range]` attribute bounds it.
     public static TaintState Seed(IMethodSymbol? owner)
     {
         var state = new TaintState();
-        if (owner is null || !IsVisibleOutside(owner) || TestMethods.IsTest(owner))
+        if (owner is null || TestMethods.IsTest(owner))
         {
             return state;
         }
 
+        var name = MemberName(owner);
+        var action = IsAction(owner);
+        var visible = IsVisibleOutside(owner);
         foreach (var parameter in owner.Parameters)
         {
-            var label = LabelFor(parameter.Type);
-            if (label != TaintLabel.None)
+            var label = HasAttribute(parameter, RangeAttribute) && IsNumeric(parameter.Type) ? TaintLabel.None : LabelFor(parameter.Type);
+            var source = (BindingOf(parameter), action, visible) switch
             {
-                state.Set(parameter, Taint.From(label, new TaintSource(parameter.Name, $"parameter of public `{MemberName(owner)}`", Line(parameter), PublicParameter: true)));
+                ({ } binding, _, _) => new TaintSource(parameter.Name, $"`[{binding}]` parameter of `{name}`", Line(parameter)),
+                (null, true, _) => new TaintSource(parameter.Name, $"parameter of action `{name}`", Line(parameter)),
+                (null, false, true) => new TaintSource(parameter.Name, $"parameter of public `{name}`", Line(parameter), PublicParameter: true),
+                _ => null,
+            };
+            if (label != TaintLabel.None && source is not null)
+            {
+                state.Set(parameter, Taint.From(label, source));
             }
         }
 
         return state;
     }
+
+    // A public instance method of a controller (a class deriving from ControllerBase or marked
+    // [ApiController]) that is not [NonAction]. Names are compared simply, so an unrestored project
+    // whose ASP.NET types do not resolve still counts.
+    private static bool IsAction(IMethodSymbol method) =>
+        method is { MethodKind: MethodKind.Ordinary, DeclaredAccessibility: Accessibility.Public, IsStatic: false }
+        && !HasAttribute(method, NonActionAttribute)
+        && IsController(method.ContainingType);
+
+    private static bool IsController(INamedTypeSymbol? type)
+    {
+        for (var current = type; current is not null; current = current.BaseType)
+        {
+            if (current.Name == ControllerBaseType || HasAttribute(current, ApiControllerAttribute))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // `FromQuery` for a parameter marked [FromQuery], and so on; null for any other parameter.
+    private static string? BindingOf(IParameterSymbol parameter) =>
+        BindingAttributes.FirstOrDefault(binding => HasAttribute(parameter, binding));
+
+    private static bool HasAttribute(ISymbol symbol, string name) =>
+        symbol.GetAttributes().Any(attribute => attribute.AttributeClass?.Name is { } written
+            && (written == name || written == name + AttributeSuffix));
 
     // The taint a call returns when it is a source, or null for any other call:
     // `Console.ReadLine()` and `Console.In.ReadLine()` and their async forms are console input;
@@ -152,18 +211,33 @@ internal static class TaintModel
         return name is null ? null : Taint.From(LabelFor(invocation.Type), new TaintSource(name, "console input", line));
     }
 
-    // Row-scoped property sources (D1): an exception's StackTrace is ExceptionDetail, and the name
-    // of a zip or tar entry is ArchiveEntry, which only zip-slip accepts.
+    // Property sources (D1): the parts of an ASP.NET HttpRequest are request input; and, scoped to
+    // their rows, an exception's StackTrace is ExceptionDetail and the name of a zip or tar entry is
+    // ArchiveEntry, which only zip-slip accepts.
     public static Taint? SourceOf(IPropertyReferenceOperation property)
     {
         var (label, description) = (property.Property.Name, Symbols.QualifiedName(property.Property.ContainingType)) switch
         {
+            (var part, _) when RequestParts.Contains(part) && IsRequest(property.Property.ContainingType) => (TaintLabel.Untrusted, "request input"),
             (StackTraceProperty, _) when Symbols.Is(property.Property.ContainingType, ExceptionType) => (TaintLabel.ExceptionDetail, ExceptionDetail),
             (EntryFullNameProperty, ZipEntryType) or (EntryNameProperty, TarEntryType) => (TaintLabel.ArchiveEntry, "archive entry name"),
             _ => (TaintLabel.None, string.Empty),
         };
         var name = property.Instance is { } instance ? $"{instance.Syntax}.{property.Property.Name}" : property.Property.Name;
         return label == TaintLabel.None ? null : Taint.From(label, new TaintSource(name, description, LineOf(property.Syntax)));
+    }
+
+    private static bool IsRequest(INamedTypeSymbol? type)
+    {
+        for (var current = type; current is not null; current = current.BaseType)
+        {
+            if (current.Name == RequestType)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static int LineOf(SyntaxNode node) => node.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
