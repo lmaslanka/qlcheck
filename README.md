@@ -195,6 +195,7 @@ project found for `--coverage`).
 | Flow | 11 | Control flow from the compiler's analysis (unreachable branches, loops that never end, locks not released on every path) |
 | Compilation | 7 | Whole-compilation facts: unused usings, literals shared across files, and the compiler's nullable warnings (reported only where `dotnet build` would warn and the file has no compile errors) |
 | Source set | 2 | Run-wide syntax over every scanned file, across projects: `duplicate-code` (a copied statement sequence, identifiers renamed consistently) and `identical-method` (methods with the same whole body) |
+| Architecture | 2 | Your declared architecture, from `.qlcheck_architecture`: `architecture-relationship` (a reference a Constraint forbids) and `architecture-tangle` (components that depend on each other in a cycle). Nothing is reported without the file |
 | Config | 4 | Hard-coded secrets in `appsettings*.json`, `*.config`, YAML, and git-tracked `.env*` files |
 | *(opt-in)* | 1 | `coverage` — test coverage gaps, via your own test run |
 
@@ -275,9 +276,37 @@ Generated/
 **/*.Designer.cs
 ```
 
+## Declaring your architecture
+
+The one thing qlcheck cannot infer is your intended architecture. Write it down in a
+`.qlcheck_architecture` at the repository root and it is checked: each line is one **Constraint**
+over dotted names (a namespace or a type, matching itself and everything below it).
+
+```
+# .qlcheck_architecture
+App.Domain                   must-not-use  App.Infrastructure App.Web
+System.Net.Http.HttpClient   only-used-by  App.Infrastructure.Http
+no-cycles App.*
+```
+
+- `S… must-not-use T…`: code under `S` must not reference anything under `T`, except inside `S`
+  itself.
+- `T… only-used-by S…`: a type under `T` may be referenced only from code under `S`, or inside `T`.
+- `no-cycles P.*`: each direct child of `P` is a component, and components must not depend on each
+  other in a cycle. Each cycle is reported at its weakest link, the dependency with the fewest
+  references.
+
+References are found semantically (fully qualified names, types from a parent namespace, global
+and static usings, extension methods), plus each `using` directive, so restore or build the
+repository for full results. A malformed line, or a `.qlcheck_architecture` below the root, is an
+error (exit `2`). Like `.qlcheck_disable`, the file is a human decision: an agent should fix the
+code, not edit the Constraint. When it applies, the JSON output lists it under `"architecture"`
+and `--stats` shows it.
+
 ## Where these files are read from
 
-`.qlcheck_ignore` and `.qlcheck_disable` work like `.gitignore`. Every file from the git root
+`.qlcheck_ignore` and `.qlcheck_disable` work like `.gitignore`. (`.qlcheck_architecture` does not:
+there is one, at the root, for the whole repository.) Every file from the git root
 down to a folder applies to that folder. Each file's patterns are relative to its own folder, and
 a deeper file overrides a shallower one. Scanning `src/` therefore still honours the files at
 the repository root. Outside a git repository, only files at or below the scanned path are read.

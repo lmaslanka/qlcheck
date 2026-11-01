@@ -12,6 +12,10 @@ _Avoid_: Rule, lint, analyzer
 One declared statement of intended architecture, written by a human in the repository's architecture file: a component must not use another, a component is only used by certain others, or components under a prefix must not form a cycle. A component is a namespace or a type, named by its dotted name. A Finding reports a reference that breaks a Constraint.
 _Avoid_: Rule, policy, layer rule
 
+**Architecture file**:
+The repository's `.qlcheck_architecture`, at the git root: the Constraints a human declared. Only a human edits it; an agent fixes the code instead.
+_Avoid_: architecture config, rules file
+
 **Copy**:
 One place where duplicate code appears. Each copy gets its own Finding, which names the other copies.
 _Avoid_: occurrence, instance
@@ -59,6 +63,10 @@ _Avoid_: sanitization, validation, filter
 
 **String concatenation**:
 Joining strings with `+` or `string.Concat`. Use interpolation instead.
+
+**Tangle**:
+Components under a `no-cycles` Constraint that depend on each other in a cycle. It is reported at its weakest link, the dependency with the fewest references.
+_Avoid_: circular dependency, cycle (alone)
 
 **Suppression comment**:
 A `// qlcheck-ignore: <rule-id> checked-on:<YYYY-MM-DD>` comment on the flagged line or the line
