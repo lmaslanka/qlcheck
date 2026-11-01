@@ -12,7 +12,19 @@ internal static class TaintEngine
 
     public static WalkRow[] Rows { get; } =
     [
-        Row.Handle("allocation-dos", CheckClass.Taint, Patterns.AllocDos),
+        Row.Flow("allocation-dos", CheckClass.Taint, new TaintSpec(
+            TaintLabel.Untrusted | TaintLabel.Numeric,
+            [
+                Sink.ArraySize(),
+                Sink.Ctor("System.Collections.Generic.List`1", "capacity"),
+                Sink.Ctor("System.Collections.Generic.Dictionary`2", "capacity"),
+                Sink.Ctor("System.Collections.Generic.HashSet`1", "capacity"),
+                Sink.Ctor("System.Text.StringBuilder", "capacity"),
+                Sink.Ctor("System.String", "count"),
+                Sink.Call("System.Buffers.ArrayPool`1", "Rent", "minimumLength"),
+                Sink.Call("System.Linq.Enumerable", "Repeat|Range", "count"),
+            ],
+            "Cap the size with a constant first (`Math.Min(size, Max)` or an early return).")),
         Row.Flow("argument-injection", CheckClass.Taint, new TaintSpec(
             TaintLabel.Untrusted,
             [
@@ -100,7 +112,10 @@ internal static class TaintEngine
                 Sink.Call("Serilog.Log", "Verbose|Debug|Information|Warning|Error|Fatal|Write", "messageTemplate"),
             ],
             "Keep the message template constant and pass the value as a structured argument: `LogInformation(\"User {Name}\", name)`.")),
-        Row.Handle("loop-bound-injection", CheckClass.Taint, Patterns.LoopBound),
+        Row.Flow("loop-bound-injection", CheckClass.Taint, new TaintSpec(
+            TaintLabel.Untrusted | TaintLabel.Numeric,
+            [Sink.LoopBound()],
+            "Cap the bound with a constant first (`Math.Min(count, Max)` or an early return).")),
         Row.Flow("no-stack-trace-disclosure", CheckClass.Taint, new TaintSpec(
             TaintLabel.ExceptionDetail,
             [

@@ -10,8 +10,8 @@
     "path": "Repo.cs"
   },
   "allocation-dos": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M(int input)\n        {\n            var data = new byte[input];\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M(int input)\n        {\n            var data = new byte[1];\n        }\n    }\n}\n",
+    "bad": "using System;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public byte[] Buffer()\n        {\n            var size = int.Parse(Console.ReadLine() ?? \"0\");\n            return new byte[size * 2];\n        }\n    }\n}\n",
+    "good": "using System;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public byte[] Buffer()\n        {\n            var size = int.Parse(Console.ReadLine() ?? \"0\");\n            return new byte[Math.Min(size, 4096) * 2];\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "argument-injection": {
@@ -495,8 +495,8 @@
     "path": "Repo.cs"
   },
   "loop-bound-injection": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M(int input)\n        {\n            for (var i = 0; i < input; i++)\n            {\n            }\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        private void M(int depth)\n        {\n            for (var i = 0; i < depth; i++)\n            {\n            }\n        }\n    }\n}\n",
+    "bad": "using System;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public int Repeat()\n        {\n            var n = int.Parse(Console.ReadLine() ?? \"0\");\n            var total = 0;\n            for (var i = 0; i < n; i++)\n            {\n                total += i;\n            }\n\n            return total;\n        }\n    }\n}\n",
+    "good": "using System;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public int Repeat()\n        {\n            var n = int.Parse(Console.ReadLine() ?? \"0\");\n            if (n > 100)\n            {\n                return 0;\n            }\n\n            var total = 0;\n            for (var i = 0; i < n; i++)\n            {\n                total += i;\n            }\n\n            return total;\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "loop-condition-reachable": {

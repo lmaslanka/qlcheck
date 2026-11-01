@@ -418,8 +418,7 @@
     "checks": [
       "loop-bound-injection"
     ],
-    "pending": "phase 4",
-    "source": "public class R { public void M(string count) { var n = int.Parse(count); for (var i = 0; i < n; i++) { } } }"
+    "source": "public class R { public void M() { var count = Console.ReadLine() ?? \"0\"; var n = int.Parse(count); for (var i = 0; i < n; i++) { } } }"
   },
   "alloc_local": {
     "tag": "local",
@@ -429,8 +428,7 @@
     "checks": [
       "allocation-dos"
     ],
-    "pending": "phase 4",
-    "source": "public class R { public byte[] M(int size) { var n = size * 2; return new byte[n]; } }"
+    "source": "public class R { public byte[] M() { var size = int.Parse(Console.ReadLine() ?? \"0\"); var n = size * 2; return new byte[n]; } }"
   },
   "alloc_clamped": {
     "tag": "sanitizer",
@@ -438,7 +436,7 @@
     "checks": [
       "allocation-dos"
     ],
-    "source": "public class R { public byte[] M(int size) { var n = Math.Min(size, 4096); return new byte[n]; } }"
+    "source": "public class R { public byte[] M() { var size = int.Parse(Console.ReadLine() ?? \"0\"); var n = Math.Min(size, 4096); return new byte[n]; } }"
   },
   "aspnet_fromquery_private_action": {
     "tag": "source",

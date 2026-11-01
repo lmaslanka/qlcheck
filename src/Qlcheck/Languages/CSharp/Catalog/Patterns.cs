@@ -448,11 +448,6 @@ internal static class Patterns
         }
     }
 
-    public static void LoopBound(WalkContext ctx, string id) => Report(ctx, id, SyntaxKind.ForStatement, ForUsesParameter);
-
-    public static void AllocDos(WalkContext ctx, string id) =>
-        Report(ctx, id, SyntaxKind.ArrayCreationExpression, ArrayUsesParameter);
-
     public static void EnumStorage(WalkContext ctx, string id)
     {
         foreach (var node in ctx.Nodes(SyntaxKind.EnumDeclaration))
@@ -927,70 +922,6 @@ internal static class Patterns
         }
 
         return null;
-    }
-
-    private static bool ForUsesParameter(SyntaxNode node)
-    {
-        if (node is not ForStatementSyntax statement || statement.Condition is null)
-        {
-            return false;
-        }
-
-        if (Shapes.Enclosing(statement, SyntaxKind.MethodDeclaration) is MethodDeclarationSyntax method
-            && (Shapes.HasModifier(method, SyntaxKind.PrivateKeyword) || Shapes.HasModifier(method, SyntaxKind.InternalKeyword)))
-        {
-            return false;
-        }
-
-        foreach (var name in statement.Condition.DescendantNodes().OfType<IdentifierNameSyntax>())
-        {
-            if (IsDirectParameter(name))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool IsDirectParameter(IdentifierNameSyntax name) =>
-        IsParameterName(name) && name.Parent is not MemberAccessExpressionSyntax;
-
-    private static bool ArrayUsesParameter(SyntaxNode node)
-    {
-        if (node is not ArrayCreationExpressionSyntax creation)
-        {
-            return false;
-        }
-
-        foreach (var name in creation.DescendantNodes().OfType<IdentifierNameSyntax>())
-        {
-            if (IsParameterName(name))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool IsParameterName(IdentifierNameSyntax identifier)
-    {
-        var method = Shapes.Enclosing(identifier, SyntaxKind.MethodDeclaration) as MethodDeclarationSyntax;
-        if (method is null)
-        {
-            return false;
-        }
-
-        foreach (var parameter in method.ParameterList.Parameters)
-        {
-            if (parameter.Identifier.Text == identifier.Identifier.Text)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static bool HasLowerSuffix(string text) =>

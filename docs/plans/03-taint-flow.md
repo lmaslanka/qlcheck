@@ -541,6 +541,9 @@ The user settled these on 2026-10-29.
     below. Each later row is
     decided the same way from its D12 triage: `reflection-injection` is entry points only (its public-parameter Findings
     were helpers that resolve a member name on purpose); the XML rows and `regex-dos` accept both.
+    `allocation-dos` and `loop-bound-injection` are entry points only too, against D1's first text (on Jellyfin and
+    bitwarden/server 15 of their 16 public-parameter Findings were helpers taking a size or count on purpose, and the
+    16th is a `[FromQuery]` action bounded by `[Range]`, which the ASP.NET sources will see as an entry point).
     `connection-string-injection` and `argument-injection` are entry points only (a constructor taking a connection
     string, or a helper taking an argument list, is the norm); `command-argument-injection` and
     `untrusted-environment-variable` accept both.

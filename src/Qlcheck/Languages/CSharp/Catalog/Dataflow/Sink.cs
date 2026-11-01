@@ -23,6 +23,12 @@ internal sealed record Sink(SinkKind Kind, string Type, string Member, string? P
 
     public static Sink Ctor(string type, string parameter) => new(SinkKind.Ctor, type, WellKnownMemberNames.InstanceConstructorName, parameter);
 
+    public static Sink ArraySize() => new(SinkKind.ArraySize, string.Empty, string.Empty, null);
+
+    public static Sink LoopBound() => new(SinkKind.LoopBound, string.Empty, string.Empty, null);
+
+    public bool IsStructural => Kind is SinkKind.ArraySize or SinkKind.LoopBound;
+
     // Whether the program started must be a constant command shell (`sh`, `cmd.exe`, ...), or must
     // not be: the `fileName` argument of the same call, or a `FileName` set on the same object.
     public ProgramKind Program { get; init; }
@@ -81,13 +87,19 @@ internal sealed record Sink(SinkKind Kind, string Type, string Member, string? P
                 ITypeSymbol type => Symbols.Is(type, Type),
                 _ => false,
             },
-            _ => symbol is IPropertySymbol property && property.Name == Member && Symbols.Is(property.ContainingType, Type),
+            SinkKind.Set => symbol is IPropertySymbol property && property.Name == Member && Symbols.Is(property.ContainingType, Type),
+            _ => false,
         };
 
     // The identifiers that can name this sink in source: the method or property name, each
     // alternative possibly ending in `*`, or a constructor sink's type name.
     public IEnumerable<string> NamePatterns() =>
-        Kind == SinkKind.Ctor ? [SimpleTypeName()] : Member.Split(Alternative);
+        Kind switch
+        {
+            SinkKind.Ctor => [SimpleTypeName()],
+            SinkKind.Call or SinkKind.Set => Member.Split(Alternative),
+            _ => [],
+        };
 
     // `System.Collections.Generic.List`1` is written `List`, `Outer+Inner` is written `Inner`.
     private string SimpleTypeName()

@@ -1,5 +1,6 @@
 // Copyright (c) qlcheck contributors.
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.FlowAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -245,8 +246,28 @@ internal sealed class TaintFlow
         return taint;
     }
 
-    private Taint Binary(IBinaryOperation binary, TaintState state) =>
-        Combined(binary.Type, Eval(binary.LeftOperand, state).Join(Eval(binary.RightOperand, state)));
+    private Taint Binary(IBinaryOperation binary, TaintState state)
+    {
+        var operands = Eval(binary.LeftOperand, state).Join(Eval(binary.RightOperand, state));
+        if (IsLoopBound(binary))
+        {
+            CheckStructural(SinkKind.LoopBound, operands, binary.Syntax, "a loop bound");
+        }
+
+        return Combined(binary.Type, operands);
+    }
+
+    // A relational comparison that is, by itself, the condition of a for, while or do loop.
+    private static bool IsLoopBound(IBinaryOperation binary) =>
+        binary.OperatorKind is BinaryOperatorKind.LessThan or BinaryOperatorKind.LessThanOrEqual
+            or BinaryOperatorKind.GreaterThan or BinaryOperatorKind.GreaterThanOrEqual
+        && binary.Syntax.Parent switch
+        {
+            ForStatementSyntax loop => loop.Condition == binary.Syntax,
+            WhileStatementSyntax loop => loop.Condition == binary.Syntax,
+            DoStatementSyntax loop => loop.Condition == binary.Syntax,
+            _ => false,
+        };
 
     // The result of an operator over tainted operands: a string keeps the taint, a number keeps
     // only Numeric, and anything else (a comparison, say) is clean.
@@ -374,7 +395,7 @@ internal sealed class TaintFlow
     {
         foreach (var size in array.DimensionSizes)
         {
-            Eval(size, state);
+            CheckStructural(SinkKind.ArraySize, Eval(size, state), array.Syntax, "an array size");
         }
 
         return array.Initializer is { } initializer ? Elements(initializer, state) : Taint.None;
@@ -550,12 +571,25 @@ internal sealed class TaintFlow
             _ => true,
         };
 
+    private void CheckStructural(SinkKind kind, Taint taint, SyntaxNode at, string target)
+    {
+        if (taint.IsNone)
+        {
+            return;
+        }
+
+        foreach (var sink in _sinks.Where(sink => sink.Kind == kind))
+        {
+            Record(sink, at, target, taint);
+        }
+    }
+
     private static string Target(ISymbol member, string? parameter) =>
         member switch
         {
-            IMethodSymbol { MethodKind: MethodKind.Constructor } constructor => $"new {constructor.ContainingType.Name}({parameter})",
-            IMethodSymbol method => $"{method.ContainingType.Name}.{method.Name}({parameter})",
-            _ => $"{member.ContainingType.Name}.{member.Name}",
+            IMethodSymbol { MethodKind: MethodKind.Constructor } constructor => $"`new {constructor.ContainingType.Name}({parameter})`",
+            IMethodSymbol method => $"`{method.ContainingType.Name}.{method.Name}({parameter})`",
+            _ => $"`{member.ContainingType.Name}.{member.Name}`",
         };
 
     private void Record(Sink sink, SyntaxNode at, string target, Taint taint)

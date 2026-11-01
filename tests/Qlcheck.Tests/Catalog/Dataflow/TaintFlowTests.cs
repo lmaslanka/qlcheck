@@ -28,6 +28,8 @@ public class TaintFlowTests
         Sink.Call("System.IO.File", "ReadAllText", "path"),
         Sink.Ctor("System.Collections.Generic.List`1", "capacity"),
         Sink.Call("Microsoft.AspNetCore.Mvc.ControllerBase", "Redirect", "url"),
+        Sink.ArraySize(),
+        Sink.LoopBound(),
     ];
 
     private const string AspNetStubs = """
@@ -258,6 +260,29 @@ public class TaintFlowTests
     public void Test_method_parameters_are_not_sources(string attribute)
     {
         Assert.Empty(Run($"public class {attribute}Attribute : Attribute {{ }} public class T {{ [{attribute}] public void M(DbCommand c, string userId) {{ c.CommandText = userId; }} }}"));
+    }
+
+    [Theory]
+    [InlineData("var buffer = new byte[n * 2];", "new byte[n * 2]")]
+    [InlineData("var grid = new int[4, n];", "new int[4, n]")]
+    [InlineData("for (var i = 0; i < n; i++) { }", "i < n")]
+    [InlineData("var i = 0; while (n >= i) { i++; }", "n >= i")]
+    [InlineData("var i = 0; do { i++; } while (i <= n + 1);", "i <= n + 1")]
+    public void Array_sizes_and_loop_bounds_are_structural_sinks(string body, string at)
+    {
+        var hit = Assert.Single(Run($"public class R {{ public void M(int n) {{ {body} }} }}"));
+
+        Assert.Equal(at, hit.Node.ToString());
+        Assert.Equal(TaintLabel.Numeric, hit.Labels);
+    }
+
+    [Theory]
+    [InlineData("var buffer = new byte[16]; var list = new[] { n };")]
+    [InlineData("for (var i = 0; i < 10; i++) { }")]
+    [InlineData("for (var i = 0; i < 10 && i != n; i++) { }")]
+    public void Constant_sizes_and_bounds_are_not_sinks(string body)
+    {
+        Assert.Empty(Run($"public class R {{ public void M(int n) {{ {body} }} }}"));
     }
 
     [Fact]

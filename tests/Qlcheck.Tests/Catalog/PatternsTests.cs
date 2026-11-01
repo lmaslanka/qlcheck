@@ -21,48 +21,6 @@ public class PatternsTests
     }
 
     [Fact]
-    public void LoopBound_ignores_for_loop_without_a_condition()
-    {
-        var ctx = MatchFixtures.Context("class C { void M() { for (var i = 0; ; i++) { } } }");
-        Patterns.LoopBound(ctx, MatchFixtures.Id);
-        Assert.Empty(ctx.Findings);
-    }
-
-    [Fact]
-    public void LoopBound_ignores_an_internal_method()
-    {
-        var ctx = MatchFixtures.Context(
-            "class C { internal void M(int maxBatch) { for (var i = 0; i < maxBatch; i++) { } } }");
-        Patterns.LoopBound(ctx, MatchFixtures.Id);
-        Assert.Empty(ctx.Findings);
-    }
-
-    [Fact]
-    public void LoopBound_reports_a_public_method_bound_by_a_parameter()
-    {
-        var ctx = MatchFixtures.Context(
-            "class C { public void M(int maxBatch) { for (var i = 0; i < maxBatch; i++) { } } }");
-        Patterns.LoopBound(ctx, MatchFixtures.Id);
-        Assert.Single(ctx.Findings);
-    }
-
-    [Fact]
-    public void AllocDos_ignores_array_creation_with_no_parameter_derived_size()
-    {
-        var ctx = MatchFixtures.Context("class C { void M() { var local = 5; var x = new int[local]; } }");
-        Patterns.AllocDos(ctx, MatchFixtures.Id);
-        Assert.Empty(ctx.Findings);
-    }
-
-    [Fact]
-    public void AllocDos_ignores_identifier_outside_a_method()
-    {
-        var ctx = MatchFixtures.Context("class C { C(int x) { var arr = new int[x]; } }");
-        Patterns.AllocDos(ctx, MatchFixtures.Id);
-        Assert.Empty(ctx.Findings);
-    }
-
-    [Fact]
     public void ConstantReturn_ignores_expression_bodied_method()
     {
         var ctx = MatchFixtures.Context("class C { int M() => 1; }");

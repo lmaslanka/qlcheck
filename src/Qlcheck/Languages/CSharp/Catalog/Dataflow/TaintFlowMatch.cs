@@ -22,6 +22,6 @@ internal static class TaintFlowMatch
     private static string Detail(SinkHit hit, string hint)
     {
         var via = hit.Via.Count == 0 ? string.Empty : $" via {string.Join(", ", hit.Via.Select(local => $"`{local}`"))}";
-        return $"`{hit.Source.Name}` ({hit.Source.Description}, line {hit.Source.Line}) reaches `{hit.Target}`{via}. {hint}";
+        return $"`{hit.Source.Name}` ({hit.Source.Description}, line {hit.Source.Line}) reaches {hit.Target}{via}. {hint}";
     }
 }
