@@ -163,7 +163,8 @@ public class CheckRunTests
 
         public RunResult Execute(
             IReadOnlyList<SourceScan.LoadedSource> files,
-            IReadOnlyList<ICheck> checks)
+            IReadOnlyList<ICheck> checks,
+            RunInputs inputs)
         {
             var findings = new List<Finding>();
             foreach (var file in files)

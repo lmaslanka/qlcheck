@@ -14,5 +14,6 @@ internal interface ILanguage
 
     RunResult Execute(
         IReadOnlyList<SourceScan.LoadedSource> files,
-        IReadOnlyList<ICheck> checks);
+        IReadOnlyList<ICheck> checks,
+        RunInputs inputs);
 }

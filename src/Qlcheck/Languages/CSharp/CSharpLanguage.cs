@@ -33,7 +33,8 @@ internal sealed class CSharpLanguage : ILanguage
 
     public RunResult Execute(
         IReadOnlyList<SourceScan.LoadedSource> loaded,
-        IReadOnlyList<ICheck> checks)
+        IReadOnlyList<ICheck> checks,
+        RunInputs inputs)
     {
         foreach (var check in checks)
         {

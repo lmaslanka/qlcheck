@@ -1,3 +1,4 @@
+using Qlcheck.Languages;
 using Qlcheck.Languages.CSharp.Catalog;
 using Qlcheck.Languages.CSharp.Checks.Coverage;
 
@@ -18,7 +19,7 @@ public class CSharpLanguageTests
                 [new CoverageFile("Repo.cs", false, [])]));
             var coverage = Catalog.Checks.Single(c => c.Id == "coverage");
 
-            var result = language.Execute([file], [coverage]);
+            var result = language.Execute([file], [coverage], RunInputs.None);
 
             Assert.Contains(result.Findings, finding => finding.Check == "coverage");
             Assert.Single(result.Coverage);

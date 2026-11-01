@@ -280,6 +280,20 @@ public class QlcheckAppTests : IDisposable
     }
 
     [Fact]
+    public void A_malformed_architecture_file_exits_two_naming_the_line()
+    {
+        Write(".qlcheck_architecture", "# layers\nQlcheck.Cli depends-on Qlcheck.Run\n");
+        Write("A.cs", "class A { }\n");
+        using var stdout = new StringWriter();
+        using var stderr = new StringWriter();
+
+        var code = QlcheckApp.Run([_dir], stdout, stderr);
+
+        Assert.Equal(ExitCode.Error, code);
+        Assert.Contains(".qlcheck_architecture:2)", stderr.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Uncommitted_reports_modified_staged_and_untracked_files()
     {
         Git(InitCommand, QuietFlag);

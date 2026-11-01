@@ -60,7 +60,7 @@ public class CheckDiscoveryTests
 
         public bool Matches(string path) => false;
 
-        public RunResult Execute(IReadOnlyList<SourceScan.LoadedSource> files, IReadOnlyList<ICheck> checks) => new([], []);
+        public RunResult Execute(IReadOnlyList<SourceScan.LoadedSource> files, IReadOnlyList<ICheck> checks, RunInputs inputs) => new([], []);
     }
 
     private sealed record StubCheck(string Id, string Language) : ICheck;

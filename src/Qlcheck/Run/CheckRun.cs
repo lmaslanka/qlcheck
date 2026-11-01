@@ -10,7 +10,8 @@ internal static class CheckRun
         IReadOnlyList<SourceScan.LoadedSource> loaded,
         IReadOnlyList<ICheck> checks,
         IReadOnlyList<ILanguage> languages,
-        DisableFiles? disabled = null)
+        DisableFiles? disabled = null,
+        RunInputs? inputs = null)
     {
         EnsureOwned(checks, languages);
         EnsureOneLanguage(loaded, languages);
@@ -30,7 +31,7 @@ internal static class CheckRun
                 continue;
             }
 
-            var result = language.Execute(files, mine);
+            var result = language.Execute(files, mine, inputs ?? RunInputs.None);
             findings.AddRange(result.Findings);
             coverage.AddRange(result.Coverage);
         }

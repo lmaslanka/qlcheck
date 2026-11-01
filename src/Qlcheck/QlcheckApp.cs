@@ -26,12 +26,14 @@ public static class QlcheckApp
         IReadOnlyList<SourceScan.LoadedSource> reported;
         IReadOnlyList<ILanguage> languages;
         DisableFiles disabled;
+        ArchitectureFiles architecture;
         try
         {
             languages = LanguageDiscovery.All();
             loaded = SourceScan.Load(options.Paths, path => languages.Any(language => language.Matches(path)));
             reported = options.Uncommitted ? OnlyUncommitted(loaded, options.Paths) : loaded;
             disabled = DisableFiles.Load(options.Paths, loaded.Select(source => source.FullPath));
+            architecture = ArchitectureFiles.Load(options.Paths, loaded.Select(source => source.FullPath));
         }
         catch (CaughtException ex)
         {
@@ -51,7 +53,7 @@ public static class QlcheckApp
         RunResult run;
         try
         {
-            run = reported.Count == 0 ? new RunResult([], []) : CheckRun.Execute(loaded, checks, languages, disabled);
+            run = reported.Count == 0 ? new RunResult([], []) : CheckRun.Execute(loaded, checks, languages, disabled, new RunInputs(architecture));
         }
         catch (CaughtException ex)
         {

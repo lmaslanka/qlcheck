@@ -1,3 +1,4 @@
+using Qlcheck.Languages;
 using Qlcheck.Languages.Config;
 
 namespace Qlcheck.Tests;
@@ -154,7 +155,7 @@ public sealed class ConfigLanguageTests : IDisposable
         var path = Write(relative ?? name, text);
         var source = new SourceScan.LoadedSource(path, new SourceFile(relative ?? name, text));
         var language = new ConfigLanguage();
-        return language.Execute([source], language.Checks).Findings;
+        return language.Execute([source], language.Checks, RunInputs.None).Findings;
     }
 
     private string Write(string relative, string text)

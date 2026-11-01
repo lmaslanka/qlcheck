@@ -45,7 +45,7 @@ internal sealed class ConfigLanguage : ILanguage
         };
     }
 
-    public RunResult Execute(IReadOnlyList<SourceScan.LoadedSource> files, IReadOnlyList<ICheck> checks)
+    public RunResult Execute(IReadOnlyList<SourceScan.LoadedSource> files, IReadOnlyList<ICheck> checks, RunInputs inputs)
     {
         var selected = checks.OfType<ConfigCheck>().ToDictionary(check => check.Id, check => check.Message, StringComparer.Ordinal);
         var findings =
