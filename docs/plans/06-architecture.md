@@ -1,6 +1,16 @@
 # Plan 06: architecture conformance as a user-facing Check
 
-Status: Agreed 2026-10-29 · Depends on: 00 (compilation fidelity); scheduled last
+Status: Done 2026-10-31 (agreed 2026-10-29) · Depends on: 00 (compilation fidelity); scheduled last
+
+## Progress
+
+- **Done** (2026-10-31, branch `architecture`): steps 1-10. Counts are 334 catalog / 333 enabled; every catalog row is
+  implemented. The plan's 509/501 predate plan 01's cleanup.
+- **Dogfood** (§1's example file on a scratch copy of this repository): exactly the predicted breach, L4
+  (`Scan/SourceScan.cs:5` and `:13` use `Qlcheck.SourceFile`); L1-L3, L5 and L6 hold and `no-cycles Qlcheck.*` is
+  clean. Whether to move `SourceFile` or relax the Constraint is still the human call noted under Dogfooding.
+- **Cost:** a full run takes about 0.9 s more with the file (11.4 s -> 12.3 s, median of 3), under the ~1 s that would
+  call for the prefilter in step 10; without the file nothing is extracted.
 
 ## Goal
 
