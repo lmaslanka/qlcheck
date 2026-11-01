@@ -62,7 +62,9 @@ internal sealed class TaintState
         return union;
     }
 
-    // Unions this state into `into` and reports whether any label there grew.
+    // Unions this state into `into` and reports whether anything there grew: a label, or a source
+    // upgraded from a public parameter to an entry point (which happens at most once per key, so
+    // the analysis still converges).
     public bool MergeInto(TaintState into)
     {
         var changed = false;
@@ -70,7 +72,7 @@ internal sealed class TaintState
         {
             var old = into.Get(key);
             var merged = old.Join(taint);
-            if (merged.Labels != old.Labels)
+            if (merged.Labels != old.Labels || merged.Source != old.Source)
             {
                 into._taints[key] = merged;
                 changed = true;

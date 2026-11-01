@@ -102,8 +102,8 @@ internal static class TaintModel
     };
 
     // The entry state: every parameter of a method visible outside the assembly (it and every
-    // containing type public or protected) is a PublicParameter, except those of a safe type and
-    // those of test methods. A numeric parameter is Numeric, which only the allocation and
+    // containing type public or protected) is untrusted, with its source marked PublicParameter,
+    // except those of a safe type and those of test methods. A numeric parameter is Numeric, which only the allocation and
     // loop-bound rows accept.
     public static TaintState Seed(IMethodSymbol? owner)
     {
@@ -115,10 +115,10 @@ internal static class TaintModel
 
         foreach (var parameter in owner.Parameters)
         {
-            var label = LabelFor(parameter.Type, TaintLabel.PublicParameter);
+            var label = LabelFor(parameter.Type);
             if (label != TaintLabel.None)
             {
-                state.Set(parameter, Taint.From(label, new TaintSource(parameter.Name, $"parameter of public `{MemberName(owner)}`", Line(parameter))));
+                state.Set(parameter, Taint.From(label, new TaintSource(parameter.Name, $"parameter of public `{MemberName(owner)}`", Line(parameter), PublicParameter: true)));
             }
         }
 
@@ -276,15 +276,15 @@ internal static class TaintModel
     public static bool IsNumeric(ITypeSymbol? type) =>
         (Underlying(type) ?? type)?.SpecialType is >= SpecialType.System_SByte and <= SpecialType.System_Double;
 
-    // The label a value of this type starts with when it comes from a source of `kind`.
-    public static TaintLabel LabelFor(ITypeSymbol? type, TaintLabel kind = TaintLabel.Untrusted)
+    // The label a value of this type starts with when it comes from an untrusted source.
+    public static TaintLabel LabelFor(ITypeSymbol? type)
     {
         if (IsNumeric(type))
         {
             return TaintLabel.Numeric;
         }
 
-        return IsSafe(type) ? TaintLabel.None : kind;
+        return IsSafe(type) ? TaintLabel.None : TaintLabel.Untrusted;
     }
 
     private static bool IsVisibleOutside(ISymbol member)

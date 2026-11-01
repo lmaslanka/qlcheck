@@ -75,11 +75,11 @@ public class RowTests
     [Theory]
     [InlineData(true, 1)]
     [InlineData(false, 0)]
-    public void Flow_row_carries_its_spec_and_reports_hits_with_an_accepted_label(bool acceptsPublicParameters, int findings)
+    public void Flow_row_carries_its_spec_and_reports_public_parameters_only_if_it_accepts_them(bool acceptsPublicParameters, int findings)
     {
         var ctx = MatchFixtures.Context(
             "public class C { public void M(System.Data.Common.DbCommand c, string id) { var q = \"SELECT \" + id; c.CommandText = q; } }");
-        var spec = new TaintSpec(acceptsPublicParameters ? TaintLabel.PublicParameter : TaintLabel.Numeric, [Sink.Set("System.Data.IDbCommand", "CommandText")], "hint");
+        var spec = new TaintSpec(TaintLabel.Untrusted, [Sink.Set("System.Data.IDbCommand", "CommandText")], "hint") { PublicParameters = acceptsPublicParameters };
         var row = Row.Flow(MatchFixtures.Id, CheckClass.Taint, spec);
         row.Apply(ctx);
         Assert.Same(spec, row.Taint);

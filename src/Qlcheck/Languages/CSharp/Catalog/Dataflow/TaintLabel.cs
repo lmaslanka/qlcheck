@@ -14,9 +14,4 @@ internal enum TaintLabel
     ContainedPath = 8,
     ArchiveEntry = 16,
     ExceptionDetail = 32,
-
-    // A parameter of a method visible outside the assembly: untrusted for rows where a public
-    // API is an entry point (SQL, commands), but not for rows where wrappers that take the value
-    // on purpose are the norm (file paths). Entry points proper (requests, console) are Untrusted.
-    PublicParameter = 64,
 }

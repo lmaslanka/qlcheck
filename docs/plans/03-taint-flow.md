@@ -533,10 +533,12 @@ The user settled these on 2026-10-29.
     test as `validate-public-arguments`). Safe types (numbers, bool, enums, `Guid`, dates, `TimeSpan`,
     `CancellationToken`) carry no label. Numeric parameters carry `Numeric`, which only the allocation and
     loop-bound rows accept. Test methods' parameters are not sources (revised 2026-10-31).
-  - **Public parameters are their own label, `PublicParameter`** (revised 2026-10-31 after the D12 triage of
+  - **Each row decides whether public parameters count** (revised 2026-10-31 after the D12 triage of
     `path-injection`: on Jellyfin 65 of 74 Findings were public methods whose path parameter is their job, and none was
-    an injection). Each row chooses: `sql-injection` and `command-injection` accept `Untrusted | PublicParameter`;
-    `path-injection` and `filesystem-oracle` accept only `Untrusted`, from the entry points below. Each later row is
+    an injection). A public parameter's source is marked `PublicParameter`; a row counts it only with
+    `TaintSpec.PublicParameters`. At a join an entry point outranks a public parameter. `sql-injection` and
+    `command-injection` count public parameters; `path-injection` and `filesystem-oracle` count only the entry points
+    below. Each later row is
     decided the same way from its D12 triage: `reflection-injection` is entry points only (its public-parameter Findings
     were helpers that resolve a member name on purpose); the XML rows and `regex-dos` accept both.
     `connection-string-injection` and `argument-injection` are entry points only (a constructor taking a connection

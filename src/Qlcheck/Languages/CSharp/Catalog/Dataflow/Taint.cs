@@ -4,8 +4,9 @@ using System.Collections.Immutable;
 namespace Qlcheck.Languages.CSharp.Catalog.Dataflow;
 
 // The taint of one value: its labels, the first source that reached it, and the locals it passed
-// through on the way. Joining two taints unions the labels and keeps the first source, so the
-// analysis converges on labels alone and the message stays stable.
+// through on the way. Joining two taints unions the labels and keeps the first source (an entry
+// point before a public parameter), so the analysis converges on labels alone and the message
+// stays stable.
 internal readonly record struct Taint(TaintLabel Labels, TaintSource? Source, ImmutableArray<string> Via)
 {
     public static Taint None => default;
@@ -23,7 +24,16 @@ internal readonly record struct Taint(TaintLabel Labels, TaintSource? Source, Im
             return other;
         }
 
-        return other.IsNone ? this : this with { Labels = Labels | other.Labels };
+        if (other.IsNone)
+        {
+            return this;
+        }
+
+        // An entry point outranks a public parameter, so a row that skips public parameters still
+        // sees the entry point when both reach the same value.
+        return Source is { PublicParameter: true } && other.Source is { PublicParameter: false }
+            ? other with { Labels = Labels | other.Labels }
+            : this with { Labels = Labels | other.Labels };
     }
 
     public Taint Relabel(TaintLabel labels) => labels == TaintLabel.None ? None : this with { Labels = labels };

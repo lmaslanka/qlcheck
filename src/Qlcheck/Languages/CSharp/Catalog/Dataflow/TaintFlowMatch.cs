@@ -9,6 +9,7 @@ internal static class TaintFlowMatch
     {
         var hits = ctx.Dataflow.Hits(TaintEngine.FlowSinks)
             .Where(hit => (hit.Labels & spec.Accepts) != TaintLabel.None && spec.Sinks.Contains(hit.Sink))
+            .Where(hit => spec.PublicParameters || !hit.Source.PublicParameter)
             .DistinctBy(hit => hit.Node);
         foreach (var hit in hits)
         {

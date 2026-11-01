@@ -566,8 +566,16 @@ internal sealed class TaintFlow
         }
 
         var key = (sink, at);
-        _hits[key] = _hits.TryGetValue(key, out var hit)
-            ? hit with { Labels = hit.Labels | taint.Labels }
-            : new SinkHit(sink, at, target, taint.Labels, source, taint.Path);
+        if (!_hits.TryGetValue(key, out var hit))
+        {
+            _hits[key] = new SinkHit(sink, at, target, taint.Labels, source, taint.Path);
+            return;
+        }
+
+        // An entry point outranks a public parameter, as in Taint.Join.
+        var labels = hit.Labels | taint.Labels;
+        _hits[key] = hit.Source.PublicParameter && !source.PublicParameter
+            ? new SinkHit(sink, at, target, labels, source, taint.Path)
+            : hit with { Labels = labels };
     }
 }
