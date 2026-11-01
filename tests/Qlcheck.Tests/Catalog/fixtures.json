@@ -1309,6 +1309,11 @@
     "good": "interface Holder\n{\n    void M();\n}\n",
     "path": "Repo.cs"
   },
+  "redundant-null-check": {
+    "bad": "using System.Collections.Generic;\n\nnamespace Sample\n{\n    public class Orders\n    {\n        public int Count()\n        {\n            var items = Load();\n            if (items == null)\n            {\n                return 0;\n            }\n\n            return items.Count;\n        }\n\n        private static List<string> Load() => new List<string>();\n    }\n}\n",
+    "good": "using System.Collections.Generic;\n\nnamespace Sample\n{\n    public class Orders\n    {\n        public int Count()\n        {\n            var items = Load();\n            return items.Count;\n        }\n\n        private static List<string> Load() => new List<string>();\n    }\n}\n",
+    "path": "Repo.cs"
+  },
   "redundant-nullable-compare": {
     "bad": "class C\n{\n    bool M(int? x) => x.HasValue == true;\n}\n",
     "good": "class C\n{\n    bool M(int? x) => x.HasValue;\n}\n",

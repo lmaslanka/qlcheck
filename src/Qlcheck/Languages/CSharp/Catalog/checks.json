@@ -1060,6 +1060,10 @@
     "message": "Redundant modifiers should not be used."
   },
   {
+    "id": "redundant-null-check",
+    "message": "Results of methods that never return null should not be checked for null."
+  },
+  {
     "id": "redundant-nullable-compare",
     "message": "Nullable type comparison should not be redundant."
   },

@@ -84,6 +84,7 @@ internal static class SymbolEngine
         Row.Handle("prefer-set-min-max", CheckClass.Symbol, SymbolPatterns.SetMinMax),
         Row.Handle("produces-response-type", CheckClass.Symbol, SymbolPatterns.ProducesResponseType),
         Row.Handle("redundant-include", CheckClass.Symbol, ResourcePatterns.RedundantInclude),
+        Row.Handle("redundant-null-check", CheckClass.Symbol, RedundantNullCheckPattern.Apply),
         Row.Handle("redundant-nullable-compare", CheckClass.Symbol, SymbolPatterns.RedundantNullableCompare),
         Row.Invoke("restrict-cors", CheckClass.Symbol, "AllowAnyOrigin"),
         Row.Handle("reuse-client", CheckClass.Symbol, SymbolPatterns.ReuseClient),
