@@ -39,8 +39,7 @@ public sealed class DuplicateCodeRunTests : IDisposable
     [Fact]
     public void A_suppression_comment_silences_only_its_copy()
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow).ToString("O", System.Globalization.CultureInfo.InvariantCulture);
-        Write(CopyA, Source(Daily, $"// qlcheck-ignore: {Id} checked-on:{today}"));
+        Write(CopyA, Source(Daily, $"// qlcheck-ignore: {Id} checked-on:{TestDates.Today}"));
         Write(CopyB, Source(Weekly));
 
         Assert.Equal([CopyB], Run().Select(finding => finding.File));

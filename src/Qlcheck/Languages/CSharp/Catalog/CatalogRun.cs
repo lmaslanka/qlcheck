@@ -12,7 +12,9 @@ internal static class CatalogRun
         IEnumerable<SourceScan.LoadedSource> group,
         string? csproj,
         IReadOnlyDictionary<string, SyntaxTree> trees,
-        IReadOnlyList<CatalogCheck> checks)
+        IReadOnlyList<CatalogCheck> checks,
+        ArchitectureFiles? architecture = null,
+        Action<IEnumerable<GovernedDependency>>? collectDependencies = null)
     {
         var sources = group.ToList();
         var compilation = Compile(sources, csproj, trees);
@@ -24,6 +26,10 @@ internal static class CatalogRun
             var tree = trees[source.FullPath];
             var model = compilation.GetSemanticModel(tree);
             findings.AddRange(CatalogWalker.Walk(source.File, tree, model, selected, messages));
+            if (collectDependencies is not null && architecture?.For(source.FullPath) is { } governing)
+            {
+                collectDependencies(DependencyExtractor.Extract(model, source.File.Path).Select(dependency => new GovernedDependency(governing, dependency)));
+            }
         }
 
         var reportable = sources.Select(source => trees[source.FullPath]).ToHashSet();

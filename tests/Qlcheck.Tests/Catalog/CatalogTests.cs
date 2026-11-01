@@ -11,9 +11,9 @@ public class CatalogTests
 {
     private const int CatalogCount = 334;
 
-    private const int EnabledCatalogCount = 331;
+    private const int EnabledCatalogCount = 332;
 
-    private const int UnimplementedCatalogCount = 2;
+    private const int UnimplementedCatalogCount = 1;
 
     private const int HouseEnabledCount = 0;
 
@@ -170,7 +170,7 @@ public class CatalogTests
         var failures = new List<string>();
         foreach (var id in CatalogWalker.ImplementedIds)
         {
-            if (CatalogWalker.TryClass(id, out var group) && group == CheckClass.Process)
+            if (CatalogWalker.TryClass(id, out var group) && group is CheckClass.Process or CheckClass.Architecture)
             {
                 continue;
             }
@@ -200,7 +200,7 @@ public class CatalogTests
         var failing = new List<string>();
         foreach (var id in CatalogWalker.ImplementedIds)
         {
-            if (CatalogWalker.TryClass(id, out var group) && group == CheckClass.Process)
+            if (CatalogWalker.TryClass(id, out var group) && group is CheckClass.Process or CheckClass.Architecture)
             {
                 continue;
             }

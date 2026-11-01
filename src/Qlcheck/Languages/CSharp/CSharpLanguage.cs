@@ -44,7 +44,7 @@ internal sealed class CSharpLanguage : ILanguage
             }
         }
 
-        var findings = RunCatalog(loaded, checks);
+        var findings = RunCatalog(loaded, checks, inputs.Architecture);
         var coverage = new List<CoverageFile>();
         if (checks.Any(check => check.Id == CoverageCheck.CheckId))
         {
@@ -58,7 +58,8 @@ internal sealed class CSharpLanguage : ILanguage
 
     private static List<Finding> RunCatalog(
         IReadOnlyList<SourceScan.LoadedSource> loaded,
-        IReadOnlyList<ICheck> checks)
+        IReadOnlyList<ICheck> checks,
+        ArchitectureFiles architecture)
     {
         var catalog = checks.OfType<CatalogCheck>().ToList();
         var findings = new List<Finding>();
@@ -67,14 +68,22 @@ internal sealed class CSharpLanguage : ILanguage
             return findings;
         }
 
+        // Dependencies are extracted only when an architecture Check runs and a file declares one (D4).
+        var selected = catalog.Select(check => check.Id).ToHashSet(StringComparer.Ordinal);
+        var dependencies = ArchitectureEngine.Selects(selected) && architecture.Files.Count > 0 ? new List<GovernedDependency>() : null;
         var trees = loaded.ToDictionary(source => source.FullPath, source => CSharpTrees.Parse(source.File));
         foreach (var group in loaded.GroupBy(source => CSharpCompilations.FindCsproj(source.FullPath) ?? string.Empty))
         {
             var csproj = string.IsNullOrEmpty(group.Key) ? null : group.Key;
-            findings.AddRange(CatalogRun.Execute(group, csproj, trees, catalog));
+            findings.AddRange(CatalogRun.Execute(group, csproj, trees, catalog, architecture, dependencies is null ? null : dependencies.AddRange));
         }
 
         findings.AddRange(CatalogRun.ExecuteSourceSet(loaded, trees, catalog));
+        if (dependencies is not null)
+        {
+            findings.AddRange(ArchitectureEngine.Apply(dependencies, selected, catalog.ToDictionary(check => check.Id, check => check.Message, StringComparer.Ordinal)));
+        }
+
         return findings;
     }
 }

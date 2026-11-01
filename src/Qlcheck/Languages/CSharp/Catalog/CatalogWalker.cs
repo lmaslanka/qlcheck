@@ -18,6 +18,7 @@ internal static class CatalogWalker
         Rows.Select(row => row.Id)
             .Concat(CompilationEngine.Rows.Select(row => row.Id))
             .Concat(SourceSetEngine.Rows.Select(row => row.Id))
+            .Concat(ArchitectureEngine.Rows.Select(row => row.Id))
             .Concat(RunEngine.Rows.Keys)
             .ToHashSet(StringComparer.Ordinal);
 
@@ -25,6 +26,7 @@ internal static class CatalogWalker
         Rows.Select(row => (row.Id, row.Class))
             .Concat(CompilationEngine.Rows.Select(row => (row.Id, row.Class)))
             .Concat(SourceSetEngine.Rows.Select(row => (row.Id, row.Class)))
+            .Concat(ArchitectureEngine.Rows.Select(row => (row.Id, row.Class)))
             .Concat(RunEngine.Rows.Select(kv => (Id: kv.Key, Class: kv.Value)))
             .ToDictionary(row => row.Id, row => row.Class, StringComparer.Ordinal);
 
