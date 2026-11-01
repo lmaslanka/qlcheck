@@ -20,6 +20,11 @@ internal sealed class DataflowCache(SyntaxTree tree, SemanticModel model)
 
     public bool PublicParameters { get; set; } = true;
 
+    private IReadOnlyList<LockHit>? _locks;
+
+    // The file's lock problems, for the three lock rows.
+    public IReadOnlyList<LockHit> Locks => _locks ??= [.. LockFlow.Run(Graphs)];
+
     public IReadOnlyList<SinkHit> Hits(IReadOnlyList<Sink> sinks)
     {
         if (!ReferenceEquals(sinks, _hitsFor))

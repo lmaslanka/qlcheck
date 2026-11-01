@@ -22,9 +22,7 @@ identical-branch
 identical-branches
 identical-operands
 interface-method-callable
-lock-released
 loop-must-change-counter
-matching-lock-release
 merge-identical-catch
 move-method-to-inner-class
 multiline-needs-braces
@@ -56,7 +54,6 @@ prefer-exists
 prefer-set-min-max
 prefer-trueforall
 readonly-not-mutable
-release-lock-same-method
 reuse-client
 robust-cipher
 stateless-azure-function

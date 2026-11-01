@@ -6,20 +6,18 @@ namespace Qlcheck.Languages.CSharp.Catalog;
 
 internal static class FlowEngine
 {
-    private const string MonitorType = "Monitor";
-
     public static WalkRow[] Rows { get; } =
     [
         Row.Handle("invariant-loop-bound", CheckClass.Flow, StylePatterns.ForBoundChanges),
-        Row.Invoke("lock-released", CheckClass.Flow, "Enter", MonitorType),
+        Row.Handle("lock-released", CheckClass.Flow, LockFlowMatch.NotReleasedOnAllPaths),
         Row.Handle("loop-condition-reachable", CheckClass.Flow, StylePatterns.ForNeverTrue),
         Row.Handle("loop-counter-direction", CheckClass.Flow, StylePatterns.ForWrongWay),
         Row.Handle("loop-more-than-once", CheckClass.Flow, StylePatterns.ForOnce),
         Row.Handle("loop-must-change-counter", CheckClass.Flow, StylePatterns.ForNoCounter),
-        Row.Invoke("matching-lock-release", CheckClass.Flow, "Exit", MonitorType),
+        Row.Handle("matching-lock-release", CheckClass.Flow, LockFlowMatch.ModeMismatch),
         Row.Handle("no-infinite-loop", CheckClass.Flow, Reach.InfiniteLoop),
         Row.Handle("reachable-branch", CheckClass.Flow, Reach.UnreachableBranch),
-        Row.Invoke("release-lock-same-method", CheckClass.Flow, "Enter", MonitorType),
+        Row.Handle("release-lock-same-method", CheckClass.Flow, LockFlowMatch.NeverReleased),
         Row.Handle("validate-public-arguments", CheckClass.Flow, PublicArgumentPattern.Apply),
     ];
 

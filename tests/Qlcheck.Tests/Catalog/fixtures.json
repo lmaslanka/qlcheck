@@ -455,8 +455,8 @@
     "path": "Repo.cs"
   },
   "lock-released": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Monitor.Enter();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "using System.Threading;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        private readonly object _gate = new();\n\n        public void Update(bool skip)\n        {\n            Monitor.Enter(_gate);\n            if (skip)\n            {\n                return;\n            }\n\n            Monitor.Exit(_gate);\n        }\n    }\n}\n",
+    "good": "using System.Threading;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        private readonly object _gate = new();\n\n        public void Update(bool skip)\n        {\n            Monitor.Enter(_gate);\n            try\n            {\n                if (skip)\n                {\n                    return;\n                }\n            }\n            finally\n            {\n                Monitor.Exit(_gate);\n            }\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "log-argument-position": {
@@ -530,8 +530,8 @@
     "path": "Repo.cs"
   },
   "matching-lock-release": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Monitor.Exit();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "using System.Threading;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        private readonly ReaderWriterLockSlim _lock = new();\n\n        public void Read()\n        {\n            _lock.EnterReadLock();\n            try\n            {\n            }\n            finally\n            {\n                _lock.ExitWriteLock();\n            }\n        }\n    }\n}\n",
+    "good": "using System.Threading;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        private readonly ReaderWriterLockSlim _lock = new();\n\n        public void Read()\n        {\n            _lock.EnterReadLock();\n            try\n            {\n            }\n            finally\n            {\n                _lock.ExitReadLock();\n            }\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "member-not-more-visible": {
@@ -1335,8 +1335,8 @@
     "path": "Repo.cs"
   },
   "release-lock-same-method": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            Monitor.Enter();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "using System.Threading;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        private readonly object _gate = new();\n\n        public void Begin()\n        {\n            Monitor.Enter(_gate);\n        }\n    }\n}\n",
+    "good": "using System.Threading;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        private readonly object _gate = new();\n\n        public void Update()\n        {\n            lock (_gate)\n            {\n                Begin();\n            }\n        }\n\n        private static void Begin()\n        {\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "restrict-cors": {

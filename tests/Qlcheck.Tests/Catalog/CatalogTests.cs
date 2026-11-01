@@ -61,10 +61,7 @@ public class CatalogTests
         "restrict-cors",
         "secure-temp-file",
 
-        // Owned: lock flow (plan 03), duplication (plan 04).
-        "lock-released",
-        "matching-lock-release",
-        "release-lock-same-method",
+        // Owned: duplication (plan 04).
         "identical-method",
     ];
 

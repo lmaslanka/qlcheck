@@ -9,8 +9,6 @@ file-length
 function-length
 identical-method
 interface-method-callable
-lock-released
-matching-lock-release
 no-async-identifier
 no-colliding-interface-inherit
 no-empty-block
@@ -24,5 +22,4 @@ no-sleep-in-test
 no-tabs
 one-statement-per-line
 operator-named-alternative
-release-lock-same-method
 robust-cipher
