@@ -470,8 +470,8 @@
     "path": "Repo.cs"
   },
   "log-injection": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            Information(input);\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            Information(\"fixed\");\n        }\n    }\n}\n",
+    "bad": "using System;\nusing Microsoft.Extensions.Logging;\n\nnamespace Microsoft.Extensions.Logging\n{\n    public interface ILogger\n    {\n    }\n\n    public static class LoggerExtensions\n    {\n        public static void LogInformation(this ILogger logger, string? message, params object?[] args)\n        {\n        }\n    }\n}\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public void SignIn(ILogger logger)\n        {\n            var name = Console.ReadLine() ?? string.Empty;\n            logger.LogInformation(\"User \" + name + \" signed in\");\n        }\n    }\n}\n",
+    "good": "using System;\nusing Microsoft.Extensions.Logging;\n\nnamespace Microsoft.Extensions.Logging\n{\n    public interface ILogger\n    {\n    }\n\n    public static class LoggerExtensions\n    {\n        public static void LogInformation(this ILogger logger, string? message, params object?[] args)\n        {\n        }\n    }\n}\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public void SignIn(ILogger logger)\n        {\n            var name = Console.ReadLine() ?? string.Empty;\n            logger.LogInformation(\"User {Name} signed in\", name);\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "log-or-rethrow": {

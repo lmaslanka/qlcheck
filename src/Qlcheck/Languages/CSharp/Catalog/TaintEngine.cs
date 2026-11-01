@@ -77,7 +77,14 @@ internal static class TaintEngine
                 Sink.Ctor("System.DirectoryServices.Protocols.SearchRequest", "ldapFilter|distinguishedName"),
             ],
             "Escape the value for an LDAP filter (`(`, `)`, `*`, `\\` and NUL) or check it against an allow-list.")),
-        Row.Taint("log-injection", CheckClass.Taint, "Information"),
+        Row.Flow("log-injection", CheckClass.Taint, new TaintSpec(
+            TaintLabel.Untrusted,
+            [
+                Sink.Call("Microsoft.Extensions.Logging.LoggerExtensions", "Log*", "message"),
+                Sink.Call("Serilog.ILogger", "Verbose|Debug|Information|Warning|Error|Fatal|Write", "messageTemplate"),
+                Sink.Call("Serilog.Log", "Verbose|Debug|Information|Warning|Error|Fatal|Write", "messageTemplate"),
+            ],
+            "Keep the message template constant and pass the value as a structured argument: `LogInformation(\"User {Name}\", name)`.")),
         Row.Handle("loop-bound-injection", CheckClass.Taint, Patterns.LoopBound),
         Row.Taint("no-stack-trace-disclosure", CheckClass.Taint, "Write"),
         Row.Flow("nosql-injection", CheckClass.Taint, new TaintSpec(

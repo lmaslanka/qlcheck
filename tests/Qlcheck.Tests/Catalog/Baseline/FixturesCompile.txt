@@ -23,7 +23,6 @@ identical-branches
 identical-operands
 interface-method-callable
 lock-released
-log-injection
 loop-must-change-counter
 matching-lock-release
 merge-identical-catch
