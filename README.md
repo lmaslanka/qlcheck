@@ -14,7 +14,7 @@ compiler model), not regex guesses, so they catch real bugs and skip the obvious
 │ Scan                                         │
 │   Files checked                            1 │
 │   Lines checked                           29 │
-│   Checks run                             334 │
+│   Checks run                             335 │
 │                                              │
 │ Results                                      │
 │   Findings                                 7 │
@@ -32,7 +32,7 @@ compiler model), not regex guesses, so they catch real bugs and skip the obvious
 │ By file                                      │
 │   Sample.cs                                7 │
 │                                              │
-│ Duration                              671 ms │
+│ Duration                              690 ms │
 ╰──────────────────────────────────────────────╯
 ```
 
@@ -51,7 +51,7 @@ compiler model), not regex guesses, so they catch real bugs and skip the obvious
   `jwt-strong-signature` flags any signing call and tells the agent to *ask the user* whether
   the algorithm is strong enough, rather than silently guessing. Once a human has made that
   call, a dated suppression comment keeps the finding quiet for a year, then it resurfaces.
-- **342 checks, zero config.** Covers naming, style, resource management, exceptions,
+- **343 checks, zero config.** Covers naming, style, resource management, exceptions,
   concurrency, ~20 taint-tracked injection classes (SQL, command, path, LDAP, XPath,
   log, SSRF, zip-slip, and more), and hard-coded secrets in code and configuration files
   out of the box.
@@ -176,7 +176,7 @@ $ qlcheck Sample.cs
 | `--stats` | Appends the summary box shown above (files/lines/checks/findings, grouped by check and by file) |
 | `--check <id>` | Run only the named check(s) (repeatable), ignoring the default/opt-in selection and any `.qlcheck_disable` file |
 | `--coverage` | Opt in to the `coverage` check (runs your test suite via `dotnet test`/`coverlet` and reports under-covered methods) |
-| `--uncommitted` | Report only files with uncommitted changes (staged, unstaged or untracked). Every file is still compiled, but a Finding an edit causes in an *unchanged* file (such as a new nullable warning at a caller) is not shown |
+| `--uncommitted` | Report only files with uncommitted changes (staged, unstaged or untracked). Every file is still compiled and cross-file Checks still see committed files (a new copy of committed code is reported on the new copy), but a Finding an edit causes in an *unchanged* file (such as a new nullable warning at a caller) is not shown |
 | `--help` / `-h` | Usage |
 
 Exit codes: `0` clean, `1` findings reported, `2` a usage or environment error (e.g. no
@@ -184,16 +184,17 @@ project found for `--coverage`).
 
 ## What it checks
 
-342 checks across these classes:
+343 checks across these classes:
 
 | Class | Checks | What it looks at |
 |---|---|---|
-| Syntax | 170 | Style, naming, structure — pure syntax tree shape |
+| Syntax | 169 | Style, naming, structure — pure syntax tree shape |
 | Symbol | 102 | Anything needing type/symbol info — accessibility, overloads, member shape |
 | Taint | 27 | Dataflow within each method, over its control-flow graph, from an untrusted source (request input, console input, and for some Checks a public method's parameter) to a sink resolved by symbol |
 | Metric | 13 | Size/complexity thresholds (method length, nesting, parameter count) |
 | Flow | 11 | Control flow from the compiler's analysis (unreachable branches, loops that never end, locks not released on every path) |
 | Compilation | 7 | Whole-compilation facts: unused usings, literals shared across files, and the compiler's nullable warnings (reported only where `dotnet build` would warn and the file has no compile errors) |
+| Source set | 2 | Run-wide syntax over every scanned file, across projects: `duplicate-code` (a copied statement sequence, identifiers renamed consistently) and `identical-method` (methods with the same whole body) |
 | Config | 4 | Hard-coded secrets in `appsettings*.json`, `*.config`, YAML, and git-tracked `.env*` files |
 | *(opt-in)* | 1 | `coverage` — test coverage gaps, via your own test run |
 
@@ -259,7 +260,8 @@ Disabling a check is a lasting policy, so a human decides it. An agent should no
 just to make findings go away. Unknown ids are an error (exit `2`). `--check <id>` and
 `--coverage` override the file. Disabled checks are listed in the JSON output (`"disabled"`:
 `check` + `under`) and in the `--stats` box, so a clean run can't be mistaken for an unchecked
-one.
+one. Cross-file Checks still see files in a disabled folder: a copy of code there is not
+reported, but `duplicate-code` elsewhere still names it.
 
 ## Ignoring files
 

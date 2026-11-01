@@ -12,10 +12,18 @@ _Avoid_: Rule, lint, analyzer
 One declared statement of intended architecture, written by a human in the repository's architecture file: a component must not use another, a component is only used by certain others, or components under a prefix must not form a cycle. A component is a namespace or a type, named by its dotted name. A Finding reports a reference that breaks a Constraint.
 _Avoid_: Rule, policy, layer rule
 
+**Copy**:
+One place where duplicate code appears. Each copy gets its own Finding, which names the other copies.
+_Avoid_: occurrence, instance
+
 **Disabled check**:
 A Check turned off for a directory tree (up to the whole repository), so it emits no Findings for files there unless it is asked for by name.
 Only a human disables a Check, as a lasting policy. An agent never disables one to make its Findings go away.
 _Avoid_: Skipped check, excluded check, ignored check
+
+**Duplicate code**:
+A sequence of statements, at least the threshold size, that appears in another place with the same shape. Identifiers may be renamed consistently; literals must match. Boilerplate such as member lists and runs of similar one-line statements doesn't count. When every copy is a whole method body, it is an identical method instead.
+_Avoid_: clone (in messages), copy-paste
 
 **Finding**:
 One reported problem for an agent to fix. It has a stable ID.

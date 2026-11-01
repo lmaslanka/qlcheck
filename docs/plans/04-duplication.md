@@ -1,10 +1,20 @@
 # Plan 04: duplicate code (clone) detection
 
-Status: Agreed 2026-10-29 · Depends on: none technically; scheduled after 00, 01, 05, 02, 03
+Status: Done 2026-10-31 (agreed 2026-10-29) · Depends on: none technically; scheduled after 00, 01, 05, 02, 03
 
 The prototype and the measurements
 live in `/tmp/claude-1000/-home-lmaslanka-projects-qlcheck/1fadbd8a-84fa-480a-a869-298258cc64bb/scratchpad/probes-duplication/`
 (`proto/Program.cs`, `qlcheck-self-50-4.txt`). Cohesion metrics (LCOM) are out of scope, as the user decided.
+
+## Progress
+
+- **Done** (2026-10-31, branch `duplication`): steps 1-10. Counts are 339 catalog / 331 enabled (the plan's 510/502
+  predate plan 01's cleanup). `identical-method` moved from the Syntax to the new Source set class.
+- **Dogfood:** the 8 predicted groups. 4 are whole method bodies and so `identical-method` (10 Findings: the
+  `InvokeMatch`/`MemberMatch` `Report` methods, four `MetricMatch` rules, two `SymbolPatterns` helpers,
+  `CatalogTests.RepoRoot` against `RepoPaths.Root`); 4 stay `duplicate-code` (8 Findings). A ninth group came from
+  plan 03 and was fixed at once (`Symbols.IsVisibleOutsideAssembly`). Fixing the others is follow-up work.
+- **Timing:** full run +1.3 % (release, median of 5, back to back with main); the two rows alone take 0.8 s.
 
 ## Goal
 
