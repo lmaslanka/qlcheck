@@ -29,6 +29,17 @@ Probe corpus, scorer and throwaway prototype (all outside the repo):
   making an encoded value clean for `sql-injection` too. The probes for these barriers sit on phase 4 rows, so no
   probe changed. Side fix: `short-circuit` reported any `a & b` of two identifiers, flags enums included; it now
   requires bool.
+- **Phase 4 done** (2026-10-31, branch `taint-rows`): all 25 Taint rows but `ssrf` and `ssrf-traversal` (D11) are
+  `Row.Flow` with symbol sinks; no `Row.Taint` is left. Each row was triaged on Jellyfin and bitwarden/server (D12,
+  without restore); see the decisions under D1 for which rows count public parameters. New sink conditions:
+  `Shell`/`NotShell`, `On(type, property)` for a required receiver, `OfType` for a parameter's declared type,
+  `Without` for an excluded overload, and the structural `ArraySize` and `LoopBound`. New sources: ASP.NET request
+  input (step 13), exception detail and archive entries (row-scoped). D2 is built (see D2). The old rows gave 215
+  Findings on the two repositories, nearly all calls that only shared a name; the new rows give 5, of which 2 look
+  real (a quoted file path in an ffprobe command line, a `Regex` from a configurable token) and 3 are deliberate
+  exec wrappers. 55 probes pass; 9 are pending (phase 5: 8, and the out-of-scope `sql_private_helper`). Timing:
+  full run +1.6 %, the Taint and Flow rows alone +0.44 s, after the prefilter learned to bind only bodies a source
+  can reach.
 - **Pulled forward from phase 3:** the edge guards `== const` and readonly-set `Contains` (so `sql_allowlist_column`
   does not regress to a false positive).
 - **Prefilter:** a body is built only when an identifier with a sink's name *binds* to that sink (`SinkFilter`). Names
