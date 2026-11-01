@@ -12,28 +12,8 @@
     "message": "Do not size an allocation from untrusted input."
   },
   {
-    "id": "architecture-component",
-    "message": "An intended architecture component is missing."
-  },
-  {
-    "id": "architecture-interface",
-    "message": "A relationship does not match the intended architecture."
-  },
-  {
-    "id": "architecture-location",
-    "message": "Move this class to the location the architecture requires."
-  },
-  {
-    "id": "architecture-move",
-    "message": "Move this component as the architecture requires."
-  },
-  {
     "id": "architecture-relationship",
     "message": "This relationship does not match the intended architecture."
-  },
-  {
-    "id": "architecture-rename",
-    "message": "Rename this component as the architecture requires."
   },
   {
     "id": "architecture-tangle",

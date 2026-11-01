@@ -9,11 +9,11 @@ namespace Qlcheck.Tests;
 
 public class CatalogTests
 {
-    private const int CatalogCount = 339;
+    private const int CatalogCount = 334;
 
     private const int EnabledCatalogCount = 331;
 
-    private const int UnimplementedCatalogCount = 7;
+    private const int UnimplementedCatalogCount = 2;
 
     private const int HouseEnabledCount = 0;
 
@@ -21,7 +21,7 @@ public class CatalogTests
 
     private const string UnknownId = "nope";
 
-    private const string ArchitectureId = "architecture-relationship";
+    private const string ArchitectureId = "architecture-tangle";
 
     private const string MethodComplexityId = "method-complexity";
 

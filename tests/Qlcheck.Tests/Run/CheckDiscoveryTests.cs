@@ -48,7 +48,7 @@ public class CheckDiscoveryTests
     {
         using var stderr = new StringWriter();
 
-        Assert.False(CheckDiscovery.TrySelect(["architecture-relationship"], [], out _, stderr));
+        Assert.False(CheckDiscovery.TrySelect(["architecture-tangle"], [], out _, stderr));
         Assert.Contains("has no implementation", stderr.ToString(), StringComparison.Ordinal);
     }
 

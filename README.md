@@ -51,7 +51,7 @@ compiler model), not regex guesses, so they catch real bugs and skip the obvious
   `jwt-strong-signature` flags any signing call and tells the agent to *ask the user* whether
   the algorithm is strong enough, rather than silently guessing. Once a human has made that
   call, a dated suppression comment keeps the finding quiet for a year, then it resurfaces.
-- **343 checks, zero config.** Covers naming, style, resource management, exceptions,
+- **338 checks, zero config.** Covers naming, style, resource management, exceptions,
   concurrency, ~20 taint-tracked injection classes (SQL, command, path, LDAP, XPath,
   log, SSRF, zip-slip, and more), and hard-coded secrets in code and configuration files
   out of the box.
@@ -184,7 +184,7 @@ project found for `--coverage`).
 
 ## What it checks
 
-343 checks across these classes:
+338 checks across these classes:
 
 | Class | Checks | What it looks at |
 |---|---|---|
