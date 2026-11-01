@@ -89,7 +89,4 @@ untrusted-session-cookie
 unused-assignment
 unused-local
 unused-parameter
-xml-injection
-xpath-injection
-xslt-injection
 zip-slip

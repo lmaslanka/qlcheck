@@ -1630,18 +1630,18 @@
     "path": "Repo.cs"
   },
   "xml-injection": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            LoadXml(input);\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            LoadXml(\"fixed\");\n        }\n    }\n}\n",
+    "bad": "using System.Xml;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public XmlDocument Build(string name)\n        {\n            var document = new XmlDocument();\n            document.LoadXml($\"<user name=\\\"{name}\\\" />\");\n            return document;\n        }\n    }\n}\n",
+    "good": "using System.Xml;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public XmlDocument Build(string name)\n        {\n            var document = new XmlDocument();\n            var user = document.CreateElement(\"user\");\n            user.SetAttribute(\"name\", name);\n            document.AppendChild(user);\n            return document;\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "xpath-injection": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            SelectNodes(input);\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            SelectNodes(\"fixed\");\n        }\n    }\n}\n",
+    "bad": "using System.Xml;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public XmlNodeList? Find(XmlDocument document, string user)\n        {\n            var expression = \"//user[@name='\" + user + \"']\";\n            return document.SelectNodes(expression);\n        }\n    }\n}\n",
+    "good": "using System.Xml;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public XmlNodeList? Find(XmlDocument document, string user)\n        {\n            if (user != \"admin\" && user != \"guest\")\n            {\n                return null;\n            }\n\n            return document.SelectNodes(\"//user[@name='\" + user + \"']\");\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "xslt-injection": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            Transform(input);\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            Transform(\"fixed\");\n        }\n    }\n}\n",
+    "bad": "using System.Xml.Xsl;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public XslCompiledTransform Load(string stylesheet)\n        {\n            var transform = new XslCompiledTransform();\n            transform.Load(stylesheet);\n            return transform;\n        }\n    }\n}\n",
+    "good": "using System.Xml.Xsl;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public XslCompiledTransform Load(string stylesheet)\n        {\n            var transform = new XslCompiledTransform();\n            transform.Load(\"/etc/app/report.xslt\");\n            return transform;\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "zip-slip": {

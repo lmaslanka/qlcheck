@@ -388,7 +388,6 @@
     "checks": [
       "xpath-injection"
     ],
-    "pending": "phase 4",
     "source": "public class R { public XmlNodeList M(XmlDocument doc, string user) { var xp = \"//user[@name='\" + user + \"']\"; return doc.SelectNodes(xp); } }"
   },
   "env_direct": {

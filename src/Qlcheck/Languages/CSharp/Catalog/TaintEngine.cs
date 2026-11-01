@@ -75,9 +75,27 @@ internal static class TaintEngine
         Row.Handle("ssrf-traversal", CheckClass.Taint, SsrfPatterns.SsrfTraversal),
         Row.Taint("untrusted-environment-variable", CheckClass.Taint, "SetEnvironmentVariable"),
         Row.Taint("untrusted-session-cookie", CheckClass.Taint, "Append"),
-        Row.Taint("xml-injection", CheckClass.Taint, "LoadXml"),
-        Row.Taint("xpath-injection", CheckClass.Taint, "SelectNodes"),
-        Row.Taint("xslt-injection", CheckClass.Taint, "Transform"),
+        Row.Flow("xml-injection", CheckClass.Taint, new TaintSpec(
+            TaintLabel.Untrusted | TaintLabel.PublicParameter,
+            [
+                Sink.Call("System.Xml.XmlDocument", "LoadXml", "xml"),
+                Sink.Call("System.Xml.Linq.XDocument", "Parse", "text"),
+                Sink.Call("System.Xml.Linq.XElement", "Parse", "text"),
+                Sink.Call("System.Xml.XmlWriter", "WriteRaw", "data"),
+            ],
+            "Build the document with `XElement` or `XmlWriter` calls that escape values, instead of parsing text that contains it.")),
+        Row.Flow("xpath-injection", CheckClass.Taint, new TaintSpec(
+            TaintLabel.Untrusted | TaintLabel.PublicParameter,
+            [
+                Sink.Call("System.Xml.XmlNode", "SelectNodes|SelectSingleNode", "xpath"),
+                Sink.Call("System.Xml.XPath.XPathNavigator", "Select|SelectSingleNode|Evaluate|Compile", "xpath"),
+                Sink.Call("System.Xml.XPath.XPathExpression", "Compile", "xpath"),
+            ],
+            "Check the value against an allow-list, or pass it as an XPath variable instead of building the expression from it.")),
+        Row.Flow("xslt-injection", CheckClass.Taint, new TaintSpec(
+            TaintLabel.Untrusted | TaintLabel.PublicParameter,
+            [Sink.Call("System.Xml.Xsl.XslCompiledTransform", "Load", "stylesheetUri")],
+            "Load stylesheets only from a fixed, trusted location.")),
         Row.Taint("zip-slip", CheckClass.Taint, "ExtractToFile"),
     ];
 
