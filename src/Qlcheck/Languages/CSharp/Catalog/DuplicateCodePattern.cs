@@ -2,12 +2,13 @@
 namespace Qlcheck.Languages.CSharp.Catalog;
 
 // duplicate-code: one Finding per copy of a duplicated statement sequence (D7), at the copy, naming
-// the other copies, so --uncommitted, disabling and suppression all work on each copy alone.
+// the other copies, so --uncommitted, disabling and suppression all work on each copy alone. A
+// group of whole member bodies is identical-method's instead (D1).
 internal static class DuplicateCodePattern
 {
     public static void Apply(SourceSetContext ctx, string id)
     {
-        foreach (var group in CloneIndex.Find(ctx.Files))
+        foreach (var group in ctx.Clones.Where(group => !IdenticalMethodPattern.IsIdentical(group)))
         {
             foreach (var copy in group.Copies)
             {

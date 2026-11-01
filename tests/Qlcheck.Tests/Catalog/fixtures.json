@@ -390,8 +390,8 @@
     "path": "Repo.cs"
   },
   "identical-method": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            M();\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        void M()\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "using System;\nusing System.Collections.Generic;\n\nnamespace Sample\n{\n    public class Report\n    {\n        public void Daily(List<string> lines)\n        {\n            var total = 0;\n            foreach (var line in lines)\n            {\n                total += line.Length;\n            }\n\n            Console.WriteLine(\"lines \" + lines.Count);\n            Console.WriteLine(\"characters \" + total);\n            Console.WriteLine(\"average \" + total / Math.Max(1, lines.Count));\n        }\n\n        public void Weekly(List<string> lines)\n        {\n            var total = 0;\n            foreach (var line in lines)\n            {\n                total += line.Length;\n            }\n\n            Console.WriteLine(\"lines \" + lines.Count);\n            Console.WriteLine(\"characters \" + total);\n            Console.WriteLine(\"average \" + total / Math.Max(1, lines.Count));\n        }\n    }\n}\n",
+    "good": "using System;\nusing System.Collections.Generic;\n\nnamespace Sample\n{\n    public class Report\n    {\n        public void Daily(List<string> lines)\n        {\n            var total = 0;\n            foreach (var line in lines)\n            {\n                total += line.Length;\n            }\n\n            Console.WriteLine(\"lines \" + lines.Count);\n            Console.WriteLine(\"characters \" + total);\n            Console.WriteLine(\"average \" + total / Math.Max(1, lines.Count));\n        }\n\n        public void Weekly(List<string> lines) => Daily(lines);\n    }\n}\n",
     "path": "Repo.cs"
   },
   "identical-operands": {

@@ -61,8 +61,6 @@ public class CatalogTests
         "restrict-cors",
         "secure-temp-file",
 
-        // Owned: duplication (plan 04).
-        "identical-method",
     ];
 
     // The two placeholder good fixtures, whitespace collapsed.

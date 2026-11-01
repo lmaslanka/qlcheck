@@ -13,6 +13,12 @@ internal static class SourceSetEngine
             Class = CheckClass.SourceSet,
             Apply = ctx => DuplicateCodePattern.Apply(ctx, "duplicate-code"),
         },
+        new SourceSetRow
+        {
+            Id = "identical-method",
+            Class = CheckClass.SourceSet,
+            Apply = ctx => IdenticalMethodPattern.Apply(ctx, "identical-method"),
+        },
     ];
 
     public static void Apply(SourceSetContext ctx, IReadOnlySet<string> selected)

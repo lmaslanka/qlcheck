@@ -11,6 +11,8 @@ internal sealed class SourceSetContext
 
     private readonly List<Finding> _findings = [];
 
+    private IReadOnlyList<CloneGroup>? _clones;
+
     public SourceSetContext(IEnumerable<SourceSetFile> files, IReadOnlyDictionary<string, string> messages)
     {
         Files = [.. files.OrderBy(file => file.Path, StringComparer.Ordinal)];
@@ -18,6 +20,10 @@ internal sealed class SourceSetContext
     }
 
     public IReadOnlyList<SourceSetFile> Files { get; }
+
+    // The run's duplicated statement sequences, found once and shared by duplicate-code and
+    // identical-method.
+    public IReadOnlyList<CloneGroup> Clones => _clones ??= CloneIndex.Find(Files);
 
     public IReadOnlyList<Finding> Findings => _findings;
 

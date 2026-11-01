@@ -7,7 +7,6 @@ empty-method
 empty-statement
 file-length
 function-length
-identical-method
 interface-method-callable
 no-async-identifier
 no-colliding-interface-inherit

@@ -5,8 +5,6 @@ namespace Qlcheck.Languages.CSharp.Catalog;
 
 internal static class SyntaxEngine
 {
-    private const string MethodPlaceholder = "M";
-
     public static WalkRow[] Rows { get; } =
     [
         Row.Handle("abstract-class-mixed", CheckClass.Syntax, StylePatterns.AbstractMixed),
@@ -46,7 +44,6 @@ internal static class SyntaxEngine
         Row.Handle("identical-branch", CheckClass.Syntax, Patterns.IdenticalBranch),
         Row.Handle("identical-branches", CheckClass.Syntax, Patterns.IdenticalBranch),
         Row.Handle("identical-if-condition", CheckClass.Syntax, StylePatterns.SameIf),
-        Row.Invoke("identical-method", CheckClass.Syntax, MethodPlaceholder),
         Row.Handle("identical-operands", CheckClass.Syntax, Patterns.IdenticalOps),
         Row.Handle("indent-conditional", CheckClass.Syntax, StylePatterns.IndentConditional),
         Row.Handle("indexer-string-or-int", CheckClass.Syntax, StylePatterns.BadIndexer),
