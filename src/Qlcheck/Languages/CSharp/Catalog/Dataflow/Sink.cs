@@ -1,5 +1,6 @@
 // Copyright (c) qlcheck contributors.
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Operations;
 using Qlcheck.Languages.CSharp.Catalog.Queries;
 
 namespace Qlcheck.Languages.CSharp.Catalog.Dataflow;
@@ -22,11 +23,24 @@ internal sealed record Sink(SinkKind Kind, string Type, string Member, string? P
 
     public static Sink Ctor(string type, string parameter) => new(SinkKind.Ctor, type, WellKnownMemberNames.InstanceConstructorName, parameter);
 
-    // Only a sink when the program started is a constant command shell (`sh`, `cmd.exe`, ...): the
-    // `fileName` argument of the same call, or a `FileName` set earlier on the same object.
-    public bool ShellOnly { get; init; }
+    // Whether the program started must be a constant command shell (`sh`, `cmd.exe`, ...), or must
+    // not be: the `fileName` argument of the same call, or a `FileName` set on the same object.
+    public ProgramKind Program { get; init; }
 
-    public Sink Shell() => this with { ShellOnly = true };
+    public Sink Shell() => this with { Program = ProgramKind.Shell };
+
+    public Sink NotShell() => this with { Program = ProgramKind.NotShell };
+
+    // The call's receiver must be this property: `ProcessStartInfo.ArgumentList` for `Add`.
+    public (string Type, string Property)? Receiver { get; init; }
+
+    public Sink On(string type, string property) => this with { Receiver = (type, property) };
+
+    public bool ReceiverMatches(IOperation? instance) =>
+        Receiver is not { } receiver
+        || Unwrap(instance) is IPropertyReferenceOperation reference
+            && reference.Property.Name == receiver.Property
+            && Symbols.Is(reference.Property.ContainingType, receiver.Type);
 
     // An overload with a parameter of this name is not a sink: `Regex(pattern, options,
     // matchTimeout)` bounds the work an untrusted pattern can cause.
@@ -34,13 +48,21 @@ internal sealed record Sink(SinkKind Kind, string Type, string Member, string? P
 
     public Sink Without(string parameter) => this with { Excluded = parameter };
 
+    // The parameter must be declared with exactly this type (qualified metadata name):
+    // `Process.Start(fileName, arguments)` takes a command line as a string and an argument list
+    // as an IEnumerable<string>, and a string is itself an IEnumerable<char>.
+    public string? ParameterType { get; init; }
+
+    public Sink OfType(string type) => this with { ParameterType = type };
+
     // `member` is the called method or constructor, or the set property; `parameter` is the name
     // of the parameter the tainted argument binds to (null for a property set).
     public bool Matches(ISymbol member, string? parameter) =>
         Targets(member)
         && (Kind == SinkKind.Set || ParameterMatches(parameter))
         && member is not ITypeSymbol
-        && !(member is IMethodSymbol method && method.Parameters.Any(item => item.Name == Excluded));
+        && !(member is IMethodSymbol method && method.Parameters.Any(item => item.Name == Excluded))
+        && (ParameterType is null || member is IMethodSymbol typed && typed.Parameters.Any(item => item.Name == parameter && Symbols.QualifiedName(item.Type) == ParameterType));
 
     // Parameter names, like member names, take `|` alternatives: `path|sourceFileName`.
     private bool ParameterMatches(string? parameter) =>
@@ -76,6 +98,9 @@ internal sealed record Sink(SinkKind Kind, string Type, string Member, string? P
     }
 
     public static bool IsWildcard(string pattern) => pattern.EndsWith(Wildcard);
+
+    private static IOperation? Unwrap(IOperation? operation) =>
+        operation is IConversionOperation conversion ? Unwrap(conversion.Operand) : operation;
 
     public static bool NameMatches(string pattern, string name) =>
         pattern.EndsWith(Wildcard) ? name.StartsWith(pattern[..^1], StringComparison.Ordinal) : name == pattern;

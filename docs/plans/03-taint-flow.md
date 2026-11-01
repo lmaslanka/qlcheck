@@ -539,6 +539,9 @@ The user settled these on 2026-10-29.
     `path-injection` and `filesystem-oracle` accept only `Untrusted`, from the entry points below. Each later row is
     decided the same way from its D12 triage: `reflection-injection` is entry points only (its public-parameter Findings
     were helpers that resolve a member name on purpose); the XML rows and `regex-dos` accept both.
+    `connection-string-injection` and `argument-injection` are entry points only (a constructor taking a connection
+    string, or a helper taking an argument list, is the norm); `command-argument-injection` and
+    `untrusted-environment-variable` accept both.
   - ASP.NET entry points: `[From*]` parameters, controller-action parameters, and
     `HttpRequest.Query/Form/Headers/Cookies/RouteValues/Path/Body`.
   - `Console.ReadLine`.

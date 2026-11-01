@@ -1,7 +1,6 @@
 # Fixtures_compile_without_errors: ids whose bad or good fixture does not compile.
 # Shrink-only: fix a fixture, then delete its line. Never add one.
 abstract-class-mixed
-argument-injection
 azure-function-error-handling
 azure-function-logs-failure
 braces-required
@@ -9,8 +8,6 @@ case-length
 catch-only-rethrow
 class-coupling
 collection-self-argument
-command-argument-injection
-connection-string-injection
 constructor-non-virtual
 controller-base
 datetime-kind
@@ -82,7 +79,6 @@ test-signature
 throw-created-exception
 too-many-logs
 type-name-suffix
-untrusted-environment-variable
 untrusted-session-cookie
 unused-assignment
 unused-local

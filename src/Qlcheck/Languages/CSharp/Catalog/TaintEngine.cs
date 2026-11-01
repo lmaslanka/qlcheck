@@ -6,11 +6,29 @@ namespace Qlcheck.Languages.CSharp.Catalog;
 
 internal static class TaintEngine
 {
+    private const string Text = "System.String";
+
+    private const string Sequence = "System.Collections.Generic.IEnumerable`1";
+
     public static WalkRow[] Rows { get; } =
     [
         Row.Handle("allocation-dos", CheckClass.Taint, Patterns.AllocDos),
-        Row.Taint("argument-injection", CheckClass.Taint, "ArgumentList"),
-        Row.Taint("command-argument-injection", CheckClass.Taint, "Arguments"),
+        Row.Flow("argument-injection", CheckClass.Taint, new TaintSpec(
+            TaintLabel.Untrusted,
+            [
+                Sink.Call("System.Collections.ObjectModel.Collection`1", "Add|Insert", "item").On("System.Diagnostics.ProcessStartInfo", "ArgumentList"),
+                Sink.Call("System.Diagnostics.Process", "Start", "arguments").OfType(Sequence).NotShell(),
+                Sink.Ctor("System.Diagnostics.ProcessStartInfo", "arguments").OfType(Sequence).NotShell(),
+            ],
+            "Put `--` before arguments taken from input, or reject values that start with `-`, so they cannot become options.")),
+        Row.Flow("command-argument-injection", CheckClass.Taint, new TaintSpec(
+            TaintLabel.Untrusted | TaintLabel.PublicParameter,
+            [
+                Sink.Call("System.Diagnostics.Process", "Start", "arguments").OfType(Text).NotShell(),
+                Sink.Ctor("System.Diagnostics.ProcessStartInfo", "arguments").OfType(Text).NotShell(),
+                Sink.Set("System.Diagnostics.ProcessStartInfo", "Arguments").NotShell(),
+            ],
+            "Pass each argument through `ProcessStartInfo.ArgumentList` instead of one command-line string.")),
         Row.Flow("command-injection", CheckClass.Taint, new TaintSpec(
             TaintLabel.Untrusted | TaintLabel.PublicParameter,
             [
@@ -22,7 +40,14 @@ internal static class TaintEngine
                 Sink.Set("System.Diagnostics.ProcessStartInfo", "Arguments").Shell(),
             ],
             "Run a fixed program and pass the input through `ProcessStartInfo.ArgumentList`, never through a shell.")),
-        Row.Taint("connection-string-injection", CheckClass.Taint, "ConnectionString"),
+        Row.Flow("connection-string-injection", CheckClass.Taint, new TaintSpec(
+            TaintLabel.Untrusted,
+            [
+                Sink.Set("System.Data.IDbConnection", "ConnectionString"),
+                Sink.Ctor("System.Data.Common.DbConnection", "connectionString"),
+                Sink.Set("System.Data.Common.DbConnectionStringBuilder", "ConnectionString"),
+            ],
+            "Set each part through a `DbConnectionStringBuilder` property, or pick the connection string from configuration by an allow-listed key.")),
         Row.Taint("deserialization-injection", CheckClass.Taint, "Deserialize"),
         Row.Taint("dynamic-code-injection", CheckClass.Taint, "Evaluate"),
         Row.Flow("filesystem-oracle", CheckClass.Taint, new TaintSpec(
@@ -91,7 +116,10 @@ internal static class TaintEngine
             "Pass it as a `DbParameter` instead of building the SQL text from it.")),
         Row.Handle("ssrf", CheckClass.Taint, SsrfPatterns.Ssrf),
         Row.Handle("ssrf-traversal", CheckClass.Taint, SsrfPatterns.SsrfTraversal),
-        Row.Taint("untrusted-environment-variable", CheckClass.Taint, "SetEnvironmentVariable"),
+        Row.Flow("untrusted-environment-variable", CheckClass.Taint, new TaintSpec(
+            TaintLabel.Untrusted | TaintLabel.PublicParameter,
+            [Sink.Call("System.Environment", "SetEnvironmentVariable", "variable|value")],
+            "Set only variables from a fixed list, with values checked against what the program expects.")),
         Row.Taint("untrusted-session-cookie", CheckClass.Taint, "Append"),
         Row.Flow("xml-injection", CheckClass.Taint, new TaintSpec(
             TaintLabel.Untrusted | TaintLabel.PublicParameter,

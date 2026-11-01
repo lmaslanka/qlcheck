@@ -19,11 +19,11 @@ internal sealed class TaintFlow
 
     private readonly Dictionary<(Sink Sink, SyntaxNode Node), SinkHit> _hits = [];
 
-    // Receivers whose FileName was set to a constant shell, and the tainted sets on a receiver
-    // that only count as hits if it turns out to be one. Both ignore control flow.
+    // Receivers whose FileName was set to a constant shell, and the tainted property sets whose
+    // sink depends on whether their receiver turns out to be one. Both ignore control flow.
     private readonly HashSet<object> _shells = [];
 
-    private readonly List<(Sink Sink, SyntaxNode Node, string Target, Taint Taint, object Receiver)> _shellCandidates = [];
+    private readonly List<(Sink Sink, SyntaxNode Node, string Target, Taint Taint, object? Receiver)> _programCandidates = [];
 
     // Flow captures that stand for a local or parameter rather than its value: the compiler lowers
     // `x ??= e` into an assignment through such a capture, which must write to x.
@@ -51,9 +51,12 @@ internal sealed class TaintFlow
             return [];
         }
 
-        foreach (var (sink, node, target, taint, _) in flow._shellCandidates.Where(candidate => flow._shells.Contains(candidate.Receiver)))
+        foreach (var (sink, node, target, taint, receiver) in flow._programCandidates)
         {
-            flow.Record(sink, node, target, taint);
+            if (Expects(sink, receiver is not null && flow._shells.Contains(receiver)))
+            {
+                flow.Record(sink, node, target, taint);
+            }
         }
 
         return [.. flow._hits.Values];
@@ -338,7 +341,7 @@ internal sealed class TaintFlow
             _shells.Add(receiver);
         }
 
-        Check(property.Property, null, taint, assignment.Syntax, shell: false, receiver);
+        Check(property.Property, null, taint, assignment.Syntax, shell: null, receiver: receiver);
     }
 
     // Constructor arguments can be sinks. Object initializers are lowered into separate property
@@ -452,7 +455,7 @@ internal sealed class TaintFlow
         {
             var taint = Eval(argument.Value, state);
             taints.Add(taint);
-            Check(method, argument.Parameter?.Name, taint, invocation.Syntax, shell);
+            Check(method, argument.Parameter?.Name, taint, invocation.Syntax, shell, instance: invocation.Instance);
             if (method.MethodKind == MethodKind.LocalFunction && argument.Parameter is { } parameter)
             {
                 PassToLocalFunction(parameter.OriginalDefinition, taint);
@@ -511,27 +514,36 @@ internal sealed class TaintFlow
     private static void Store(object key, Taint taint, TaintState state) =>
         state.Set(key, key is ILocalSymbol local ? taint.Through(local.Name) : taint);
 
-    // `shell` says whether the call starts a constant shell; for a property set it is not known
-    // yet, so a shell-only sink waits on the receiver instead.
-    private void Check(ISymbol member, string? parameter, Taint taint, SyntaxNode at, bool shell, object? receiver = null)
+    // `shell` says whether the call starts a constant shell. For a property set it is not known
+    // yet (null), so a sink that depends on the program waits on the receiver instead. `instance`
+    // is the call's receiver, for sinks that name one.
+    private void Check(ISymbol member, string? parameter, Taint taint, SyntaxNode at, bool? shell, object? receiver = null, IOperation? instance = null)
     {
         if (taint.IsNone)
         {
             return;
         }
 
-        var matching = _sinks.Where(sink => sink.Matches(member, parameter)).ToList();
         var target = Target(member, parameter);
-        foreach (var sink in matching.Where(sink => !sink.ShellOnly || shell))
+        var matching = _sinks.Where(sink => sink.Matches(member, parameter) && sink.ReceiverMatches(instance)).ToList();
+        foreach (var sink in matching.Where(sink => sink.Program == ProgramKind.Any || shell is { } known && Expects(sink, known)))
         {
             Record(sink, at, target, taint);
         }
 
-        if (receiver is not null && !shell)
+        if (shell is null)
         {
-            _shellCandidates.AddRange(matching.Where(sink => sink.ShellOnly).Select(sink => (sink, at, target, taint, receiver)));
+            _programCandidates.AddRange(matching.Where(sink => sink.Program != ProgramKind.Any).Select(sink => (sink, at, target, taint, receiver)));
         }
     }
+
+    private static bool Expects(Sink sink, bool shell) =>
+        sink.Program switch
+        {
+            ProgramKind.Shell => shell,
+            ProgramKind.NotShell => !shell,
+            _ => true,
+        };
 
     private static string Target(ISymbol member, string? parameter) =>
         member switch
