@@ -83,12 +83,13 @@ internal static class TaintModel
         "System.Threading.CancellationToken",
     };
 
-    // The entry state: every parameter of a method declared public, except those of a safe type.
-    // A numeric parameter is Numeric, which only the allocation and loop-bound rows accept.
+    // The entry state: every parameter of a method visible outside the assembly (it and every
+    // containing type public or protected), except those of a safe type. A numeric parameter is
+    // Numeric, which only the allocation and loop-bound rows accept.
     public static TaintState Seed(IMethodSymbol? owner)
     {
         var state = new TaintState();
-        if (owner is null || owner.DeclaredAccessibility != Accessibility.Public)
+        if (owner is null || !IsVisibleOutside(owner))
         {
             return state;
         }
@@ -237,6 +238,19 @@ internal static class TaintModel
         }
 
         return IsSafe(type) ? TaintLabel.None : TaintLabel.Untrusted;
+    }
+
+    private static bool IsVisibleOutside(ISymbol member)
+    {
+        for (ISymbol? symbol = member; symbol is not null and not INamespaceSymbol; symbol = symbol.ContainingSymbol)
+        {
+            if (symbol.DeclaredAccessibility is not (Accessibility.Public or Accessibility.Protected or Accessibility.ProtectedOrInternal))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static ITypeSymbol? Underlying(ITypeSymbol? type) =>

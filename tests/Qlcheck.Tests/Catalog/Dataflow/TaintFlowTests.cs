@@ -229,6 +229,16 @@ public class TaintFlowTests
         Assert.Equal(hits, Run($"{AspNetStubs} public class R : Microsoft.AspNetCore.Mvc.ControllerBase {{ public object Go(string returnUrl) {{ {body} }} }}").Count);
     }
 
+    [Theory]
+    [InlineData("public class R { protected void M(DbCommand c, string userId) { c.CommandText = userId; } }", 1)]
+    [InlineData("public class Outer { public class R { public void M(DbCommand c, string userId) { c.CommandText = userId; } } }", 1)]
+    [InlineData("class R { public void M(DbCommand c, string userId) { c.CommandText = userId; } }", 0)]
+    [InlineData("public class Outer { class R { public void M(DbCommand c, string userId) { c.CommandText = userId; } } }", 0)]
+    public void Only_methods_visible_outside_the_assembly_take_untrusted_parameters(string source, int hits)
+    {
+        Assert.Equal(hits, Run(source).Count);
+    }
+
     [Fact]
     public void A_numeric_parameter_carries_only_the_numeric_label_even_as_text()
     {

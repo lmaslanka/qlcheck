@@ -234,7 +234,7 @@ ref pack in project mode, so that most web sinks resolve properly, is owned by P
 Sources are **seeded into the entry state**, not checked at each reference. The prototype showed why: if a parameter
 is re-checked as a source wherever it is used, a guard can never clean it. Proposed source set (D1):
 
-- Parameters of methods with the `public` modifier (today's rule, kept so existing behaviour and fixtures carry over).
+- Parameters of methods visible outside the assembly (the method and every containing type public or protected; see D1).
   Safe types get **no** label: numeric types, bool, enums, `Guid`, `DateTime*`, `TimeSpan`,
   `CancellationToken`, and `Nullable<>` of those. The exception is that numeric parameters get the `Numeric` label,
   which only `allocation-dos` and `loop-bound-injection` accept.
@@ -528,7 +528,9 @@ phases 0–1, in about 3 days. The flow-row fixes in phase 5 are independent and
 The user settled these on 2026-10-29.
 
 - **D1 Sources: (b).** Untrusted means:
-  - parameters of methods with the `public` modifier. Safe types (numbers, bool, enums, `Guid`, dates, `TimeSpan`,
+  - parameters of methods visible outside the assembly: the method and every containing type are public or protected
+    (revised 2026-10-31 from "the `public` modifier", which made public methods of internal classes sources; the same
+    test as `validate-public-arguments`). Safe types (numbers, bool, enums, `Guid`, dates, `TimeSpan`,
     `CancellationToken`) carry no label. Numeric parameters carry `Numeric`, which only the allocation and
     loop-bound rows accept.
   - ASP.NET entry points: `[From*]` parameters, controller-action parameters, and
