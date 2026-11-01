@@ -34,6 +34,8 @@ internal sealed class TaintState
             _ => null,
         };
 
+    public bool IsEmpty => _taints.Count == 0;
+
     public Taint Get(object key) => _taints.TryGetValue(key, out var taint) ? taint : Taint.None;
 
     public void Set(object key, Taint taint)

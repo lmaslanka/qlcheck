@@ -155,6 +155,10 @@ internal static class TaintModel
         return state;
     }
 
+    // The method's parameters include an entry point: it is an action, or binds one from the request.
+    public static bool HasEntryPoint(IMethodSymbol method) =>
+        IsAction(method) || method.Parameters.Any(parameter => BindingOf(parameter) is not null);
+
     // A public instance method of a controller (a class deriving from ControllerBase or marked
     // [ApiController]) that is not [NonAction]. Names are compared simply, so an unrestored project
     // whose ASP.NET types do not resolve still counts.

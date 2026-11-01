@@ -307,7 +307,7 @@ public class TaintFlowTests
     [InlineData("var i = 0; do { i++; } while (i <= n + 1);", "i <= n + 1")]
     public void Array_sizes_and_loop_bounds_are_structural_sinks(string body, string at)
     {
-        var hit = Assert.Single(Run($"public class R {{ public void M(int n) {{ {body} }} }}"));
+        var hit = Assert.Single(Run($"public class R {{ public void M() {{ var n = int.Parse(Console.ReadLine() ?? \"0\"); {body} }} }}"));
 
         Assert.Equal(at, hit.Node.ToString());
         Assert.Equal(TaintLabel.Numeric, hit.Labels);
@@ -319,7 +319,13 @@ public class TaintFlowTests
     [InlineData("for (var i = 0; i < 10 && i != n; i++) { }")]
     public void Constant_sizes_and_bounds_are_not_sinks(string body)
     {
-        Assert.Empty(Run($"public class R {{ public void M(int n) {{ {body} }} }}"));
+        Assert.Empty(Run($"public class R {{ public void M() {{ var n = int.Parse(Console.ReadLine() ?? \"0\"); {body} }} }}"));
+    }
+
+    [Fact]
+    public void A_body_with_a_loop_but_no_entry_point_is_not_built_for_structural_sinks()
+    {
+        Assert.Empty(Run("public class R { public void M(int n) { for (var i = 0; i < n; i++) { } var buffer = new byte[n]; } }"));
     }
 
     [Fact]
@@ -457,6 +463,6 @@ public class TaintFlowTests
         var errors = model.GetDiagnostics().Where(diagnostic => diagnostic.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error);
         Assert.Empty(errors);
         var filter = new SinkFilter(Sinks);
-        return new BodyGraphs(tree, model).Containing(token => filter.Reaches(model, token)).SelectMany(body => TaintFlow.Run(body, Sinks)).ToList();
+        return new BodyGraphs(tree, model).Where((body, tokens) => filter.Relevant(model, body, tokens)).SelectMany(body => TaintFlow.Run(body, Sinks)).ToList();
     }
 }

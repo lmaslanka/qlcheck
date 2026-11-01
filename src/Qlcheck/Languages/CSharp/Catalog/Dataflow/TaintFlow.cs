@@ -220,6 +220,7 @@ internal sealed class TaintFlow
             IPropertyReferenceOperation property => Read(property, state),
             IArrayInitializerOperation initializer => Elements(initializer, state),
             IInvocationOperation invocation => Invoke(invocation, state),
+            IInvalidOperation invalid => Unresolved(invalid, state),
             IAwaitOperation awaited => TaintModel.Retype(awaited.Type, Eval(awaited.Operation, state)),
             _ => Children(operation, state),
         };
@@ -331,6 +332,9 @@ internal sealed class TaintFlow
                 break;
             case IPropertyReferenceOperation property:
                 SetProperty(property, assignment, taint, state);
+                break;
+            case IInvalidOperation { Syntax: MemberAccessExpressionSyntax access } invalid:
+                SetUnresolved(invalid, access, assignment, taint, state);
                 break;
             default:
                 Eval(assignment.Target, state);
@@ -570,6 +574,59 @@ internal sealed class TaintFlow
             ProgramKind.NotShell => !shell,
             _ => true,
         };
+
+    // D2: a property set on a receiver whose type does not resolve.
+    private void SetUnresolved(IInvalidOperation invalid, MemberAccessExpressionSyntax access, IAssignmentOperation assignment, Taint taint, TaintState state)
+    {
+        var receiver = invalid.ChildOperations.FirstOrDefault();
+        if (receiver is not null)
+        {
+            Eval(receiver, state);
+        }
+
+        CheckUnresolved(SinkKind.Set, access.Name.Identifier.ValueText, receiver?.Type?.Name, taint, assignment.Syntax);
+    }
+
+    // D2: a call or creation that does not bind. Its children are evaluated as usual; then, by
+    // name, the first argument is checked against the sinks of an unresolved type.
+    private Taint Unresolved(IInvalidOperation invalid, TaintState state)
+    {
+        var taints = invalid.ChildOperations.ToDictionary(child => child.Syntax, child => Eval(child, state));
+        var (kind, member, type, arguments) = invalid.Syntax switch
+        {
+            BaseObjectCreationExpressionSyntax creation => (SinkKind.Ctor, string.Empty, invalid.Type?.Name, creation.ArgumentList),
+            InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access } call =>
+                (SinkKind.Call, access.Name.Identifier.ValueText, ReceiverTypeName(invalid, access), call.ArgumentList),
+            _ => (SinkKind.Call, string.Empty, null, null),
+        };
+        if (arguments?.Arguments.FirstOrDefault()?.Expression is { } first && taints.TryGetValue(first, out var taint))
+        {
+            CheckUnresolved(kind, member, type, taint, invalid.Syntax);
+        }
+
+        return Taint.None;
+    }
+
+    // The receiver's type name, or for a static call on a type that does not resolve, the name
+    // written before the dot.
+    private static string? ReceiverTypeName(IInvalidOperation invalid, MemberAccessExpressionSyntax access)
+    {
+        var receiver = invalid.ChildOperations.FirstOrDefault(child => child.Syntax == access)?.ChildOperations.FirstOrDefault();
+        return receiver?.Type?.Name is { Length: > 0 } name ? name : (access.Expression as SimpleNameSyntax)?.Identifier.ValueText;
+    }
+
+    private void CheckUnresolved(SinkKind kind, string member, string? type, Taint taint, SyntaxNode at)
+    {
+        if (taint.IsNone)
+        {
+            return;
+        }
+
+        foreach (var sink in _sinks.Where(sink => sink.MatchesUnresolved(kind, member, type)))
+        {
+            Record(sink, at, kind == SinkKind.Ctor ? $"`new {type}(...)`" : $"`{type}.{member}`", taint);
+        }
+    }
 
     private void CheckStructural(SinkKind kind, Taint taint, SyntaxNode at, string target)
     {

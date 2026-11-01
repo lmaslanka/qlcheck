@@ -7,7 +7,7 @@ internal static class TaintFlowMatch
 {
     public static void Report(WalkContext ctx, string id, TaintSpec spec)
     {
-        var hits = ctx.Dataflow.Hits(TaintEngine.FlowSinks)
+        var hits = ctx.Dataflow.Hits(ctx.Dataflow.Sinks)
             .Where(hit => (hit.Labels & spec.Accepts) != TaintLabel.None && spec.Sinks.Contains(hit.Sink))
             .Where(hit => spec.PublicParameters || !hit.Source.PublicParameter)
             .DistinctBy(hit => hit.Node);

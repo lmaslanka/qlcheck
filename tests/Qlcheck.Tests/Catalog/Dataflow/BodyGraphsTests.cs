@@ -75,6 +75,6 @@ public class BodyGraphsTests
     {
         var tree = CSharpTrees.Parse(new SourceFile("Repo.cs", source));
         var model = CSharpCompilations.Create("graphs", [tree]).GetSemanticModel(tree);
-        return new BodyGraphs(tree, model).Containing(token => names.Contains(token.ValueText)).ToList();
+        return new BodyGraphs(tree, model).Where((_, tokens) => tokens.Any(token => names.Contains(token.ValueText))).ToList();
     }
 }

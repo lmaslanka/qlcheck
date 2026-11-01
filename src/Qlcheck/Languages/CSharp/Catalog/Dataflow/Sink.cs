@@ -61,6 +61,22 @@ internal sealed record Sink(SinkKind Kind, string Type, string Member, string? P
 
     public Sink OfType(string type) => this with { ParameterType = type };
 
+    // D2: when the receiver's type does not resolve (an unrestored package), the sink matches by
+    // member name and by the type's name ending in this: by default the sink type's core name
+    // (`Command` for IDbCommand, `Logger` for LoggerExtensions); Unresolved overrides it for an
+    // extension class whose receiver is another type (Dapper's SqlMapper extends `...Connection`).
+    public string? UnresolvedReceiver { get; init; }
+
+    public Sink Unresolved(string receiverSuffix) => this with { UnresolvedReceiver = receiverSuffix };
+
+    public string UnresolvedSuffix => UnresolvedReceiver ?? CoreTypeName();
+
+    public bool MatchesUnresolved(SinkKind kind, string member, string? typeName) =>
+        kind == Kind
+        && typeName is not null
+        && typeName.EndsWith(UnresolvedSuffix, StringComparison.Ordinal)
+        && (kind == SinkKind.Ctor || NamePatterns().Any(pattern => NameMatches(pattern, member)));
+
     // `member` is the called method or constructor, or the set property; `parameter` is the name
     // of the parameter the tainted argument binds to (null for a property set).
     public bool Matches(ISymbol member, string? parameter) =>
@@ -100,6 +116,18 @@ internal sealed record Sink(SinkKind Kind, string Type, string Member, string? P
             SinkKind.Call or SinkKind.Set => Member.Split(Alternative),
             _ => [],
         };
+
+    // IDbCommand -> Command, DbConnection -> Connection, LoggerExtensions -> Logger.
+    private string CoreTypeName()
+    {
+        const string Interface = "I";
+        const string Database = "Db";
+        const string Extensions = "Extensions";
+        var name = SimpleTypeName();
+        name = name.Length > 1 && name.StartsWith(Interface, StringComparison.Ordinal) && char.IsUpper(name[1]) ? name[1..] : name;
+        name = name.StartsWith(Database, StringComparison.Ordinal) ? name[Database.Length..] : name;
+        return name.EndsWith(Extensions, StringComparison.Ordinal) ? name[..^Extensions.Length] : name;
+    }
 
     // `System.Collections.Generic.List`1` is written `List`, `Outer+Inner` is written `Inner`.
     private string SimpleTypeName()

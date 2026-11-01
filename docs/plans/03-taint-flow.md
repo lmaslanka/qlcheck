@@ -556,7 +556,10 @@ The user settled these on 2026-10-29.
 
   Environment variables, files, streams, DB reads and `Main` args are not sources.
 - **D2 Unresolved sinks: (b).** Only when a call does not bind, match it by the row's member name plus the error
-  type's simple name.
+  type's simple name. As built: the unresolved type's name must end in the sink type's core name (`Command` for
+  `IDbCommand`, `Connection` for `DbConnection`, `Logger` for `LoggerExtensions`), or in a suffix the sink names for
+  an extension class (Dapper's `...Connection`, EF Core's `...Set` and `...Facade`), and only the first argument
+  counts, since parameter names are unknown.
 - **D3 ASP.NET reference pack: moved to Plan 00** (`docs/plans/00-compilation-fidelity.md`, ADR 0011). This plan
   depends on it.
 - **D4 Sink table: accepted.** Appendix A is the starting table. `Path.Combine` is a propagator. `Exists` belongs to

@@ -1,4 +1,5 @@
 // Copyright (c) qlcheck contributors.
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis.CSharp;
 using Qlcheck.Languages.CSharp.Catalog.Dataflow;
 
@@ -208,9 +209,9 @@ internal static class TaintEngine
                 Sink.Set("System.Data.IDbCommand", "CommandText"),
                 Sink.Ctor("System.Data.Common.DbCommand", "cmdText"),
                 Sink.Ctor("System.Data.Common.DbDataAdapter", "selectCommandText"),
-                Sink.Call("Dapper.SqlMapper", "Query*|Execute*", "sql"),
-                Sink.Call("Microsoft.EntityFrameworkCore.RelationalQueryableExtensions", "FromSqlRaw", "sql"),
-                Sink.Call("Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions", "ExecuteSqlRaw*", "sql"),
+                Sink.Call("Dapper.SqlMapper", "Query*|Execute*", "sql").Unresolved("Connection"),
+                Sink.Call("Microsoft.EntityFrameworkCore.RelationalQueryableExtensions", "FromSqlRaw", "sql").Unresolved("Set"),
+                Sink.Call("Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions", "ExecuteSqlRaw*", "sql").Unresolved("Facade"),
             ],
             "Pass it as a `DbParameter` instead of building the SQL text from it.")
         {
@@ -273,8 +274,17 @@ internal static class TaintEngine
     public static IReadOnlyList<Sink> FlowSinks { get; } =
         [.. Rows.Select(row => row.Taint).OfType<TaintSpec>().SelectMany(spec => spec.Sinks).Distinct()];
 
+    private static readonly ConditionalWeakTable<IReadOnlySet<string>, IReadOnlyList<TaintSpec>> SelectedSpecs = new();
+
     public static void Apply(WalkContext ctx, IReadOnlySet<string> selected)
     {
+        var specs = SelectedSpecs.GetValue(selected, ids => [.. Rows.Where(row => ids.Contains(row.Id)).Select(row => row.Taint).OfType<TaintSpec>()]);
+        if (specs.Count > 0)
+        {
+            ctx.Dataflow.Sinks = [.. specs.SelectMany(spec => spec.Sinks).Distinct()];
+            ctx.Dataflow.PublicParameters = specs.Any(spec => spec.PublicParameters);
+        }
+
         foreach (var row in Rows)
         {
             if (selected.Contains(row.Id))

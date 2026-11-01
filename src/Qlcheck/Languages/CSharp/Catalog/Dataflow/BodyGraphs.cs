@@ -15,12 +15,13 @@ internal sealed class BodyGraphs(SyntaxTree tree, SemanticModel model)
 
     private readonly Lazy<IReadOnlyList<SyntaxNode>> _bodies = new(() => Declarations(tree.GetRoot()));
 
-    // Graphs of the bodies with at least one token the caller finds relevant.
-    public IEnumerable<BodyGraph> Containing(Func<SyntaxToken, bool> relevant)
+    // Graphs of the bodies the caller finds relevant, judged from the declaration and the tokens of
+    // its executable part.
+    public IEnumerable<BodyGraph> Where(BodyFilter relevant)
     {
         foreach (var body in _bodies.Value)
         {
-            if (Executable(body).Any(relevant) && Graph(body) is { } graph)
+            if (relevant(body, [.. Executable(body)]) && Graph(body) is { } graph)
             {
                 yield return graph;
             }
