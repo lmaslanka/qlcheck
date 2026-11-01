@@ -12,10 +12,6 @@ internal sealed class CoverageCheck
 
     public const string NoProductMessage = "No product source to cover.";
 
-    private const string GeneratedSuffix = ".g.cs";
-
-    private const string DesignerSuffix = ".Designer.cs";
-
     public CoverageAnalysis Analyze(IReadOnlyList<SourceScan.LoadedSource> files)
     {
         var product = ProductFiles(files);
@@ -37,7 +33,7 @@ internal sealed class CoverageCheck
         var product = new List<SourceScan.LoadedSource>();
         foreach (var file in files)
         {
-            if (IsGenerated(file.File.Path))
+            if (GeneratedFiles.IsGenerated(file.File.Path, file.File.Text))
             {
                 continue;
             }
@@ -63,8 +59,4 @@ internal sealed class CoverageCheck
 
         return product;
     }
-
-    private static bool IsGenerated(string path) =>
-        path.EndsWith(GeneratedSuffix, StringComparison.OrdinalIgnoreCase) ||
-        path.EndsWith(DesignerSuffix, StringComparison.OrdinalIgnoreCase);
 }
