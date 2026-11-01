@@ -102,10 +102,10 @@ internal static class StylePatterns
         Report(ctx, id, SyntaxKind.ForStatement, ForAtMostOne);
 
     public static void ForNoCounter(WalkContext ctx, string id) =>
-        Report(ctx, id, SyntaxKind.ForStatement, ForSkipsCounter);
+        Report(ctx, id, SyntaxKind.ForStatement, node => ForSkipsCounter(ctx, node));
 
     public static void ForBoundChanges(WalkContext ctx, string id) =>
-        Report(ctx, id, SyntaxKind.ForStatement, ForAssignsBound);
+        Report(ctx, id, SyntaxKind.ForStatement, node => ForAssignsBound(ctx, node));
 
     public static void PreferWhile(WalkContext ctx, string id) =>
         Report(ctx, id, SyntaxKind.ForStatement, EmptyForClauses);
@@ -472,26 +472,49 @@ internal static class StylePatterns
         && binary.Right is LiteralExpressionSyntax right
         && right.Token.ValueText == ZeroText;
 
-    private static bool ForSkipsCounter(SyntaxNode node)
+    // No incrementor writes the loop's declared counter (by the compiler's data flow, so `i += 2`
+    // and `Step(ref i)` count, and `j = i + 1` does not).
+    private static bool ForSkipsCounter(WalkContext ctx, SyntaxNode node)
     {
         if (node is not ForStatementSyntax statement || statement.Declaration is null || statement.Incrementors.Count == 0)
         {
             return false;
         }
 
-        var counter = statement.Declaration.Variables[0].Identifier.Text;
-        return !statement.Incrementors[0].ToString().Contains(counter, StringComparison.Ordinal);
+        var counter = ctx.Model.GetDeclaredSymbol(statement.Declaration.Variables[0]);
+        return counter is not null && !statement.Incrementors.Any(incrementor => WritesTo(ctx, incrementor, counter));
     }
 
-    private static bool ForAssignsBound(SyntaxNode node)
+    // The body writes the variable the condition compares against: `n = 3`, `n++` or `n += 1`,
+    // not text that merely contains `n =`.
+    private static bool ForAssignsBound(WalkContext ctx, SyntaxNode node)
     {
         if (node is not ForStatementSyntax statement || statement.Condition is not BinaryExpressionSyntax binary)
         {
             return false;
         }
 
-        var bound = Names.Simple(binary.Right);
-        return bound.Length > 0 && statement.Statement.ToString().Contains($"{bound} =", StringComparison.Ordinal);
+        return ctx.Model.GetSymbolInfo(binary.Right).Symbol is ILocalSymbol or IParameterSymbol or IFieldSymbol
+            && WritesTo(ctx, statement.Statement, ctx.Model.GetSymbolInfo(binary.Right).Symbol!);
+    }
+
+    // Data-flow analysis tracks locals and parameters; a field is written by an assignment or an
+    // increment whose target binds to it.
+    private static bool WritesTo(WalkContext ctx, SyntaxNode code, ISymbol variable)
+    {
+        if (variable is not IFieldSymbol)
+        {
+            return ctx.Model.AnalyzeDataFlow(code) is { Succeeded: true } flow && flow.WrittenInside.Contains(variable, SymbolEqualityComparer.Default);
+        }
+
+        var targets = code.DescendantNodesAndSelf().Select(node => node switch
+        {
+            AssignmentExpressionSyntax assignment => assignment.Left,
+            PostfixUnaryExpressionSyntax postfix => postfix.Operand,
+            PrefixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.PreIncrementExpression or (int)SyntaxKind.PreDecrementExpression } prefix => prefix.Operand,
+            _ => null,
+        });
+        return targets.Any(target => target is not null && SymbolEqualityComparer.Default.Equals(ctx.Model.GetSymbolInfo(target).Symbol, variable));
     }
 
     private static bool EmptyForClauses(SyntaxNode node) =>

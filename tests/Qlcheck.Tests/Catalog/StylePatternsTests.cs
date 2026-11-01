@@ -94,6 +94,34 @@ public class StylePatternsTests
         Assert.Empty(ctx.Findings);
     }
 
+    [Theory]
+    [InlineData("for (var i = 0; i < n; j++) { }", 1)]
+    [InlineData("for (var i = 0; i < n; i++) { }", 0)]
+    [InlineData("for (var i = 0; i < n; i += 2) { }", 0)]
+    [InlineData("for (var i = 0; i < n; Step(ref i)) { }", 0)]
+    [InlineData("for (var i = 0; i < n; j = i + 1) { }", 1)]
+    public void ForNoCounter_reports_an_incrementor_that_does_not_write_the_counter(string loop, int findings)
+    {
+        var ctx = MatchFixtures.Context($"class C {{ static void Step(ref int x) => x++; void M(int n) {{ var j = 0; {loop} }} }}");
+        StylePatterns.ForNoCounter(ctx, MatchFixtures.Id);
+        Assert.Equal(findings, ctx.Findings.Count);
+    }
+
+    [Theory]
+    [InlineData("for (var i = 0; i < n; i++) { n = 3; }", 1)]
+    [InlineData("for (var i = 0; i < n; i++) { n++; }", 1)]
+    [InlineData("for (var i = 0; i < n; i++) { n += 1; }", 1)]
+    [InlineData("for (var i = 0; i < n; i++) { var s = \"n = 1\"; }", 0)]
+    [InlineData("for (var i = 0; i < n; i++) { var m = n; }", 0)]
+    [InlineData("for (var i = 0; i < _count; i++) { _count--; }", 1)]
+    [InlineData("for (var i = 0; i < _count; i++) { var m = _count; }", 0)]
+    public void ForBoundChanges_reports_a_body_that_writes_the_bound(string loop, int findings)
+    {
+        var ctx = MatchFixtures.Context($"class C {{ int _count = 3; void M(int n) {{ {loop} }} }}");
+        StylePatterns.ForBoundChanges(ctx, MatchFixtures.Id);
+        Assert.Equal(findings, ctx.Findings.Count);
+    }
+
     [Fact]
     public void ForNoCounter_ignores_for_loop_without_a_declaration()
     {
