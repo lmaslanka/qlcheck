@@ -37,6 +37,18 @@ _Avoid_: non-null return, safe result
 A Finding from the compiler's own nullable-reference warnings (`null-dereference`, `nullable-argument`, `nullable-return`, `nullable-assignment`, `non-nullable-uninitialized`). Reported only where the compiler would warn and the file has no compile errors.
 _Avoid_: null warning, nullability issue
 
+**Sink**:
+A place where untrusted data does harm: an argument, property or constructor parameter of a specific API (`DbCommand.CommandText`, `Process.Start`'s file name), or a shape such as an array's size. Each taint Check watches its own sinks.
+_Avoid_: target, dangerous call
+
+**Source**:
+Where untrusted data enters a method: request input, console input, and, for the Checks that count them, the parameters of a method other assemblies can call. A value is tainted when it comes from a source and has not passed a barrier.
+_Avoid_: input, origin
+
+**Barrier**:
+Code that makes untrusted data safe for a sink: a sanitizer that changes the value (`int.Parse`, `Path.GetFileName`, an encoder) or a guard that proves something about it on one branch (an allow-list check, `Url.IsLocalUrl`). A user's own validation method is not a barrier.
+_Avoid_: sanitization, validation, filter
+
 **String concatenation**:
 Joining strings with `+` or `string.Concat`. Use interpolation instead.
 

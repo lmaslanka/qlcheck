@@ -1,6 +1,6 @@
 # Plan 03: real intra-procedural taint and control-flow analysis
 
-Status: Agreed 2026-10-29 · Depends on: 00 (compilation fidelity), and lands after 01, 05 and 02
+Status: Done 2026-10-31 (agreed 2026-10-29) · Depends on: 00 (compilation fidelity), and lands after 01, 05 and 02
 
 Probe corpus, scorer and throwaway prototype (all outside the repo):
 `/tmp/claude-1000/-home-lmaslanka-projects-qlcheck/1fadbd8a-84fa-480a-a869-298258cc64bb/scratchpad/probes-taint/`
@@ -40,6 +40,14 @@ Probe corpus, scorer and throwaway prototype (all outside the repo):
   exec wrappers. 55 probes pass; 9 are pending (phase 5: 8, and the out-of-scope `sql_private_helper`). Timing:
   full run +1.6 %, the Taint and Flow rows alone +0.44 s, after the prefilter learned to bind only bodies a source
   can reach.
+- **Phase 5 done** (2026-10-31, branch `flow-rows`): `Reach` puts `reachable-branch` and `no-infinite-loop` on
+  `AnalyzeControlFlow` (D9 applied; files with compile errors and literals inside patterns are skipped after the D12
+  triage), and `LockFlow` puts the three lock rows on a held-lock analysis with finally regions modelled (D10). A
+  semaphore released in another method is a throttle, not a `release-lock-same-method` Finding (bitwarden's
+  `EventRepository`). The optional data-flow fix for `invariant-loop-bound` and `loop-must-change-counter` landed
+  too. Every probe passes except the out-of-scope `sql_private_helper`.
+- **Phase 6 done:** `TaintMatch`, `Row.Taint` and their tests are gone; README, `CONTEXT.md` (Source, Sink, Barrier)
+  and ADR 0013 are written; ADR 0001 is marked superseded.
 - **Pulled forward from phase 3:** the edge guards `== const` and readonly-set `Contains` (so `sql_allowlist_column`
   does not regress to a false positive).
 - **Prefilter:** a body is built only when an identifier with a sink's name *binds* to that sink (`SinkFilter`). Names

@@ -110,14 +110,6 @@ internal static class Row
             Apply = ctx => MetricMatch.Report(ctx, id, metric),
         };
 
-    public static WalkRow Taint(string id, CheckClass group, params string[] sinks) =>
-        new()
-        {
-            Id = id,
-            Class = group,
-            Apply = ctx => TaintMatch.Report(ctx, id, sinks),
-        };
-
     public static WalkRow Flow(string id, CheckClass group, TaintSpec spec) =>
         new()
         {

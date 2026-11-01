@@ -42,10 +42,11 @@ compiler model), not regex guesses, so they catch real bugs and skip the obvious
   (`{check}:{file}:{line}:{column}`), a plain-language fix instruction, and sometimes a
   drop-in `replacement`. No severity levels to argue about, no suppressing-by-config-file
   rituals — just "here's what's wrong and here's one way to fix it."
-- **Semantic, not textual.** `sql-injection` and `command-injection` follow untrusted data
-  through each method's control flow (locals, reassignment, concatenation, interpolation) into
-  sinks resolved by symbol: `DbCommand.CommandText` fires, a method that merely happens to be
-  named `Execute` or `Start` does not. The Finding names the source and the path it took.
+- **Semantic, not textual.** Taint Checks follow untrusted data through each method's control
+  flow (locals, reassignment, concatenation, collections, lambdas) into sinks resolved by symbol:
+  `DbCommand.CommandText` fires, a method that merely happens to be named `Execute` or `Start`
+  does not. The Finding names the source and the path it took. Flow Checks ask the compiler's own
+  control-flow analysis whether a branch can run, a loop can end, or a lock is released.
 - **Knows what it doesn't know.** Some findings genuinely need a human judgment call —
   `jwt-strong-signature` flags any signing call and tells the agent to *ask the user* whether
   the algorithm is strong enough, rather than silently guessing. Once a human has made that
@@ -189,15 +190,18 @@ project found for `--coverage`).
 |---|---|---|
 | Syntax | 170 | Style, naming, structure — pure syntax tree shape |
 | Symbol | 102 | Anything needing type/symbol info — accessibility, overloads, member shape |
-| Taint | 27 | Dataflow from an untrusted source (a public parameter, `ReadLine`, etc.) to a sink |
+| Taint | 27 | Dataflow within each method, over its control-flow graph, from an untrusted source (request input, console input, and for some Checks a public method's parameter) to a sink resolved by symbol |
 | Metric | 13 | Size/complexity thresholds (method length, nesting, parameter count) |
-| Flow | 11 | Control-flow shape (unreachable code, always-true conditions) |
+| Flow | 11 | Control flow from the compiler's analysis (unreachable branches, loops that never end, locks not released on every path) |
 | Compilation | 7 | Whole-compilation facts: unused usings, literals shared across files, and the compiler's nullable warnings (reported only where `dotnet build` would warn and the file has no compile errors) |
 | Config | 4 | Hard-coded secrets in `appsettings*.json`, `*.config`, YAML, and git-tracked `.env*` files |
 | *(opt-in)* | 1 | `coverage` — test coverage gaps, via your own test run |
 
-A sample of the taint-tracked injection checks — each requires untrusted data to actually
-reach a real sink of that type, not just a suspicious method name:
+A sample of the taint-tracked injection checks. Each follows untrusted data through locals,
+concatenation, `StringBuilder`, collections, `await`, lambdas and local functions to a real sink of
+that type, stops at sanitizers and guards (`int.Parse`, `Path.GetFileName`, an allow-list check,
+`Url.IsLocalUrl`), and names the source and path in its message. It does not follow data into other
+methods:
 
 | Check | Message |
 |---|---|
