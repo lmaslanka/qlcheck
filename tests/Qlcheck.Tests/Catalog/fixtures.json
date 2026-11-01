@@ -315,8 +315,8 @@
     "path": "Repo.cs"
   },
   "filesystem-oracle": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            Exists(input);\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            Exists(\"fixed\");\n        }\n    }\n}\n",
+    "bad": "using System.IO;\n\nnamespace Sample\n{\n    public class Files\n    {\n        public bool Has(string name) => File.Exists(Path.Combine(\"/data\", name));\n    }\n}\n",
+    "good": "using System.IO;\n\nnamespace Sample\n{\n    public class Files\n    {\n        public bool Has(string name) => File.Exists(Path.Combine(\"/data\", Path.GetFileName(name)));\n    }\n}\n",
     "path": "Repo.cs"
   },
   "finalizer-no-throw": {
@@ -1200,8 +1200,8 @@
     "path": "Repo.cs"
   },
   "path-injection": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            Combine(input);\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            Combine(\"fixed\");\n        }\n    }\n}\n",
+    "bad": "using System.IO;\n\nnamespace Sample\n{\n    public class Files\n    {\n        public string Read(string name)\n        {\n            var path = Path.Combine(\"/data\", name);\n            return File.ReadAllText(path);\n        }\n    }\n}\n",
+    "good": "using System;\nusing System.IO;\n\nnamespace Sample\n{\n    public class Files\n    {\n        public string Read(string name)\n        {\n            var path = Path.GetFullPath(Path.Combine(\"/data\", name));\n            if (!path.StartsWith(\"/data/\", StringComparison.Ordinal))\n            {\n                throw new UnauthorizedAccessException();\n            }\n\n            return File.ReadAllText(path);\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "prefer-assembly-load": {

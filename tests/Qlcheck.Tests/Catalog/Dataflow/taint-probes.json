@@ -284,7 +284,6 @@
     "checks": [
       "path-injection"
     ],
-    "pending": "phase 4",
     "source": "public class R { public string M(string name) { var full = \"/data/\" + name; return File.ReadAllText(full); } }"
   },
   "path_getfilename": {
@@ -301,7 +300,6 @@
     "checks": [
       "path-injection"
     ],
-    "pending": "phase 4",
     "source": "public static class Url { public static string Combine(string a) => a; }\npublic class R { public string M(string seg) => Url.Combine(seg); }"
   },
   "path_startswith_guard": {
@@ -310,7 +308,6 @@
     "checks": [
       "path-injection"
     ],
-    "pending": "phase 4",
     "source": "public class R { public string M(string name) { var full = Path.GetFullPath(Path.Combine(\"/data\", name));\n  if (!full.StartsWith(\"/data/\", StringComparison.Ordinal)) { throw new UnauthorizedAccessException(); } return File.ReadAllText(full); } }"
   },
   "xss_console_write": {

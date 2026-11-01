@@ -23,7 +23,6 @@ exception-name-extends
 exception-public
 exception-standard-constructors
 export-implements-contract
-filesystem-oracle
 identical-branch
 identical-branches
 identical-operands
@@ -62,7 +61,6 @@ override-does-more
 override-keeps-defaults
 params-on-override
 part-creation-policy
-path-injection
 prefer-contains
 prefer-exists
 prefer-set-min-max

@@ -19,6 +19,8 @@ public class SinkTests
 
     private const string AssemblyName = "sinks";
 
+    private const string CopyMethod = "Copy";
+
     private static readonly Compilation Platform = CSharpCompilations.Create(AssemblyName, []);
 
     [Fact]
@@ -41,6 +43,17 @@ public class SinkTests
         var sink = Sink.Call("System.IO.File", "Read*|Write*|Delete", PathParameter);
 
         Assert.Equal(matches, sink.Matches(Method("System.IO.File", method, PathParameter), PathParameter));
+    }
+
+    [Theory]
+    [InlineData("sourceFileName", true)]
+    [InlineData("destFileName", true)]
+    [InlineData("overwrite", false)]
+    public void Call_parameter_takes_alternatives(string parameter, bool matches)
+    {
+        var copy = Platform.GetTypeByMetadataName("System.IO.File")!.GetMembers(CopyMethod).OfType<IMethodSymbol>().First();
+
+        Assert.Equal(matches, Sink.Call("System.IO.File", CopyMethod, "sourceFileName|destFileName").Matches(copy, parameter));
     }
 
     [Fact]

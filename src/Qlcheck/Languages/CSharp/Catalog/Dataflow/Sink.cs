@@ -14,7 +14,8 @@ internal sealed record Sink(SinkKind Kind, string Type, string Member, string? P
 
     private const char Wildcard = '*';
 
-    // Member is a method name, alternatives separated by `|`, each with an optional trailing `*`.
+    // Member is a method name, alternatives separated by `|`, each with an optional trailing `*`;
+    // parameter names take alternatives too.
     public static Sink Call(string type, string member, string parameter) => new(SinkKind.Call, type, member, parameter);
 
     public static Sink Set(string type, string property) => new(SinkKind.Set, type, property, null);
@@ -30,7 +31,11 @@ internal sealed record Sink(SinkKind Kind, string Type, string Member, string? P
     // `member` is the called method or constructor, or the set property; `parameter` is the name
     // of the parameter the tainted argument binds to (null for a property set).
     public bool Matches(ISymbol member, string? parameter) =>
-        Targets(member) && (Kind == SinkKind.Set || parameter == Parameter) && member is not ITypeSymbol;
+        Targets(member) && (Kind == SinkKind.Set || ParameterMatches(parameter)) && member is not ITypeSymbol;
+
+    // Parameter names, like member names, take `|` alternatives: `path|sourceFileName`.
+    private bool ParameterMatches(string? parameter) =>
+        parameter is not null && Parameter is not null && Parameter.Split(Alternative).Contains(parameter, StringComparer.Ordinal);
 
     // Whether `symbol` is this sink's method or property, whatever the argument; for a constructor
     // sink, the constructor or the type itself (`new ProcessStartInfo(...)` names the type).
