@@ -17,34 +17,39 @@ internal static class Reach
     // boolean literal or a constant can make that so, which keeps the analysis off most ifs.
     public static void UnreachableBranch(WalkContext ctx, string id)
     {
-        foreach (var node in ctx.Nodes(SyntaxKind.IfStatement))
+        var hasErrors = HasErrors(ctx);
+        foreach (var statement in ctx.Nodes(SyntaxKind.IfStatement).OfType<IfStatementSyntax>())
         {
-            if (node is IfStatementSyntax statement
-                && MentionsConstant(ctx, statement.Condition)
-                && ctx.Model.AnalyzeControlFlow(statement) is { Succeeded: true, StartPointIsReachable: true }
-                && ctx.Model.AnalyzeControlFlow(statement.Statement) is { Succeeded: true, StartPointIsReachable: false })
+            if (MentionsConstant(ctx, statement.Condition) && !hasErrors.Value && IsDead(ctx, statement))
             {
                 ctx.Report(id, statement);
             }
         }
     }
 
+    private static bool IsDead(WalkContext ctx, IfStatementSyntax statement) =>
+        ctx.Model.AnalyzeControlFlow(statement) is { Succeeded: true, StartPointIsReachable: true }
+        && ctx.Model.AnalyzeControlFlow(statement.Statement) is { Succeeded: true, StartPointIsReachable: false };
+
     // no-infinite-loop: a loop whose condition is always true (or absent) that can be entered but
     // never left: no break, return or goto out of it, and no throw or yield in its body. A loop that
     // awaits or uses a CancellationToken is meant to run until cancelled (D9).
     public static void InfiniteLoop(WalkContext ctx, string id)
     {
-        foreach (var node in ctx.Nodes(SyntaxKind.WhileStatement).Concat(ctx.Nodes(SyntaxKind.DoStatement)).Concat(ctx.Nodes(SyntaxKind.ForStatement)))
+        var hasErrors = HasErrors(ctx);
+        var loops = ctx.Nodes(SyntaxKind.WhileStatement).Concat(ctx.Nodes(SyntaxKind.DoStatement)).Concat(ctx.Nodes(SyntaxKind.ForStatement));
+        foreach (var loop in loops.OfType<StatementSyntax>())
         {
-            if (node is StatementSyntax loop
-                && AlwaysTrue(ctx, Condition(loop))
-                && ctx.Model.AnalyzeControlFlow(loop) is { Succeeded: true, StartPointIsReachable: true, EndPointIsReachable: false, ExitPoints.IsEmpty: true }
-                && !Leaves(ctx, Body(loop)))
+            if (AlwaysTrue(ctx, Condition(loop)) && !hasErrors.Value && NeverEnds(ctx, loop))
             {
                 ctx.Report(id, loop);
             }
         }
     }
+
+    private static bool NeverEnds(WalkContext ctx, StatementSyntax loop) =>
+        ctx.Model.AnalyzeControlFlow(loop) is { Succeeded: true, StartPointIsReachable: true, EndPointIsReachable: false, ExitPoints.IsEmpty: true }
+        && !Leaves(ctx, Body(loop));
 
     private static ExpressionSyntax? Condition(StatementSyntax loop) =>
         loop switch
@@ -67,8 +72,15 @@ internal static class Reach
     private static bool AlwaysTrue(WalkContext ctx, ExpressionSyntax? condition) =>
         condition is null || ctx.Model.GetConstantValue(condition) is { HasValue: true, Value: true };
 
+    // Flow analysis of a file with compile errors is unreliable (ADR 0003); asked only once a
+    // candidate is found.
+    private static Lazy<bool> HasErrors(WalkContext ctx) =>
+        new(() => ctx.Model.GetDiagnostics().Any(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+
+    // A boolean literal or a constant in the condition itself; a literal inside a pattern
+    // (`x is { Done: false }`) is a value to match, not a constant condition.
     private static bool MentionsConstant(WalkContext ctx, ExpressionSyntax condition) =>
-        condition.DescendantNodesAndSelf().Any(node =>
+        condition.DescendantNodesAndSelf(node => node is not PatternSyntax).Any(node =>
             node.Kind() is SyntaxKind.TrueLiteralExpression or SyntaxKind.FalseLiteralExpression
             || node is IdentifierNameSyntax && ctx.Model.GetSymbolInfo(node).Symbol is IFieldSymbol { IsConst: true } or ILocalSymbol { IsConst: true });
 

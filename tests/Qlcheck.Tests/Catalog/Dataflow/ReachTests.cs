@@ -11,6 +11,7 @@ public class ReachTests
     [InlineData("if (flag) { Console.WriteLine(); }", 0)]
     [InlineData("if (true) { Console.WriteLine(); }", 0)]
     [InlineData("return; if (false) { Console.WriteLine(); }", 0)]
+    [InlineData("object o = flag; if (o is bool and false) { Console.WriteLine(); }", 0)]
     public void An_if_body_that_cannot_run_is_reported(string body, int findings)
     {
         Assert.Equal(findings, Run(Reach.UnreachableBranch, $"class C {{ const bool Enabled = false; void M(bool flag) {{ {body} }} }}"));
@@ -32,6 +33,13 @@ public class ReachTests
     public void A_loop_that_can_never_end_is_reported(string body, int findings)
     {
         Assert.Equal(findings, Run(Reach.InfiniteLoop, $"using System; using System.Threading; class C {{ const bool Forever = true; void M(int x, CancellationToken token) {{ {body} }} }}"));
+    }
+
+    [Fact]
+    public void A_file_with_compile_errors_gives_nothing()
+    {
+        Assert.Equal(0, Run(Reach.UnreachableBranch, "class C { void M() { if (false) { Missing m; } } }"));
+        Assert.Equal(0, Run(Reach.InfiniteLoop, "class C { void M() { while (true) { Missing m; } } }"));
     }
 
     [Fact]
