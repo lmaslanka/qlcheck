@@ -43,15 +43,6 @@ public class CheckDiscoveryTests
         Assert.Contains("same", error.Message, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void An_unimplemented_check_from_any_language_is_rejected_when_selected()
-    {
-        using var stderr = new StringWriter();
-
-        Assert.False(CheckDiscovery.TrySelect(["architecture-tangle"], [], out _, stderr));
-        Assert.Contains("has no implementation", stderr.ToString(), StringComparison.Ordinal);
-    }
-
     private sealed class StubLanguage(string id, params string[] checkIds) : ILanguage
     {
         public string Id => id;

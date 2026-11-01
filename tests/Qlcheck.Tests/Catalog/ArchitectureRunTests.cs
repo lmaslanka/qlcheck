@@ -20,7 +20,7 @@ public sealed class ArchitectureRunTests : IDisposable
     public ArchitectureRunTests()
     {
         TestGit.Init(_dir);
-        Write(".qlcheck_architecture", "App.Report App.Core must-not-use App.Run\n");
+        Write(ArchitectureFiles.FileName, "App.Report App.Core must-not-use App.Run\n");
         Write("src/Run/Job.cs", Kernel);
     }
 
@@ -54,6 +54,24 @@ public sealed class ArchitectureRunTests : IDisposable
         Write(Engine, User("App.Core", "Engine"));
 
         Assert.Equal((ExitCode.Findings, 1), Run(Id, "--uncommitted"));
+    }
+
+    [Fact]
+    public void A_cycle_that_only_two_projects_together_close_is_found()
+    {
+        const string Project = "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>\n";
+        Write(ArchitectureFiles.FileName, "no-cycles Q.*\n");
+        Write("one/One.csproj", Project);
+        Write("two/Two.csproj", Project);
+        Write("one/A.cs", "namespace Q.A { class X { Q.B.Y y = new(); } }\nnamespace Q.B { class Y { } }\n");
+        Write("two/B.cs", "namespace Q.B { class Z { Q.A.W w = new(); } }\nnamespace Q.A { class W { } }\n");
+
+        using var stdout = new StringWriter();
+        using var stderr = new StringWriter();
+        var code = QlcheckApp.Run(["--check", "architecture-tangle", _dir], stdout, stderr);
+
+        Assert.Equal(ExitCode.Findings, code);
+        Assert.Contains("closes the cycle", stdout.ToString(), StringComparison.Ordinal);
     }
 
     private static string User(string ns, string type) => $"namespace {ns} {{ class {type} {{ App.Run.Job j = new(); }} }}\n";

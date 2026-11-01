@@ -11,17 +11,13 @@ public class CatalogTests
 {
     private const int CatalogCount = 334;
 
-    private const int EnabledCatalogCount = 332;
-
-    private const int UnimplementedCatalogCount = 1;
+    private const int EnabledCatalogCount = 333;
 
     private const int HouseEnabledCount = 0;
 
     private const int ConfigEnabledCount = 4;
 
     private const string UnknownId = "nope";
-
-    private const string ArchitectureId = "architecture-tangle";
 
     private const string MethodComplexityId = "method-complexity";
 
@@ -121,23 +117,9 @@ public class CatalogTests
     }
 
     [Fact]
-    public void Architecture_checks_are_discovered_and_unimplemented()
+    public void Every_catalog_row_is_implemented()
     {
-        var architecture = Catalog.Checks.Where(check => !CatalogWalker.IsImplemented(check.Id)).ToList();
-        Assert.Equal(UnimplementedCatalogCount, architecture.Count);
-        Assert.All(architecture, check => Assert.False(check.EnabledByDefault));
-        Assert.Contains(architecture, check => check.Id == ArchitectureId);
-    }
-
-    [Fact]
-    public void Selected_architecture_check_exits_two()
-    {
-        var file = WriteTemp("class C { }\n");
-        var stderr = new StringWriter();
-        var code = QlcheckApp.Run(["--check", ArchitectureId, file], new StringWriter(), stderr);
-
-        Assert.Equal(ExitCode.Error, code);
-        Assert.Contains($"Check '{ArchitectureId}' has no implementation.", stderr.ToString());
+        Assert.Empty(Catalog.Checks.Where(check => !CatalogWalker.IsImplemented(check.Id)).Select(check => check.Id));
     }
 
     [Fact]

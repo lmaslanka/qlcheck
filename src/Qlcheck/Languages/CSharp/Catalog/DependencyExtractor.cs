@@ -23,13 +23,14 @@ internal static class DependencyExtractor
     public static IEnumerable<Dependency> Extract(SemanticModel model, string path)
     {
         var root = model.SyntaxTree.GetRoot();
-        var sources = new Dictionary<SyntaxNode, string?>();
+        var sources = new Dictionary<SyntaxNode, DependencySide?>();
         var references = root.DescendantNodes()
             .OfType<SimpleNameSyntax>()
             .Where(name => !IsDeclarationName(name))
             .Select(name => (Name: name, Target: TargetOf(model.GetSymbolInfo(name).Symbol), Source: SourceOf(model, name, sources)))
             .Where(reference => reference.Target is not null && reference.Source is not null)
-            .Select(reference => new Dependency(reference.Source!, reference.Target!, path, reference.Name.GetLocation()));
+            .Select(reference => new Dependency(
+                reference.Source!.Name, reference.Target!.Name, path, reference.Name.GetLocation(), reference.Source.Namespace, reference.Target.Namespace));
         return references.Concat(Usings(root, path))
             .GroupBy(dependency => (dependency.Location.GetLineSpan().StartLinePosition.Line, dependency.Target))
             .Select(group => group.First());
@@ -42,7 +43,7 @@ internal static class DependencyExtractor
 
     // The type a referenced symbol stands for, as a dotted name; null for a namespace, a local or a
     // name that did not bind.
-    private static string? TargetOf(ISymbol? symbol)
+    private static DependencySide? TargetOf(ISymbol? symbol)
     {
         var type = symbol switch
         {
@@ -52,11 +53,14 @@ internal static class DependencyExtractor
             IPropertySymbol or IFieldSymbol or IEventSymbol => symbol.ContainingType?.OriginalDefinition,
             _ => null,
         };
-        return type is null or { TypeKind: TypeKind.Error } ? null : type.ToDisplayString(DottedName);
+        return type is null or { TypeKind: TypeKind.Error } ? null : new DependencySide(type.ToDisplayString(DottedName), NamespaceOf(type));
     }
 
+    private static string NamespaceOf(ISymbol symbol) =>
+        symbol.ContainingNamespace is { IsGlobalNamespace: false } ns ? ns.ToDisplayString() : string.Empty;
+
     // The innermost type declaring the code, or else its namespace; null in the global namespace.
-    private static string? SourceOf(SemanticModel model, SyntaxNode node, Dictionary<SyntaxNode, string?> cache)
+    private static DependencySide? SourceOf(SemanticModel model, SyntaxNode node, Dictionary<SyntaxNode, DependencySide?> cache)
     {
         var owner = node.Ancestors().FirstOrDefault(ancestor => ancestor is BaseTypeDeclarationSyntax or DelegateDeclarationSyntax or BaseNamespaceDeclarationSyntax);
         if (owner is null)
@@ -66,7 +70,11 @@ internal static class DependencyExtractor
 
         if (!cache.TryGetValue(owner, out var source))
         {
-            source = owner is BaseNamespaceDeclarationSyntax ns ? ns.Name.ToString() : model.GetDeclaredSymbol(owner)?.ToDisplayString(DottedName);
+            source = owner switch
+            {
+                BaseNamespaceDeclarationSyntax ns => new DependencySide(ns.Name.ToString(), ns.Name.ToString()),
+                _ => model.GetDeclaredSymbol(owner) is { } type ? new DependencySide(type.ToDisplayString(DottedName), NamespaceOf(type)) : null,
+            };
             cache[owner] = source;
         }
 
@@ -79,7 +87,7 @@ internal static class DependencyExtractor
         return root.DescendantNodes()
             .OfType<UsingDirectiveSyntax>()
             .Where(directive => directive.Name is not null)
-            .SelectMany(directive => namespaces.Select(source => new Dependency(source, Named(directive.Name!), path, directive.Name!.GetLocation())));
+            .SelectMany(directive => namespaces.Select(source => new Dependency(source, Named(directive.Name!), path, directive.Name!.GetLocation(), source, Named(directive.Name!))));
     }
 
     private static string Named(NameSyntax name)
@@ -87,4 +95,7 @@ internal static class DependencyExtractor
         var text = name.ToString();
         return text.StartsWith(GlobalPrefix, StringComparison.Ordinal) ? text[GlobalPrefix.Length..] : text;
     }
+
+    // One side of a dependency: its dotted name and the namespace it lives in.
+    private sealed record DependencySide(string Name, string Namespace);
 }

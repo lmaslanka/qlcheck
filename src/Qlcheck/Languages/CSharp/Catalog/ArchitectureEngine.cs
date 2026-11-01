@@ -15,6 +15,12 @@ internal static class ArchitectureEngine
             Class = CheckClass.Architecture,
             Apply = (dependencies, _) => RelationshipPattern.Find(dependencies, "architecture-relationship"),
         },
+        new ArchitectureRow
+        {
+            Id = "architecture-tangle",
+            Class = CheckClass.Architecture,
+            Apply = (dependencies, _) => TanglePattern.Find(dependencies, "architecture-tangle"),
+        },
     ];
 
     public static bool Selects(IReadOnlySet<string> selected) => Rows.Any(row => selected.Contains(row.Id));

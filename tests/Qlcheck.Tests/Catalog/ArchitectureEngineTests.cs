@@ -1,5 +1,3 @@
-using Qlcheck.Languages.CSharp.Catalog;
-
 namespace Qlcheck.Tests;
 
 public class ArchitectureEngineTests
@@ -54,32 +52,5 @@ public class ArchitectureEngineTests
     }
 
     // The architecture file has the given single line, or none at all when it is null.
-    private static List<Finding> Run(string? constraint, params string[] sources)
-    {
-        var dir = Directory.CreateTempSubdirectory("qlcheck_engine_").FullName;
-        try
-        {
-            if (constraint is not null)
-            {
-                File.WriteAllText(Path.Combine(dir, ArchitectureFiles.FileName), $"{constraint}\n");
-            }
-
-            var files = sources.Select((source, index) => (Full: Path.Combine(dir, $"F{index}.cs"), Source: source)).ToList();
-            files.ForEach(file => File.WriteAllText(file.Full, file.Source));
-            var architecture = ArchitectureFiles.Load([dir], files.Select(file => file.Full));
-            var trees = files.Select(file => CSharpTrees.Parse(new SourceFile(Path.GetFileName(file.Full), file.Source))).ToList();
-            var compilation = CSharpCompilations.Create("arch", trees);
-            var dependencies = files.Zip(trees)
-                .Where(pair => architecture.For(pair.First.Full) is not null)
-                .SelectMany(pair => DependencyExtractor.Extract(compilation.GetSemanticModel(pair.Second), pair.Second.FilePath)
-                    .Select(dependency => new GovernedDependency(architecture.For(pair.First.Full)!, dependency)))
-                .ToList();
-            var messages = new Dictionary<string, string>(StringComparer.Ordinal) { [Relationship] = "fallback" };
-            return [.. ArchitectureEngine.Apply(dependencies, new HashSet<string>(StringComparer.Ordinal) { Relationship }, messages)];
-        }
-        finally
-        {
-            Directory.Delete(dir, recursive: true);
-        }
-    }
+    private static IReadOnlyList<Finding> Run(string? constraint, params string[] sources) => ArchitectureFixture.Run(constraint, Relationship, sources);
 }
