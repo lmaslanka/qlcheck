@@ -43,8 +43,8 @@ public sealed class ConfigCliTests : IDisposable
     public void A_comment_suppresses_a_finding_in_a_tracked_dot_env_file()
     {
         Save(EnvFile, $"# {Ignore(Credential)}\nSMTP_PASSWORD=Hunter2!\nDB_PASSWORD=Hunter3!\n");
-        TestGit.Run(_dir, "init", "-q");
-        TestGit.Run(_dir, "add", EnvFile);
+        TestGit.Init(_dir);
+        TestGit.Add(_dir, EnvFile);
 
         using var stdout = new StringWriter();
         Assert.Equal(ExitCode.Findings, Run(stdout, CheckFlag, Credential, _dir));

@@ -5,8 +5,20 @@ namespace Qlcheck.Tests;
 // Runs git in a temporary test repository with a fixed identity and no signing.
 internal static class TestGit
 {
+    private const string Quiet = "-q";
+
     private static readonly string[] Identity =
         ["-c", "user.name=qlcheck", "-c", "user.email=qlcheck@example.com", "-c", "commit.gpgsign=false"];
+
+    public static void Init(string directory) => Run(directory, "init", Quiet);
+
+    public static void Add(string directory, string path) => Run(directory, "add", path);
+
+    public static void CommitAll(string directory)
+    {
+        Add(directory, ".");
+        Run(directory, "commit", Quiet, "-m", "test");
+    }
 
     public static void Run(string directory, params string[] args)
     {
