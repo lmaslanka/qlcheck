@@ -400,6 +400,11 @@ internal sealed class TaintFlow
             Eval(argument.Value, state);
         }
 
+        if (TaintModel.SourceOf(property) is { } source)
+        {
+            return source;
+        }
+
         return property.Property.IsIndexer || property.Property.Name == nameof(IEnumerator<object>.Current) ? TaintModel.Retype(property.Type, instance) : Taint.None;
     }
 
@@ -420,9 +425,9 @@ internal sealed class TaintFlow
         var receiver = invocation.Instance is { } instance ? Eval(instance, state) : Taint.None;
         var taints = Arguments(invocation, state);
         var arguments = taints.Aggregate(Taint.None, (all, taint) => all.Join(taint));
-        if (TaintModel.SourceOf(invocation) is { } origin)
+        if (TaintModel.SourceOf(invocation) is { } source)
         {
-            return Taint.From(TaintModel.LabelFor(invocation.Type), origin);
+            return source;
         }
 
         if (TaintModel.Sanitize(invocation, InputOf(invocation, taints)) is { } sanitized)

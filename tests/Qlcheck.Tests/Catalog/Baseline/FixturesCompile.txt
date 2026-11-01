@@ -45,9 +45,7 @@ no-not-implemented
 no-params-on-override
 no-self-assignment
 no-sleep-in-test
-no-stack-trace-disclosure
 no-virtual-field-event
-open-redirect
 operators-consistent
 override-does-more
 override-keeps-defaults
@@ -59,7 +57,6 @@ prefer-set-min-max
 prefer-trueforall
 reachable-branch
 readonly-not-mutable
-reflected-xss
 release-lock-same-method
 reuse-client
 robust-cipher
@@ -74,7 +71,6 @@ test-signature
 throw-created-exception
 too-many-logs
 type-name-suffix
-untrusted-session-cookie
 unused-assignment
 unused-local
 unused-parameter

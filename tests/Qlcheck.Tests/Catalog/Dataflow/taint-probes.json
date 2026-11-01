@@ -317,7 +317,6 @@
       "reflected-xss",
       "no-stack-trace-disclosure"
     ],
-    "pending": "phase 4",
     "source": "public class R { public void M(string s) { Console.Write(s); } }"
   },
   "xss_streamwriter_write": {
@@ -327,18 +326,14 @@
       "reflected-xss",
       "no-stack-trace-disclosure"
     ],
-    "pending": "phase 4",
     "source": "public class R { public void M(StreamWriter w, string s) { w.Write(s); } }"
   },
   "stack_trace_to_writer": {
-    "tag": "source",
-    "expect": [
-      "no-stack-trace-disclosure"
-    ],
+    "tag": "symbol",
+    "expect": [],
     "checks": [
       "no-stack-trace-disclosure"
     ],
-    "pending": "phase 4",
     "source": "public class Response { public void Write(string s) { } }\npublic class R { public void M(Response response) { try { Work(); } catch (Exception ex) { response.Write(ex.StackTrace); } } static void Work() { } }"
   },
   "reflection_local": {

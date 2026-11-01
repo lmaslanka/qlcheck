@@ -86,7 +86,19 @@ internal static class TaintEngine
             ],
             "Keep the message template constant and pass the value as a structured argument: `LogInformation(\"User {Name}\", name)`.")),
         Row.Handle("loop-bound-injection", CheckClass.Taint, Patterns.LoopBound),
-        Row.Taint("no-stack-trace-disclosure", CheckClass.Taint, "Write"),
+        Row.Flow("no-stack-trace-disclosure", CheckClass.Taint, new TaintSpec(
+            TaintLabel.ExceptionDetail,
+            [
+                Sink.Call("Microsoft.AspNetCore.Http.HttpResponseWritingExtensions", "WriteAsync", "text"),
+                Sink.Set("Microsoft.AspNetCore.Mvc.ContentResult", "Content"),
+                Sink.Call("Microsoft.AspNetCore.Mvc.ControllerBase", "Content", "content"),
+                Sink.Ctor("Microsoft.AspNetCore.Html.HtmlString", "value"),
+                Sink.Call("Microsoft.AspNetCore.Mvc.Rendering.IHtmlHelper", "Raw", "value"),
+                Sink.Call("Microsoft.AspNetCore.Mvc.ControllerBase", "Ok|BadRequest|NotFound|Conflict|UnprocessableEntity|StatusCode", "value|error"),
+                Sink.Call("Microsoft.AspNetCore.Mvc.ControllerBase", "Problem", "detail"),
+                Sink.Ctor("Microsoft.AspNetCore.Mvc.ObjectResult", "value"),
+            ],
+            "Log the exception and send the client a generic message or a problem id instead.")),
         Row.Flow("nosql-injection", CheckClass.Taint, new TaintSpec(
             TaintLabel.Untrusted | TaintLabel.PublicParameter,
             [
@@ -95,7 +107,16 @@ internal static class TaintEngine
                 Sink.Ctor("MongoDB.Driver.JsonCommand`1", "json"),
             ],
             "Build the query with `Builders<T>.Filter` instead of parsing JSON text that contains the value.")),
-        Row.Taint("open-redirect", CheckClass.Taint, "Redirect"),
+        Row.Flow("open-redirect", CheckClass.Taint, new TaintSpec(
+            TaintLabel.Untrusted,
+            [
+                Sink.Call("Microsoft.AspNetCore.Mvc.ControllerBase", "Redirect*", "url"),
+                Sink.Call("Microsoft.AspNetCore.Http.HttpResponse", "Redirect", "location"),
+                Sink.Ctor("Microsoft.AspNetCore.Mvc.RedirectResult", "url"),
+                Sink.Call("Microsoft.AspNetCore.Http.Results", "Redirect", "url"),
+                Sink.Call("Microsoft.AspNetCore.Http.TypedResults", "Redirect", "url"),
+            ],
+            "Use `LocalRedirect`, or check the target with `Url.IsLocalUrl` first.")),
         Row.Flow("path-injection", CheckClass.Taint, new TaintSpec(
             TaintLabel.Untrusted,
             [
@@ -115,7 +136,16 @@ internal static class TaintEngine
                 Sink.Call("Microsoft.AspNetCore.Mvc.ControllerBase", "PhysicalFile", "physicalPath"),
             ],
             "Resolve it with `Path.GetFullPath` and check it starts with the base directory, or keep only `Path.GetFileName` of it.")),
-        Row.Taint("reflected-xss", CheckClass.Taint, "Write"),
+        Row.Flow("reflected-xss", CheckClass.Taint, new TaintSpec(
+            TaintLabel.Untrusted,
+            [
+                Sink.Call("Microsoft.AspNetCore.Http.HttpResponseWritingExtensions", "WriteAsync", "text"),
+                Sink.Set("Microsoft.AspNetCore.Mvc.ContentResult", "Content"),
+                Sink.Call("Microsoft.AspNetCore.Mvc.ControllerBase", "Content", "content"),
+                Sink.Ctor("Microsoft.AspNetCore.Html.HtmlString", "value"),
+                Sink.Call("Microsoft.AspNetCore.Mvc.Rendering.IHtmlHelper", "Raw", "value"),
+            ],
+            "Encode it for HTML (`HtmlEncoder.Default.Encode`) or render it through a view that encodes by default.")),
         Row.Flow("reflection-injection", CheckClass.Taint, new TaintSpec(
             TaintLabel.Untrusted,
             [
@@ -153,7 +183,10 @@ internal static class TaintEngine
             TaintLabel.Untrusted | TaintLabel.PublicParameter,
             [Sink.Call("System.Environment", "SetEnvironmentVariable", "variable|value")],
             "Set only variables from a fixed list, with values checked against what the program expects.")),
-        Row.Taint("untrusted-session-cookie", CheckClass.Taint, "Append"),
+        Row.Flow("untrusted-session-cookie", CheckClass.Taint, new TaintSpec(
+            TaintLabel.Untrusted,
+            [Sink.Call("Microsoft.AspNetCore.Http.IResponseCookies", "Append", "key|value")],
+            "Set cookies only from values the server chose, such as a new session id, never from request input.")),
         Row.Flow("xml-injection", CheckClass.Taint, new TaintSpec(
             TaintLabel.Untrusted | TaintLabel.PublicParameter,
             [

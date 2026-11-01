@@ -25,6 +25,20 @@ internal static class TaintModel
 
     private const string ConsoleInput = "In";
 
+    private const string ExceptionType = "System.Exception";
+
+    private const string ExceptionDetail = "exception detail";
+
+    private const string StackTraceProperty = "StackTrace";
+
+    private const string ZipEntryType = "System.IO.Compression.ZipArchiveEntry";
+
+    private const string TarEntryType = "System.Formats.Tar.TarEntry";
+
+    private const string EntryFullNameProperty = "FullName";
+
+    private const string EntryNameProperty = "Name";
+
     private const string BuilderType = "System.Text.StringBuilder";
 
     private static readonly HashSet<string> TaskTypes = new(StringComparer.Ordinal)
@@ -111,11 +125,18 @@ internal static class TaintModel
         return state;
     }
 
-    // The source a call stands for when it returns untrusted data, or null for any other call:
-    // `Console.ReadLine()` and `Console.In.ReadLine()`, and their async forms.
-    public static TaintSource? SourceOf(IInvocationOperation invocation)
+    // The taint a call returns when it is a source, or null for any other call:
+    // `Console.ReadLine()` and `Console.In.ReadLine()` and their async forms are console input;
+    // an exception's `ToString()` is ExceptionDetail, which only no-stack-trace-disclosure accepts.
+    public static Taint? SourceOf(IInvocationOperation invocation)
     {
         var method = invocation.TargetMethod;
+        var line = LineOf(invocation.Syntax);
+        if (method.Name == nameof(ToString) && invocation.Instance is { } exception && Symbols.Is(exception.Type, ExceptionType))
+        {
+            return Taint.From(TaintLabel.ExceptionDetail, new TaintSource($"{exception.Syntax}.{nameof(ToString)}()", ExceptionDetail, line));
+        }
+
         if (!ConsoleReads.Contains(method.Name))
         {
             return null;
@@ -128,8 +149,24 @@ internal static class TaintModel
                 $"Console.{ConsoleInput}.{method.Name}()",
             _ => null,
         };
-        return name is null ? null : new TaintSource(name, "console input", invocation.Syntax.GetLocation().GetLineSpan().StartLinePosition.Line + 1);
+        return name is null ? null : Taint.From(LabelFor(invocation.Type), new TaintSource(name, "console input", line));
     }
+
+    // Row-scoped property sources (D1): an exception's StackTrace is ExceptionDetail, and the name
+    // of a zip or tar entry is ArchiveEntry, which only zip-slip accepts.
+    public static Taint? SourceOf(IPropertyReferenceOperation property)
+    {
+        var (label, description) = (property.Property.Name, Symbols.QualifiedName(property.Property.ContainingType)) switch
+        {
+            (StackTraceProperty, _) when Symbols.Is(property.Property.ContainingType, ExceptionType) => (TaintLabel.ExceptionDetail, ExceptionDetail),
+            (EntryFullNameProperty, ZipEntryType) or (EntryNameProperty, TarEntryType) => (TaintLabel.ArchiveEntry, "archive entry name"),
+            _ => (TaintLabel.None, string.Empty),
+        };
+        var name = property.Instance is { } instance ? $"{instance.Syntax}.{property.Property.Name}" : property.Property.Name;
+        return label == TaintLabel.None ? null : Taint.From(label, new TaintSource(name, description, LineOf(property.Syntax)));
+    }
+
+    private static int LineOf(SyntaxNode node) => node.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
 
     // Calls whose result carries the taint of their receiver and arguments (D5): string methods,
     // StringBuilder, the path-building Path methods, ToString, GetEnumerator (how foreach reads a

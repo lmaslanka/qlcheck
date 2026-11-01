@@ -276,6 +276,37 @@ public class TaintFlowTests
         Assert.Equal(name, hit.Source.Name);
     }
 
+    [Theory]
+    [InlineData("catch (Exception ex) { System.IO.File.ReadAllText(ex.StackTrace!); }", "ex.StackTrace", "ExceptionDetail")]
+    [InlineData("catch (Exception ex) { System.IO.File.ReadAllText(ex.ToString()); }", "ex.ToString()", "ExceptionDetail")]
+    [InlineData("catch (Exception ex) { System.IO.File.ReadAllText(ex.Message); }", null, null)]
+    public void Exception_details_are_a_row_scoped_source(string handler, string? name, string? label)
+    {
+        var hits = Run($"public class R {{ void M() {{ try {{ }} {handler} }} }}");
+
+        Assert.Equal(name, hits.SingleOrDefault()?.Source.Name);
+        Assert.Equal(label, hits.SingleOrDefault()?.Labels.ToString());
+    }
+
+    [Fact]
+    public void An_archive_entry_name_is_a_row_scoped_source()
+    {
+        var hit = Assert.Single(Run("public class R { void M(System.IO.Compression.ZipArchive zip) { foreach (var entry in zip.Entries) { System.IO.File.ReadAllText(entry.FullName); } } }"));
+
+        Assert.Equal(TaintLabel.ArchiveEntry, hit.Labels);
+        Assert.Equal("entry.FullName", hit.Source.Name);
+    }
+
+    [Theory]
+    [InlineData("System.Net.WebUtility.HtmlEncode(userId)")]
+    [InlineData("System.Net.WebUtility.UrlEncode(userId)")]
+    [InlineData("Uri.EscapeDataString(userId)")]
+    [InlineData("System.Web.HttpUtility.HtmlEncode(userId)")]
+    public void Encoders_clear_the_taint(string encoded)
+    {
+        Assert.Empty(Run($"public class R {{ public void M(DbCommand c, string userId) {{ c.CommandText = {encoded}; }} }}"));
+    }
+
     [Fact]
     public void Console_input_is_a_source()
     {
