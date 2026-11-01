@@ -48,8 +48,19 @@ internal static class TaintEngine
                 Sink.Set("System.Data.Common.DbConnectionStringBuilder", "ConnectionString"),
             ],
             "Set each part through a `DbConnectionStringBuilder` property, or pick the connection string from configuration by an allow-listed key.")),
-        Row.Taint("deserialization-injection", CheckClass.Taint, "Deserialize"),
-        Row.Taint("dynamic-code-injection", CheckClass.Taint, "Evaluate"),
+        Row.Flow("deserialization-injection", CheckClass.Taint, new TaintSpec(
+            TaintLabel.Untrusted | TaintLabel.PublicParameter,
+            [Sink.Call("System.Runtime.Serialization.IFormatter", "Deserialize", "serializationStream")],
+            "Use a serializer that does not resolve types from the data, such as `System.Text.Json` with known types.")),
+        Row.Flow("dynamic-code-injection", CheckClass.Taint, new TaintSpec(
+            TaintLabel.Untrusted | TaintLabel.PublicParameter,
+            [
+                Sink.Call("Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript", "EvaluateAsync|RunAsync|Create", "code"),
+                Sink.Call("System.Data.DataTable", "Compute", "expression"),
+                Sink.Call("System.Linq.Dynamic.Core.DynamicExpressionParser", "ParseLambda", "expression"),
+                Sink.Call("System.Linq.Dynamic.Core.DynamicQueryableExtensions", "Where|OrderBy|Select", "predicate|ordering|selector"),
+            ],
+            "Map the input to a fixed set of expressions or operations instead of evaluating it as code.")),
         Row.Flow("filesystem-oracle", CheckClass.Taint, new TaintSpec(
             TaintLabel.Untrusted,
             [
@@ -57,11 +68,26 @@ internal static class TaintEngine
                 Sink.Call("System.IO.Directory", "Exists", "path"),
             ],
             "Check the name against an allow-list, or keep only `Path.GetFileName` of it under a fixed directory.")),
-        Row.Taint("ldap-injection", CheckClass.Taint, "Search"),
+        Row.Flow("ldap-injection", CheckClass.Taint, new TaintSpec(
+            TaintLabel.Untrusted | TaintLabel.PublicParameter,
+            [
+                Sink.Set("System.DirectoryServices.DirectorySearcher", "Filter"),
+                Sink.Ctor("System.DirectoryServices.DirectorySearcher", "filter"),
+                Sink.Ctor("System.DirectoryServices.DirectoryEntry", "path"),
+                Sink.Ctor("System.DirectoryServices.Protocols.SearchRequest", "ldapFilter|distinguishedName"),
+            ],
+            "Escape the value for an LDAP filter (`(`, `)`, `*`, `\\` and NUL) or check it against an allow-list.")),
         Row.Taint("log-injection", CheckClass.Taint, "Information"),
         Row.Handle("loop-bound-injection", CheckClass.Taint, Patterns.LoopBound),
         Row.Taint("no-stack-trace-disclosure", CheckClass.Taint, "Write"),
-        Row.Taint("nosql-injection", CheckClass.Taint, "Find"),
+        Row.Flow("nosql-injection", CheckClass.Taint, new TaintSpec(
+            TaintLabel.Untrusted | TaintLabel.PublicParameter,
+            [
+                Sink.Call("MongoDB.Bson.BsonDocument", "Parse", "json"),
+                Sink.Ctor("MongoDB.Driver.JsonFilterDefinition`1", "json"),
+                Sink.Ctor("MongoDB.Driver.JsonCommand`1", "json"),
+            ],
+            "Build the query with `Builders<T>.Filter` instead of parsing JSON text that contains the value.")),
         Row.Taint("open-redirect", CheckClass.Taint, "Redirect"),
         Row.Flow("path-injection", CheckClass.Taint, new TaintSpec(
             TaintLabel.Untrusted,

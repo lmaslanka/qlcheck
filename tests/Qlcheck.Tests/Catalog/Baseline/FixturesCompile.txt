@@ -11,9 +11,7 @@ collection-self-argument
 constructor-non-virtual
 controller-base
 datetime-kind
-deserialization-injection
 dispose-created
-dynamic-code-injection
 else-required
 equals-and-hashcode
 exception-name-extends
@@ -24,7 +22,6 @@ identical-branch
 identical-branches
 identical-operands
 interface-method-callable
-ldap-injection
 lock-released
 log-injection
 loop-must-change-counter
@@ -49,7 +46,6 @@ no-not-implemented
 no-params-on-override
 no-self-assignment
 no-sleep-in-test
-nosql-injection
 no-stack-trace-disclosure
 no-virtual-field-event
 open-redirect

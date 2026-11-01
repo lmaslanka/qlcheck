@@ -175,8 +175,8 @@
     "path": "Repo.cs"
   },
   "deserialization-injection": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            Deserialize(input);\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            Deserialize(\"fixed\");\n        }\n    }\n}\n",
+    "bad": "using System.IO;\nusing System.Runtime.Serialization;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public object Load(IFormatter formatter, Stream input) => formatter.Deserialize(input);\n    }\n}\n",
+    "good": "using System.IO;\nusing System.Text.Json;\n\nnamespace Sample\n{\n    public class Order\n    {\n    }\n\n    public class Sample\n    {\n        public Order? Load(Stream input) => JsonSerializer.Deserialize<Order>(input);\n    }\n}\n",
     "path": "Repo.cs"
   },
   "digit-separator": {
@@ -220,8 +220,8 @@
     "path": "Repo.cs"
   },
   "dynamic-code-injection": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            Evaluate(input);\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            Evaluate(\"fixed\");\n        }\n    }\n}\n",
+    "bad": "using System.Data;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public object Calculate(string formula) => new DataTable().Compute(formula, string.Empty);\n    }\n}\n",
+    "good": "using System.Data;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public object Calculate(string formula) => new DataTable().Compute(formula == \"sum\" ? \"1 + 1\" : \"0\", string.Empty);\n    }\n}\n",
     "path": "Repo.cs"
   },
   "else-required": {
@@ -440,8 +440,8 @@
     "path": "Repo.cs"
   },
   "ldap-injection": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            Search(input);\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            Search(\"fixed\");\n        }\n    }\n}\n",
+    "bad": "using System.DirectoryServices;\n\nnamespace System.DirectoryServices\n{\n    public class DirectorySearcher\n    {\n        public string Filter { get; set; } = string.Empty;\n    }\n}\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public DirectorySearcher Find(string user)\n        {\n            var searcher = new DirectorySearcher();\n            searcher.Filter = \"(uid=\" + user + \")\";\n            return searcher;\n        }\n    }\n}\n",
+    "good": "using System.DirectoryServices;\n\nnamespace System.DirectoryServices\n{\n    public class DirectorySearcher\n    {\n        public string Filter { get; set; } = string.Empty;\n    }\n}\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public DirectorySearcher Find(string user)\n        {\n            var searcher = new DirectorySearcher();\n            searcher.Filter = user == \"admin\" ? \"(uid=admin)\" : \"(uid=guest)\";\n            return searcher;\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "literal-suffix-upper": {
@@ -1105,8 +1105,8 @@
     "path": "Repo.cs"
   },
   "nosql-injection": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            Find(input);\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            Find(\"fixed\");\n        }\n    }\n}\n",
+    "bad": "using MongoDB.Bson;\n\nnamespace MongoDB.Bson\n{\n    public class BsonDocument\n    {\n        public static BsonDocument Parse(string json) => new();\n\n        public BsonDocument Add(string name, string value) => this;\n    }\n}\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public BsonDocument Filter(string name) => BsonDocument.Parse(\"{ \\\"name\\\": \\\"\" + name + \"\\\" }\");\n    }\n}\n",
+    "good": "using MongoDB.Bson;\n\nnamespace MongoDB.Bson\n{\n    public class BsonDocument\n    {\n        public static BsonDocument Parse(string json) => new();\n\n        public BsonDocument Add(string name, string value) => this;\n    }\n}\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public BsonDocument Filter(string name) => new BsonDocument().Add(\"name\", name);\n    }\n}\n",
     "path": "Repo.cs"
   },
   "null-dereference": {
