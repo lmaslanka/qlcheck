@@ -536,7 +536,9 @@ The user settled these on 2026-10-29.
   - **Public parameters are their own label, `PublicParameter`** (revised 2026-10-31 after the D12 triage of
     `path-injection`: on Jellyfin 65 of 74 Findings were public methods whose path parameter is their job, and none was
     an injection). Each row chooses: `sql-injection` and `command-injection` accept `Untrusted | PublicParameter`;
-    `path-injection` and `filesystem-oracle` accept only `Untrusted`, from the entry points below.
+    `path-injection` and `filesystem-oracle` accept only `Untrusted`, from the entry points below. Each later row is
+    decided the same way from its D12 triage: `reflection-injection` is entry points only (its public-parameter Findings
+    were helpers that resolve a member name on purpose); the XML rows and `regex-dos` accept both.
   - ASP.NET entry points: `[From*]` parameters, controller-action parameters, and
     `HttpRequest.Query/Form/Headers/Cookies/RouteValues/Path/Body`.
   - `Console.ReadLine`.

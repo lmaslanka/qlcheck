@@ -68,8 +68,6 @@ prefer-trueforall
 reachable-branch
 readonly-not-mutable
 reflected-xss
-reflection-injection
-regex-dos
 release-lock-same-method
 reuse-client
 robust-cipher

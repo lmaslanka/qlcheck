@@ -28,10 +28,19 @@ internal sealed record Sink(SinkKind Kind, string Type, string Member, string? P
 
     public Sink Shell() => this with { ShellOnly = true };
 
+    // An overload with a parameter of this name is not a sink: `Regex(pattern, options,
+    // matchTimeout)` bounds the work an untrusted pattern can cause.
+    public string? Excluded { get; init; }
+
+    public Sink Without(string parameter) => this with { Excluded = parameter };
+
     // `member` is the called method or constructor, or the set property; `parameter` is the name
     // of the parameter the tainted argument binds to (null for a property set).
     public bool Matches(ISymbol member, string? parameter) =>
-        Targets(member) && (Kind == SinkKind.Set || ParameterMatches(parameter)) && member is not ITypeSymbol;
+        Targets(member)
+        && (Kind == SinkKind.Set || ParameterMatches(parameter))
+        && member is not ITypeSymbol
+        && !(member is IMethodSymbol method && method.Parameters.Any(item => item.Name == Excluded));
 
     // Parameter names, like member names, take `|` alternatives: `path|sourceFileName`.
     private bool ParameterMatches(string? parameter) =>

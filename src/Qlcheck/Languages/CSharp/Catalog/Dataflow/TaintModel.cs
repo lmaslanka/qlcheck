@@ -54,6 +54,10 @@ internal static class TaintModel
 
     private const string FullPathMethod = "GetFullPath";
 
+    private const string RegexType = "System.Text.RegularExpressions.Regex";
+
+    private const string EscapeMethod = "Escape";
+
     private static readonly HashSet<string> ParseMethods = new(StringComparer.Ordinal) { "Parse", "TryParse", "ParseExact", "TryParseExact" };
 
     private static readonly HashSet<string> FileNameMethods = new(StringComparer.Ordinal) { "GetFileName", "GetFileNameWithoutExtension" };
@@ -80,7 +84,7 @@ internal static class TaintModel
     private static readonly HashSet<string> SafeTypes = new(StringComparer.Ordinal)
     {
         "System.Guid", "System.DateTime", "System.DateTimeOffset", "System.DateOnly", "System.TimeOnly", "System.TimeSpan",
-        "System.Threading.CancellationToken",
+        "System.Threading.CancellationToken", "System.Enum",
     };
 
     // The entry state: every parameter of a method visible outside the assembly (it and every
@@ -140,7 +144,7 @@ internal static class TaintModel
     // A sanitizer (D7) keeps the source of its input but changes the labels: parsing or converting
     // to a number leaves Numeric, to another safe type nothing; Path.GetFileName leaves FileName,
     // which the path rows do not accept; Math.Min or Math.Clamp with a constant upper bound clears
-    // Numeric. Null when the call is not a sanitizer.
+    // Numeric; Regex.Escape makes the text literal. Null when the call is not a sanitizer.
     public static Taint? Sanitize(IInvocationOperation invocation, Taint input)
     {
         var method = invocation.TargetMethod;
@@ -148,6 +152,11 @@ internal static class TaintModel
         if (IsParse(method) || type == ConvertType)
         {
             return Retype(invocation.Type, input);
+        }
+
+        if (type == RegexType && method.Name == EscapeMethod)
+        {
+            return Taint.None;
         }
 
         if (type == PathType && FileNameMethods.Contains(method.Name))
@@ -218,8 +227,8 @@ internal static class TaintModel
     public static bool IsProgram(IPropertySymbol property) =>
         property.Name == ProgramProperty && Symbols.Is(property.ContainingType, StartInfoType);
 
-    // A value of this type cannot carry an injection: numbers, bool, enums, GUIDs, dates, time
-    // spans, cancellation tokens and nullables of those. A char can still be a quote.
+    // A value of this type cannot carry an injection: numbers, bool, enums (also as `Enum`), GUIDs,
+    // dates, time spans, cancellation tokens and nullables of those. A char can still be a quote.
     public static bool IsSafe(ITypeSymbol? type) =>
         type is not null
         && (type.SpecialType is >= SpecialType.System_Boolean and <= SpecialType.System_Double and not SpecialType.System_Char

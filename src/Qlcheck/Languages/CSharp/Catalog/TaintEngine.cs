@@ -58,8 +58,26 @@ internal static class TaintEngine
             ],
             "Resolve it with `Path.GetFullPath` and check it starts with the base directory, or keep only `Path.GetFileName` of it.")),
         Row.Taint("reflected-xss", CheckClass.Taint, "Write"),
-        Row.Taint("reflection-injection", CheckClass.Taint, "GetType"),
-        Row.Taint("regex-dos", CheckClass.Taint, "Regex"),
+        Row.Flow("reflection-injection", CheckClass.Taint, new TaintSpec(
+            TaintLabel.Untrusted,
+            [
+                Sink.Call("System.Type", "GetType", "typeName"),
+                Sink.Call("System.Type", "GetMethod|GetProperty|GetField|GetMember|InvokeMember", "name"),
+                Sink.Call("System.Reflection.Assembly", "GetType", "name"),
+                Sink.Call("System.Reflection.Assembly", "Load|LoadFrom|LoadFile", "assemblyString|assemblyFile|path"),
+                Sink.Call("System.Activator", "CreateInstance|CreateInstanceFrom", "assemblyName|typeName|assemblyFile"),
+            ],
+            "Map the input to a type or member through an allow-list instead of resolving it by name.")),
+        Row.Flow("regex-dos", CheckClass.Taint, new TaintSpec(
+            TaintLabel.Untrusted | TaintLabel.PublicParameter,
+            [
+                Sink.Ctor("System.Text.RegularExpressions.Regex", "pattern").Without("matchTimeout"),
+                Sink.Call(
+                    "System.Text.RegularExpressions.Regex",
+                    "IsMatch|Match|Matches|Replace|Split|Count|EnumerateMatches",
+                    "pattern").Without("matchTimeout"),
+            ],
+            "Pass a `matchTimeout`, or escape the input with `Regex.Escape` if it is meant literally.")),
         Row.Flow("sql-injection", CheckClass.Taint, new TaintSpec(
             TaintLabel.Untrusted | TaintLabel.PublicParameter,
             [

@@ -135,6 +135,7 @@ public class TaintFlowTests
     [InlineData("public void M(DbCommand c, string userId) { c.CommandText = \"SELECT 1\"; }")]
     [InlineData("public void M(DbCommand c, Guid userId) { c.CommandText = \"SELECT \" + userId; }")]
     [InlineData("public void M(DbCommand c, int? userId) { c.CommandText = $\"SELECT {userId}\"; }")]
+    [InlineData("public void M(DbCommand c, Enum userId) { c.CommandText = \"SELECT \" + userId; }")]
     [InlineData("private void M(DbCommand c, string userId) { c.CommandText = userId; }")]
     [InlineData("internal void M(DbCommand c, string userId) { c.CommandText = userId; }")]
     public void Clean_values_kills_safe_types_and_non_public_methods_give_nothing(string member)

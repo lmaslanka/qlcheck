@@ -1325,13 +1325,13 @@
     "path": "Repo.cs"
   },
   "reflection-injection": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            GetType(input);\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            GetType(\"fixed\");\n        }\n    }\n}\n",
+    "bad": "using System;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public object? Create()\n        {\n            var kind = Console.ReadLine() ?? string.Empty;\n            var type = Type.GetType(\"Sample.Plugins.\" + kind);\n            return type is null ? null : Activator.CreateInstance(type);\n        }\n    }\n}\n",
+    "good": "using System;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public object? Create()\n        {\n            var kind = Console.ReadLine() ?? string.Empty;\n            if (kind != \"Csv\" && kind != \"Json\")\n            {\n                return null;\n            }\n\n            var type = Type.GetType(\"Sample.Plugins.\" + kind);\n            return type is null ? null : Activator.CreateInstance(type);\n        }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "regex-dos": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            Regex(input);\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            Regex(\"fixed\");\n        }\n    }\n}\n",
+    "bad": "using System;\nusing System.Text.RegularExpressions;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public bool Matches(string pattern, string input) => Regex.IsMatch(input, pattern);\n    }\n}\n",
+    "good": "using System;\nusing System.Text.RegularExpressions;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public bool Matches(string pattern, string input) => Regex.IsMatch(input, pattern, RegexOptions.None, TimeSpan.FromSeconds(1));\n    }\n}\n",
     "path": "Repo.cs"
   },
   "release-lock-same-method": {

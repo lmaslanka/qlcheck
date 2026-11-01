@@ -57,6 +57,20 @@ public class SinkTests
     }
 
     [Fact]
+    public void A_sink_can_exclude_overloads_with_a_parameter()
+    {
+        const string Pattern = "pattern";
+        const string Timeout = "matchTimeout";
+        const string IsMatch = "IsMatch";
+        var regex = Platform.GetTypeByMetadataName("System.Text.RegularExpressions.Regex")!;
+        var sink = Sink.Call("System.Text.RegularExpressions.Regex", IsMatch, Pattern).Without(Timeout);
+        var isMatch = regex.GetMembers(IsMatch).OfType<IMethodSymbol>().Where(method => method.IsStatic && method.Parameters.Any(item => item.Name == Pattern)).ToList();
+
+        Assert.Contains(isMatch, method => sink.Matches(method, Pattern));
+        Assert.DoesNotContain(isMatch.Where(method => method.Parameters.Any(item => item.Name == Timeout)), method => sink.Matches(method, Pattern));
+    }
+
+    [Fact]
     public void Set_matches_a_property_through_an_interface_the_type_implements()
     {
         var property = Platform.GetTypeByMetadataName("System.Data.Common.DbCommand")!.GetMembers(CommandText).Single();

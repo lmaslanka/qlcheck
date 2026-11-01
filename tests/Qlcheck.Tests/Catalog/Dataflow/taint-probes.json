@@ -349,8 +349,7 @@
     "checks": [
       "reflection-injection"
     ],
-    "pending": "phase 4",
-    "source": "public class R { public object M(string type) { var name = \"App.\" + type; return Activator.CreateInstance(Type.GetType(name)); } }"
+    "source": "public class R { public object M() { var type = Console.ReadLine() ?? \"\"; var name = \"App.\" + type; return Activator.CreateInstance(Type.GetType(name)); } }"
   },
   "reflection_object_gettype": {
     "tag": "symbol",
@@ -366,7 +365,6 @@
     "checks": [
       "regex-dos"
     ],
-    "pending": "phase 4",
     "source": "public class R { public bool M(string pattern, string input) => new Regex(pattern, RegexOptions.None, TimeSpan.FromSeconds(1)).IsMatch(input); }"
   },
   "regex_static_ismatch": {
@@ -377,7 +375,6 @@
     "checks": [
       "regex-dos"
     ],
-    "pending": "phase 4",
     "source": "public class R { public bool M(string pattern, string input) => Regex.IsMatch(input, pattern); }"
   },
   "xpath_local": {
