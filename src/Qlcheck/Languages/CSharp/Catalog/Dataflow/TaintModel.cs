@@ -135,7 +135,7 @@ internal static class TaintModel
 
         var name = MemberName(owner);
         var action = IsAction(owner);
-        var visible = IsVisibleOutside(owner);
+        var visible = Symbols.IsVisibleOutsideAssembly(owner);
         foreach (var parameter in owner.Parameters)
         {
             var label = HasAttribute(parameter, RangeAttribute) && IsNumeric(parameter.Type) ? TaintLabel.None : LabelFor(parameter.Type);
@@ -363,19 +363,6 @@ internal static class TaintModel
         }
 
         return IsSafe(type) ? TaintLabel.None : TaintLabel.Untrusted;
-    }
-
-    private static bool IsVisibleOutside(ISymbol member)
-    {
-        for (ISymbol? symbol = member; symbol is not null and not INamespaceSymbol; symbol = symbol.ContainingSymbol)
-        {
-            if (symbol.DeclaredAccessibility is not (Accessibility.Public or Accessibility.Protected or Accessibility.ProtectedOrInternal))
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     private static ITypeSymbol? Underlying(ITypeSymbol? type) =>

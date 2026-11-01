@@ -17,12 +17,14 @@ internal static class CatalogWalker
     private static readonly HashSet<string> Implemented =
         Rows.Select(row => row.Id)
             .Concat(CompilationEngine.Rows.Select(row => row.Id))
+            .Concat(SourceSetEngine.Rows.Select(row => row.Id))
             .Concat(RunEngine.Rows.Keys)
             .ToHashSet(StringComparer.Ordinal);
 
     private static readonly Dictionary<string, CheckClass> Classes =
         Rows.Select(row => (row.Id, row.Class))
             .Concat(CompilationEngine.Rows.Select(row => (row.Id, row.Class)))
+            .Concat(SourceSetEngine.Rows.Select(row => (row.Id, row.Class)))
             .Concat(RunEngine.Rows.Select(kv => (Id: kv.Key, Class: kv.Value)))
             .ToDictionary(row => row.Id, row => row.Class, StringComparer.Ordinal);
 

@@ -40,4 +40,10 @@ internal static class Thresholds
     internal const int TooManyLogs = 5;
 
     internal const int RequestMegabytes = 8;
+
+    internal const int DuplicateTokens = 50;
+
+    internal const int DuplicateStatements = 4;
+
+    internal const int DuplicateOthersNamed = 3;
 }

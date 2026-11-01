@@ -208,6 +208,10 @@
     "message": "Classes should `Dispose` of members from the classes' own `Dispose` methods."
   },
   {
+    "id": "duplicate-code",
+    "message": "Duplicated code should be extracted into one shared method."
+  },
+  {
     "id": "dynamic-code-injection",
     "message": "Do not execute code built from untrusted input."
   },

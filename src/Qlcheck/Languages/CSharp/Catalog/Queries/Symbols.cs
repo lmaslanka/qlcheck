@@ -88,6 +88,21 @@ internal static class Symbols
             : definition.MetadataName;
     }
 
+    // The member and every type containing it are public or protected, so another assembly can
+    // reach it.
+    public static bool IsVisibleOutsideAssembly(ISymbol member)
+    {
+        for (var symbol = member; symbol is not null and not INamespaceSymbol; symbol = symbol.ContainingSymbol)
+        {
+            if (symbol.DeclaredAccessibility is not (Accessibility.Public or Accessibility.Protected or Accessibility.ProtectedOrInternal))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public static int InheritanceDepth(WalkContext ctx, SyntaxNode node)
     {
         var symbol = Declared(ctx, node) as INamedTypeSymbol;

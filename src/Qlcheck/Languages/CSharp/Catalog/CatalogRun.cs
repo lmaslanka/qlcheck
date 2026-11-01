@@ -35,6 +35,24 @@ internal static class CatalogRun
         return findings;
     }
 
+    // The run-wide Checks, once per run over every loaded file, across Compilations (plan 04, D3).
+    public static IReadOnlyList<Finding> ExecuteSourceSet(
+        IEnumerable<SourceScan.LoadedSource> loaded,
+        IReadOnlyDictionary<string, SyntaxTree> trees,
+        IReadOnlyList<CatalogCheck> checks)
+    {
+        var selected = checks.Select(check => check.Id).ToHashSet(StringComparer.Ordinal);
+        if (!SourceSetEngine.Rows.Any(row => selected.Contains(row.Id)))
+        {
+            return [];
+        }
+
+        var messages = checks.ToDictionary(check => check.Id, check => check.Message, StringComparer.Ordinal);
+        var ctx = new SourceSetContext(loaded.Select(source => new SourceSetFile(source.File.Path, trees[source.FullPath])), messages);
+        SourceSetEngine.Apply(ctx, selected);
+        return ctx.Findings;
+    }
+
     private static Compilation Compile(
         IReadOnlyList<SourceScan.LoadedSource> sources,
         string? csproj,

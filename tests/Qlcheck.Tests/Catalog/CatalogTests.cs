@@ -9,9 +9,9 @@ namespace Qlcheck.Tests;
 
 public class CatalogTests
 {
-    private const int CatalogCount = 338;
+    private const int CatalogCount = 339;
 
-    private const int EnabledCatalogCount = 330;
+    private const int EnabledCatalogCount = 331;
 
     private const int UnimplementedCatalogCount = 7;
 
@@ -533,6 +533,13 @@ public class CatalogTests
         var compilation = CSharpCompilations.Create(FixtureAssembly, [tree]);
         var selected = new HashSet<string>(StringComparer.Ordinal) { id };
         var messages = new Dictionary<string, string>(StringComparer.Ordinal) { [id] = Catalog.Messages[id] };
+
+        if (CatalogWalker.TryClass(id, out var sourceSet) && sourceSet == CheckClass.SourceSet)
+        {
+            var sourceSetCtx = new SourceSetContext([new SourceSetFile(path, tree)], messages);
+            SourceSetEngine.Apply(sourceSetCtx, selected);
+            return sourceSetCtx.Findings;
+        }
 
         if (CatalogWalker.TryClass(id, out var group) && group == CheckClass.Compilation)
         {

@@ -86,15 +86,7 @@ internal static class PublicArgumentPattern
             return false;
         }
 
-        for (ISymbol? symbol = member; symbol is not null and not INamespaceSymbol; symbol = symbol.ContainingSymbol)
-        {
-            if (symbol.DeclaredAccessibility is not (Accessibility.Public or Accessibility.Protected or Accessibility.ProtectedOrInternal))
-            {
-                return false;
-            }
-        }
-
-        return true;
+        return Symbols.IsVisibleOutsideAssembly(member);
     }
 
     // An override or explicit interface implementation: the base declares the parameter's contract.

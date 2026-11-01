@@ -73,6 +73,7 @@ internal sealed class CSharpLanguage : ILanguage
             findings.AddRange(CatalogRun.Execute(group, csproj, trees, catalog));
         }
 
+        findings.AddRange(CatalogRun.ExecuteSourceSet(loaded, trees, catalog));
         return findings;
     }
 }

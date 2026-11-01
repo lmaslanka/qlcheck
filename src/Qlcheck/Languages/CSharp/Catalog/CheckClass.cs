@@ -9,6 +9,7 @@ internal enum CheckClass
     Flow,
     Taint,
     Compilation,
+    SourceSet,
     Process,
     Architecture,
 }
