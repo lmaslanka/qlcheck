@@ -532,7 +532,11 @@ The user settled these on 2026-10-29.
     (revised 2026-10-31 from "the `public` modifier", which made public methods of internal classes sources; the same
     test as `validate-public-arguments`). Safe types (numbers, bool, enums, `Guid`, dates, `TimeSpan`,
     `CancellationToken`) carry no label. Numeric parameters carry `Numeric`, which only the allocation and
-    loop-bound rows accept.
+    loop-bound rows accept. Test methods' parameters are not sources (revised 2026-10-31).
+  - **Public parameters are their own label, `PublicParameter`** (revised 2026-10-31 after the D12 triage of
+    `path-injection`: on Jellyfin 65 of 74 Findings were public methods whose path parameter is their job, and none was
+    an injection). Each row chooses: `sql-injection` and `command-injection` accept `Untrusted | PublicParameter`;
+    `path-injection` and `filesystem-oracle` accept only `Untrusted`, from the entry points below.
   - ASP.NET entry points: `[From*]` parameters, controller-action parameters, and
     `HttpRequest.Query/Form/Headers/Cookies/RouteValues/Path/Body`.
   - `Console.ReadLine`.

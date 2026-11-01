@@ -12,7 +12,7 @@ internal static class TaintEngine
         Row.Taint("argument-injection", CheckClass.Taint, "ArgumentList"),
         Row.Taint("command-argument-injection", CheckClass.Taint, "Arguments"),
         Row.Flow("command-injection", CheckClass.Taint, new TaintSpec(
-            TaintLabel.Untrusted,
+            TaintLabel.Untrusted | TaintLabel.PublicParameter,
             [
                 Sink.Call("System.Diagnostics.Process", "Start", "fileName"),
                 Sink.Ctor("System.Diagnostics.ProcessStartInfo", "fileName"),
@@ -61,7 +61,7 @@ internal static class TaintEngine
         Row.Taint("reflection-injection", CheckClass.Taint, "GetType"),
         Row.Taint("regex-dos", CheckClass.Taint, "Regex"),
         Row.Flow("sql-injection", CheckClass.Taint, new TaintSpec(
-            TaintLabel.Untrusted,
+            TaintLabel.Untrusted | TaintLabel.PublicParameter,
             [
                 Sink.Set("System.Data.IDbCommand", "CommandText"),
                 Sink.Ctor("System.Data.Common.DbCommand", "cmdText"),

@@ -274,7 +274,7 @@
     "checks": [
       "path-injection"
     ],
-    "source": "public class R { public string M(string name) { return File.ReadAllText(Path.Combine(\"/data\", name)); } }"
+    "source": "public class R { public string M() { var name = Console.ReadLine() ?? \"\"; return File.ReadAllText(Path.Combine(\"/data\", name)); } }"
   },
   "path_local_then_read": {
     "tag": "sink-coverage",
@@ -284,7 +284,7 @@
     "checks": [
       "path-injection"
     ],
-    "source": "public class R { public string M(string name) { var full = \"/data/\" + name; return File.ReadAllText(full); } }"
+    "source": "public class R { public string M() { var name = Console.ReadLine() ?? \"\"; var full = \"/data/\" + name; return File.ReadAllText(full); } }"
   },
   "path_getfilename": {
     "tag": "sanitizer",
@@ -292,7 +292,7 @@
     "checks": [
       "path-injection"
     ],
-    "source": "public class R { public string M(string name) { var safe = Path.GetFileName(name); return File.ReadAllText(Path.Combine(\"/data\", safe)); } }"
+    "source": "public class R { public string M() { var name = Console.ReadLine() ?? \"\"; var safe = Path.GetFileName(name); return File.ReadAllText(Path.Combine(\"/data\", safe)); } }"
   },
   "path_lookalike_combine": {
     "tag": "symbol",
@@ -308,7 +308,7 @@
     "checks": [
       "path-injection"
     ],
-    "source": "public class R { public string M(string name) { var full = Path.GetFullPath(Path.Combine(\"/data\", name));\n  if (!full.StartsWith(\"/data/\", StringComparison.Ordinal)) { throw new UnauthorizedAccessException(); } return File.ReadAllText(full); } }"
+    "source": "public class R { public string M() { var name = Console.ReadLine() ?? \"\"; var full = Path.GetFullPath(Path.Combine(\"/data\", name));\n  if (!full.StartsWith(\"/data/\", StringComparison.Ordinal)) { throw new UnauthorizedAccessException(); } return File.ReadAllText(full); } }"
   },
   "xss_console_write": {
     "tag": "symbol",

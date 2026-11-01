@@ -19,7 +19,7 @@ internal static class TaintGuards
 
     private const string UrlHelperType = "Microsoft.AspNetCore.Mvc.IUrlHelper";
 
-    private const TaintLabel Uncontained = TaintLabel.Untrusted | TaintLabel.ArchiveEntry;
+    private const TaintLabel Uncontained = TaintLabel.Untrusted | TaintLabel.PublicParameter | TaintLabel.ArchiveEntry;
 
     // Applies `condition` to `state` on the edge where the condition is `holds`. `fullPaths` are
     // the variables assigned from Path.GetFullPath.

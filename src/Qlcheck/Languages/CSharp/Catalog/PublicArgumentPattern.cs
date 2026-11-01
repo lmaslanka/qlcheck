@@ -22,11 +22,6 @@ internal static class PublicArgumentPattern
         "NotNullAttribute", "ValidatedNotNullAttribute",
     };
 
-    private static readonly HashSet<string> TestAttributes = new(StringComparer.Ordinal)
-    {
-        "Fact", "Theory", "Test", "TestCase", "TestMethod", "DataTestMethod",
-    };
-
     public static void Apply(WalkContext ctx, string id)
     {
         var hasErrors = new Lazy<bool>(() => ctx.Model.GetDiagnostics().Any(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
@@ -86,7 +81,7 @@ internal static class PublicArgumentPattern
         }
 
         var attributes = syntax is MemberDeclarationSyntax declaration ? declaration.AttributeLists.SelectMany(list => list.Attributes) : [];
-        if (attributes.Any(attribute => TestAttributes.Contains(Names.Simple(attribute.Name))))
+        if (attributes.Any(attribute => TestMethods.AttributeNames.Contains(Names.Simple(attribute.Name))))
         {
             return false;
         }

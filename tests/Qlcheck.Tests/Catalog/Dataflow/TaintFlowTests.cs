@@ -43,7 +43,7 @@ public class TaintFlowTests
 
         Assert.Equal(CommandText, hit.Sink);
         Assert.Equal("c.CommandText = userId", hit.Node.ToString());
-        Assert.Equal(TaintLabel.Untrusted, hit.Labels);
+        Assert.Equal(TaintLabel.PublicParameter, hit.Labels);
         Assert.Equal(new TaintSource(UserId, "parameter of public `M`", 2), hit.Source);
         Assert.Empty(hit.Via);
     }
@@ -211,8 +211,8 @@ public class TaintFlowTests
     [Theory]
     [InlineData("var name = System.IO.Path.GetFileName(userId); System.IO.File.ReadAllText(name);", "FileName")]
     [InlineData("var full = System.IO.Path.GetFullPath(System.IO.Path.Combine(\"/data\", userId)); if (!full.StartsWith(\"/data/\")) { return; } System.IO.File.ReadAllText(full);", "ContainedPath")]
-    [InlineData("var full = System.IO.Path.GetFullPath(System.IO.Path.Combine(\"/data\", userId)); System.IO.File.ReadAllText(full);", "Untrusted")]
-    [InlineData("var path = System.IO.Path.Combine(\"/data\", userId); if (!path.StartsWith(\"/data/\")) { return; } System.IO.File.ReadAllText(path);", "Untrusted")]
+    [InlineData("var full = System.IO.Path.GetFullPath(System.IO.Path.Combine(\"/data\", userId)); System.IO.File.ReadAllText(full);", "PublicParameter")]
+    [InlineData("var path = System.IO.Path.Combine(\"/data\", userId); if (!path.StartsWith(\"/data/\")) { return; } System.IO.File.ReadAllText(path);", "PublicParameter")]
     public void File_names_and_contained_paths_are_labelled_for_the_path_rows(string body, string label)
     {
         var hit = Assert.Single(Run($"public class R {{ public void M(string userId) {{ {body} }} }}"));
@@ -237,6 +237,15 @@ public class TaintFlowTests
     public void Only_methods_visible_outside_the_assembly_take_untrusted_parameters(string source, int hits)
     {
         Assert.Equal(hits, Run(source).Count);
+    }
+
+    [Theory]
+    [InlineData("Fact")]
+    [InlineData("Theory")]
+    [InlineData("TestMethod")]
+    public void Test_method_parameters_are_not_sources(string attribute)
+    {
+        Assert.Empty(Run($"public class {attribute}Attribute : Attribute {{ }} public class T {{ [{attribute}] public void M(DbCommand c, string userId) {{ c.CommandText = userId; }} }}"));
     }
 
     [Fact]
@@ -272,6 +281,7 @@ public class TaintFlowTests
         var hit = Assert.Single(Run("public class R { void M(DbCommand c) { var s = Console.ReadLine(); c.CommandText = \"SELECT \" + s; } }"));
 
         Assert.Equal("Console.ReadLine()", hit.Source.Name);
+        Assert.Equal(TaintLabel.Untrusted, hit.Labels);
     }
 
     [Theory]

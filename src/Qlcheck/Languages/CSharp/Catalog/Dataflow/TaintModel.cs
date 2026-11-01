@@ -84,19 +84,20 @@ internal static class TaintModel
     };
 
     // The entry state: every parameter of a method visible outside the assembly (it and every
-    // containing type public or protected), except those of a safe type. A numeric parameter is
-    // Numeric, which only the allocation and loop-bound rows accept.
+    // containing type public or protected) is a PublicParameter, except those of a safe type and
+    // those of test methods. A numeric parameter is Numeric, which only the allocation and
+    // loop-bound rows accept.
     public static TaintState Seed(IMethodSymbol? owner)
     {
         var state = new TaintState();
-        if (owner is null || !IsVisibleOutside(owner))
+        if (owner is null || !IsVisibleOutside(owner) || TestMethods.IsTest(owner))
         {
             return state;
         }
 
         foreach (var parameter in owner.Parameters)
         {
-            var label = LabelFor(parameter.Type);
+            var label = LabelFor(parameter.Type, TaintLabel.PublicParameter);
             if (label != TaintLabel.None)
             {
                 state.Set(parameter, Taint.From(label, new TaintSource(parameter.Name, $"parameter of public `{MemberName(owner)}`", Line(parameter))));
@@ -229,15 +230,15 @@ internal static class TaintModel
     public static bool IsNumeric(ITypeSymbol? type) =>
         (Underlying(type) ?? type)?.SpecialType is >= SpecialType.System_SByte and <= SpecialType.System_Double;
 
-    // The label a value of this type starts with when it comes from an untrusted source.
-    public static TaintLabel LabelFor(ITypeSymbol? type)
+    // The label a value of this type starts with when it comes from a source of `kind`.
+    public static TaintLabel LabelFor(ITypeSymbol? type, TaintLabel kind = TaintLabel.Untrusted)
     {
         if (IsNumeric(type))
         {
             return TaintLabel.Numeric;
         }
 
-        return IsSafe(type) ? TaintLabel.None : TaintLabel.Untrusted;
+        return IsSafe(type) ? TaintLabel.None : kind;
     }
 
     private static bool IsVisibleOutside(ISymbol member)
