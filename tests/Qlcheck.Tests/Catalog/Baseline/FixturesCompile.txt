@@ -74,4 +74,3 @@ type-name-suffix
 unused-assignment
 unused-local
 unused-parameter
-zip-slip

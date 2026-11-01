@@ -208,7 +208,14 @@ internal static class TaintEngine
             TaintLabel.Untrusted | TaintLabel.PublicParameter,
             [Sink.Call("System.Xml.Xsl.XslCompiledTransform", "Load", "stylesheetUri")],
             "Load stylesheets only from a fixed, trusted location.")),
-        Row.Taint("zip-slip", CheckClass.Taint, "ExtractToFile"),
+        Row.Flow("zip-slip", CheckClass.Taint, new TaintSpec(
+            TaintLabel.ArchiveEntry,
+            [
+                Sink.Call("System.IO.Compression.ZipFileExtensions", "ExtractToFile", "destinationFileName"),
+                Sink.Call("System.IO.File", "Create*|Open*|Write*|Copy|Move", "path|destFileName"),
+                Sink.Ctor("System.IO.FileStream", "path"),
+            ],
+            "Resolve the target with `Path.GetFullPath` and check it starts with the extraction directory before writing.")),
     ];
 
     // Every sink of every Row.Flow row: the dataflow runs once per body for all of them.

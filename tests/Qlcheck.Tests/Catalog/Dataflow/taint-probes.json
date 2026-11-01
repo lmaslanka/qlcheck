@@ -400,7 +400,6 @@
     "checks": [
       "zip-slip"
     ],
-    "pending": "phase 4",
     "source": "public class R { public void M(ZipArchive archive, string dest) { foreach (var entry in archive.Entries) { entry.ExtractToFile(Path.Combine(dest, entry.FullName)); } } }"
   },
   "zip_entry_guarded": {

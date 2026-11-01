@@ -1645,8 +1645,8 @@
     "path": "Repo.cs"
   },
   "zip-slip": {
-    "bad": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            ExtractToFile(input);\n        }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    class C\n    {\n        public void M(string input)\n        {\n            ExtractToFile(\"fixed\");\n        }\n    }\n}\n",
+    "bad": "using System;\nusing System.IO;\nusing System.IO.Compression;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public void Extract(ZipArchive archive)\n        {\n            foreach (var entry in archive.Entries)\n            {\n                entry.ExtractToFile(Path.Combine(\"/out\", entry.FullName));\n            }\n        }\n    }\n}\n",
+    "good": "using System;\nusing System.IO;\nusing System.IO.Compression;\n\nnamespace Sample\n{\n    public class Sample\n    {\n        public void Extract(ZipArchive archive)\n        {\n            foreach (var entry in archive.Entries)\n            {\n                var target = Path.GetFullPath(Path.Combine(\"/out\", entry.FullName));\n                if (!target.StartsWith(\"/out/\", StringComparison.Ordinal))\n                {\n                    continue;\n                }\n\n                entry.ExtractToFile(target);\n            }\n        }\n    }\n}\n",
     "path": "Repo.cs"
   }
 }
