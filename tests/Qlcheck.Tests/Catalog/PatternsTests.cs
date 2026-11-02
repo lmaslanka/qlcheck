@@ -1706,6 +1706,23 @@ public class PatternsTests
         Assert.Empty(ctx.Findings);
     }
 
+    [Theory]
+    [InlineData("public class C { public List<int> M() => new(); }", 1)]
+    [InlineData("public class C { public void M(List<int> items) { } }", 1)]
+    [InlineData("public class C { public List<int> Items { get; } = []; }", 1)]
+    [InlineData("public class C { protected List<int> M() => new(); }", 1)]
+    [InlineData("public interface I { List<int> M(); }", 1)]
+    [InlineData("internal class C { public List<int> M() => new(); }", 0)]
+    [InlineData("class C { public List<int> Items { get; } = []; }", 0)]
+    [InlineData("public class O { private sealed class C { public List<int> Items { get; } = []; } }", 0)]
+    [InlineData("public class C { private List<int> M() => new(); }", 0)]
+    public void ListInPublicApi_reports_only_members_another_assembly_can_reach(string source, int count)
+    {
+        var ctx = MatchFixtures.Context("using System.Collections.Generic;\n" + source);
+        Patterns.ListInPublicApi(ctx, MatchFixtures.Id);
+        Assert.Equal(count, ctx.Findings.Count);
+    }
+
     [Fact]
     public void ExceptionStandardConstructors_flags_a_type_missing_the_standard_constructors()
     {

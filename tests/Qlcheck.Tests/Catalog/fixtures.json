@@ -835,8 +835,8 @@
     "path": "Repo.cs"
   },
   "no-list-in-public-api": {
-    "bad": "class C\n{\n    public System.Collections.Generic.List<int> M() => null;\n}\n",
-    "good": "class C\n{\n    public System.Collections.Generic.IReadOnlyList<int> M() => null;\n}\n",
+    "bad": "public class C\n{\n    public System.Collections.Generic.List<int> M() => null;\n}\n",
+    "good": "public class C\n{\n    public System.Collections.Generic.IReadOnlyList<int> M() => null;\n}\n",
     "path": "Repo.cs"
   },
   "no-lock-local": {

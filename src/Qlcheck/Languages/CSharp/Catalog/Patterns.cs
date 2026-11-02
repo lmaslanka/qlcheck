@@ -244,11 +244,13 @@ internal static class Patterns
         }
     }
 
+    // Methods and properties typed List that another assembly can reach: the member and every
+    // containing type are public or protected, as the compiler sees them (plan 08).
     public static void ListInPublicApi(WalkContext ctx, string id)
     {
         foreach (var node in ctx.Nodes(SyntaxKind.MethodDeclaration))
         {
-            if (node is not MethodDeclarationSyntax method || !Shapes.HasModifier(method, SyntaxKind.PublicKeyword))
+            if (node is not MethodDeclarationSyntax method)
             {
                 continue;
             }
@@ -256,7 +258,7 @@ internal static class Patterns
             var hasListType = Names.TypeText(method.ReturnType) == ListTypeName
                 || method.ParameterList.Parameters.Any(parameter =>
                     parameter.Type is not null && Names.TypeText(parameter.Type) == ListTypeName);
-            if (hasListType)
+            if (hasListType && Symbols.IsVisibleOutsideAssembly(ctx, method))
             {
                 ctx.Report(id, method);
             }
@@ -265,8 +267,8 @@ internal static class Patterns
         foreach (var node in ctx.Nodes(SyntaxKind.PropertyDeclaration))
         {
             if (node is PropertyDeclarationSyntax property
-                && Shapes.HasModifier(property, SyntaxKind.PublicKeyword)
-                && Names.TypeText(property.Type) == ListTypeName)
+                && Names.TypeText(property.Type) == ListTypeName
+                && Symbols.IsVisibleOutsideAssembly(ctx, property))
             {
                 ctx.Report(id, property);
             }
