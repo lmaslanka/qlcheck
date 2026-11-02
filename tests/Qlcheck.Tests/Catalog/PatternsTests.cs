@@ -1713,7 +1713,7 @@ public class PatternsTests
     [InlineData("sealed class FooException : Exception { }", 1)]
     public void ExceptionPublic_reports_exception_types_another_assembly_cannot_reach(string source, int count)
     {
-        var ctx = MatchFixtures.Context("using System;\n" + source);
+        var ctx = MatchFixtures.Context($"using System;\n{source}");
         Patterns.ExceptionPublic(ctx, MatchFixtures.Id);
         Assert.Equal(count, ctx.Findings.Count);
     }
@@ -1730,7 +1730,7 @@ public class PatternsTests
     [InlineData("public class C { private List<int> M() => new(); }", 0)]
     public void ListInPublicApi_reports_only_members_another_assembly_can_reach(string source, int count)
     {
-        var ctx = MatchFixtures.Context("using System.Collections.Generic;\n" + source);
+        var ctx = MatchFixtures.Context($"using System.Collections.Generic;\n{source}");
         Patterns.ListInPublicApi(ctx, MatchFixtures.Id);
         Assert.Equal(count, ctx.Findings.Count);
     }

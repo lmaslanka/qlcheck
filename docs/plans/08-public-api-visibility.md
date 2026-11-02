@@ -1,6 +1,12 @@
 # Plan 08: public API rows judge visibility like the compiler
 
-Status: Agreed 2026-11-02 · Depends on: none
+Status: Done 2026-11-02 (agreed 2026-11-02) · Depends on: none
+
+## Progress
+
+- **Done** (2026-11-02, branch `public-api-visibility`): steps 1-5. Catalog counts unchanged.
+- **Self-scan:** 454 → 448, exactly the six predicted Findings removed (five `no-list-in-public-api`, the
+  `MatchFixtures.cs` `no-public-const`), none added.
 
 ## Goal
 
