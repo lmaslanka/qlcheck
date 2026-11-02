@@ -103,6 +103,14 @@ internal static class Symbols
         return true;
     }
 
+    // The same for a declaration (a field declaration by its first variable; all share the
+    // modifiers). No declared symbol gives false.
+    public static bool IsVisibleOutsideAssembly(WalkContext ctx, SyntaxNode declaration)
+    {
+        var node = declaration is BaseFieldDeclarationSyntax field ? field.Declaration.Variables.FirstOrDefault() : declaration;
+        return node is not null && ctx.Model.GetDeclaredSymbol(node) is { } symbol && IsVisibleOutsideAssembly(symbol);
+    }
+
     public static int InheritanceDepth(WalkContext ctx, SyntaxNode node)
     {
         var symbol = Declared(ctx, node) as INamedTypeSymbol;

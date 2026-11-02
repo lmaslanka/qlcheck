@@ -83,6 +83,32 @@ public class SymbolsTests
         Assert.False(Symbols.Is(null, "System.Object"));
     }
 
+    [Theory]
+    [InlineData("public class C { public int M() => 0; }", true)]
+    [InlineData("internal class C { public int M() => 0; }", false)]
+    [InlineData("class C { public int M() => 0; }", false)]
+    [InlineData("public class O { private class C { public int M() => 0; } }", false)]
+    [InlineData("public class C { protected int M() => 0; }", true)]
+    [InlineData("public class C { protected internal int M() => 0; }", true)]
+    [InlineData("public class C { private protected int M() => 0; }", false)]
+    [InlineData("public interface I { int M(); }", true)]
+    [InlineData("partial class C { public int M() => 0; } public partial class C { }", true)]
+    public void A_member_is_visible_outside_the_assembly_only_when_it_and_its_types_are(string source, bool visible)
+    {
+        var ctx = CreateContext(source);
+        var method = ctx.Tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>().First();
+        Assert.Equal(visible, Symbols.IsVisibleOutsideAssembly(ctx, method));
+    }
+
+    [Fact]
+    public void A_field_declaration_resolves_through_its_variables()
+    {
+        var ctx = CreateContext("public class C { public int A, B; } internal class D { public int A, B; }");
+        var fields = ctx.Tree.GetRoot().DescendantNodes().OfType<FieldDeclarationSyntax>().ToList();
+        Assert.True(Symbols.IsVisibleOutsideAssembly(ctx, fields[0]));
+        Assert.False(Symbols.IsVisibleOutsideAssembly(ctx, fields[1]));
+    }
+
     private static WalkContext CreateContext(string source)
     {
         var file = new SourceFile("Repo.cs", source);
