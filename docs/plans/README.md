@@ -12,5 +12,6 @@ Agreed 2026-10-29. Each plan states its dependencies and records its resolved de
 | 04 | [Duplication](04-duplication.md): `duplicate-code` and a real `identical-method` | none | none |
 | 06 | [Architecture](06-architecture.md): `.qlcheck_architecture` Constraints | 00 | 0014 |
 | 07 | [Redundant null checks](07-redundant-null-check.md): `redundant-null-check` on never-null method results | 02 | none |
+| 08 | [Public API visibility](08-public-api-visibility.md): `no-list-in-public-api`, `no-public-const` and `exception-public` judge reachability like the compiler | none | none |
 
 Out of scope by decision: taint across methods or files, abstract interpretation, symbolic execution, dependency (SCA) and licence scanning, cohesion metrics, scanning git history for secrets.
