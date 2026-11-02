@@ -275,8 +275,8 @@
     "path": "Repo.cs"
   },
   "exception-public": {
-    "bad": "namespace Sample\n{\n    internal sealed class FooException : Exception\n    {\n        public FooException() { }\n\n        public FooException(string message) : base(message) { }\n\n        public FooException(string message, Exception innerException) : base(message, innerException) { }\n    }\n}\n",
-    "good": "namespace Sample\n{\n    public sealed class FooException : Exception\n    {\n        public FooException() { }\n\n        public FooException(string message) : base(message) { }\n\n        public FooException(string message, Exception innerException) : base(message, innerException) { }\n    }\n}\n",
+    "bad": "using System;\n\nnamespace Sample\n{\n    internal sealed class FooException : Exception\n    {\n        public FooException() { }\n\n        public FooException(string message) : base(message) { }\n\n        public FooException(string message, Exception innerException) : base(message, innerException) { }\n    }\n}\n",
+    "good": "using System;\n\nnamespace Sample\n{\n    public sealed class FooException : Exception\n    {\n        public FooException() { }\n\n        public FooException(string message) : base(message) { }\n\n        public FooException(string message, Exception innerException) : base(message, innerException) { }\n    }\n}\n",
     "path": "Repo.cs"
   },
   "exception-standard-constructors": {

@@ -15,7 +15,6 @@ dispose-created
 else-required
 equals-and-hashcode
 exception-name-extends
-exception-public
 exception-standard-constructors
 export-implements-contract
 identical-branch

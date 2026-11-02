@@ -1707,6 +1707,18 @@ public class PatternsTests
     }
 
     [Theory]
+    [InlineData("internal class Outer { public sealed class FooException : Exception { } }", 1)]
+    [InlineData("public class Outer { public sealed class FooException : Exception { } }", 0)]
+    [InlineData("public class Outer { private sealed class FooException : Exception { } }", 1)]
+    [InlineData("sealed class FooException : Exception { }", 1)]
+    public void ExceptionPublic_reports_exception_types_another_assembly_cannot_reach(string source, int count)
+    {
+        var ctx = MatchFixtures.Context("using System;\n" + source);
+        Patterns.ExceptionPublic(ctx, MatchFixtures.Id);
+        Assert.Equal(count, ctx.Findings.Count);
+    }
+
+    [Theory]
     [InlineData("public class C { public List<int> M() => new(); }", 1)]
     [InlineData("public class C { public void M(List<int> items) { } }", 1)]
     [InlineData("public class C { public List<int> Items { get; } = []; }", 1)]

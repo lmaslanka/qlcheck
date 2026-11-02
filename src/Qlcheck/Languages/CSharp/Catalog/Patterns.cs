@@ -167,11 +167,12 @@ internal static class Patterns
         }
     }
 
+    // An exception type another assembly cannot reach, so cannot catch by type (plan 08).
     public static void ExceptionPublic(WalkContext ctx, string id)
     {
         foreach (var node in ExceptionNamedTypes(ctx))
         {
-            if (!Shapes.HasModifier(node, SyntaxKind.PublicKeyword))
+            if (!Symbols.IsVisibleOutsideAssembly(ctx, node))
             {
                 ctx.Report(id, node);
             }
