@@ -251,9 +251,10 @@ internal static class StylePatterns
         return line.TrimEnd().EndsWith(token.Text, StringComparison.Ordinal);
     }
 
+    // A constant another assembly can reach (plan 08), which that assembly compiles in by value.
     private static bool PublicAndConst(WalkContext ctx, SyntaxNode node)
     {
-        if (!Shapes.HasModifier(node, SyntaxKind.PublicKeyword) || !Shapes.HasModifier(node, SyntaxKind.ConstKeyword))
+        if (!Shapes.HasModifier(node, SyntaxKind.ConstKeyword) || !Symbols.IsVisibleOutsideAssembly(ctx, node))
         {
             return false;
         }
