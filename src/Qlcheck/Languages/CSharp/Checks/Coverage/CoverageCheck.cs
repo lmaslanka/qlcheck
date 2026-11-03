@@ -4,13 +4,13 @@ namespace Qlcheck.Languages.CSharp.Checks.Coverage;
 
 internal sealed class CoverageCheck
 {
-    public const string CheckId = "coverage";
+    internal const string CheckId = "coverage";
 
-    public const string UncoveredMessage = "Uncovered.";
+    internal const string UncoveredMessage = "Uncovered.";
 
-    public const string MissingMessage = "Not in coverage result.";
+    internal const string MissingMessage = "Not in coverage result.";
 
-    public const string NoProductMessage = "No product source to cover.";
+    internal const string NoProductMessage = "No product source to cover.";
 
     public CoverageAnalysis Analyze(IReadOnlyList<SourceScan.LoadedSource> files)
     {

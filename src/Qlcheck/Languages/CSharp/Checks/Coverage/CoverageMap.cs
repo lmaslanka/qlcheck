@@ -66,15 +66,7 @@ internal static class CoverageMap
         }
 
         uncovered.Sort(static (left, right) => left.Line.CompareTo(right.Line));
-        foreach (var line in uncovered)
-        {
-            findings.Add(Finding.At(
-                CoverageCheck.CheckId,
-                path,
-                line.Line,
-                Column,
-                CoverageCheck.UncoveredMessage));
-        }
+        findings.AddRange(uncovered.Select(line => Finding.At(CoverageCheck.CheckId, path, line.Line, Column, CoverageCheck.UncoveredMessage)));
 
         coverage.Add(new CoverageFile(path, false, Methods(uncovered)));
     }

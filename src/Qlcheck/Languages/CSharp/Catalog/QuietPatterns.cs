@@ -551,18 +551,21 @@ internal static class QuietPatterns
             var reads = variable.Initializer?.Value
                 .DescendantNodesAndSelf(child => child is not AnonymousFunctionExpressionSyntax)
                 .OfType<IdentifierNameSyntax>() ?? [];
-            foreach (var read in reads)
+            foreach (var read in reads.Where(read => IsDeclaredLater(ctx, read, type, variable)))
             {
-                if (ctx.Model.GetSymbolInfo(read).Symbol is IFieldSymbol { IsStatic: true, IsConst: false } target
-                    && SymbolEqualityComparer.Default.Equals(target.ContainingType, ctx.Model.GetDeclaredSymbol(type))
-                    && target.DeclaringSyntaxReferences.Any(reference =>
-                        reference.SyntaxTree == node.SyntaxTree && type.Span.Contains(reference.Span) && reference.Span.Start > variable.SpanStart))
-                {
-                    yield return read;
-                }
+                yield return read;
             }
         }
     }
+
+    // A static non-const field of `type` declared in this declaration after `variable`.
+    private static bool IsDeclaredLater(WalkContext ctx, IdentifierNameSyntax read, ClassDeclarationSyntax type, VariableDeclaratorSyntax variable) =>
+        ctx.Model.GetSymbolInfo(read).Symbol is IFieldSymbol { IsStatic: true, IsConst: false } target
+        && SymbolEqualityComparer.Default.Equals(target.ContainingType, ctx.Model.GetDeclaredSymbol(type))
+        && target.DeclaringSyntaxReferences.Any(reference => IsAfter(reference, type, variable));
+
+    private static bool IsAfter(SyntaxReference reference, ClassDeclarationSyntax type, VariableDeclaratorSyntax variable) =>
+        reference.SyntaxTree == type.SyntaxTree && type.Span.Contains(reference.Span) && reference.Span.Start > variable.SpanStart;
 
     private static bool LiteralNeverWritten(SyntaxNode node)
     {

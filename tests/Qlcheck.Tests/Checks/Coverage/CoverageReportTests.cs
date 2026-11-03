@@ -29,7 +29,7 @@ public class CoverageReportTests
         var loaded = new SourceScan.LoadedSource(FullPath, new SourceFile(DisplayPath, Source));
         var finding = Finding.At(CoverageCheck.CheckId, DisplayPath, ReturnLine, 1, CoverageCheck.UncoveredMessage);
         var coverage = new CoverageFile(DisplayPath, false, [new CoverageMethod(MethodName, [ReturnLine])]);
-        var stdout = new StringWriter();
+        using var stdout = new StringWriter();
 
         Qlcheck.Report.Report.Write(
             new Qlcheck.Cli.Cli.Options(false, false, false, [], [], [DisplayPath]),
@@ -52,7 +52,7 @@ public class CoverageReportTests
     {
         var loaded = new SourceScan.LoadedSource(FullPath, new SourceFile(DisplayPath, Source));
         var coverage = new CoverageFile(DisplayPath, false, []);
-        var stdout = new StringWriter();
+        using var stdout = new StringWriter();
 
         Qlcheck.Report.Report.Write(
             new Qlcheck.Cli.Cli.Options(false, false, false, [], [], [DisplayPath]),
@@ -73,7 +73,7 @@ public class CoverageReportTests
     public void Human_output_stays_per_line()
     {
         var finding = Finding.At(CoverageCheck.CheckId, DisplayPath, ReturnLine, 1, CoverageCheck.UncoveredMessage);
-        var stdout = new StringWriter();
+        using var stdout = new StringWriter();
 
         Qlcheck.Report.Report.Write(
             new Qlcheck.Cli.Cli.Options(true, false, false, [], [], [DisplayPath]),

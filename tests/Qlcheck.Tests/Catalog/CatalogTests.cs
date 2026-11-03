@@ -35,6 +35,12 @@ public class CatalogTests
 
     private const string SharedHandlersBaseline = "SharedHandlers.txt";
 
+    private const string EnginePattern = "*Engine.cs";
+
+    private const string RowClassName = "Row";
+
+    private const int HandlerArgument = 2;
+
     private static readonly HashSet<string> HandlerBuilders = new(StringComparer.Ordinal) { "Handle", "Test" };
 
     private static readonly HashSet<string> NameOnlyBuilders = new(StringComparer.Ordinal)
@@ -209,7 +215,7 @@ public class CatalogTests
     [Fact]
     public void Name_only_rows_are_allowlisted()
     {
-        var engines = Directory.GetFiles(EngineDir(), "*Engine.cs");
+        var engines = Directory.GetFiles(EngineDir(), EnginePattern);
         var rows = engines
             .SelectMany(engine => CSharpSyntaxTree.ParseText(File.ReadAllText(engine)).GetRoot().DescendantNodes())
             .OfType<InvocationExpressionSyntax>()
@@ -227,11 +233,11 @@ public class CatalogTests
     [Fact]
     public void Rows_do_not_share_a_handler()
     {
-        var shared = Directory.GetFiles(EngineDir(), "*Engine.cs")
+        var shared = Directory.GetFiles(EngineDir(), EnginePattern)
             .SelectMany(engine => CSharpSyntaxTree.ParseText(File.ReadAllText(engine)).GetRoot().DescendantNodes())
             .OfType<InvocationExpressionSyntax>()
             .Where(IsHandlerRow)
-            .GroupBy(invocation => invocation.ArgumentList.Arguments[2].Expression.ToString(), StringComparer.Ordinal)
+            .GroupBy(invocation => invocation.ArgumentList.Arguments[HandlerArgument].Expression.ToString(), StringComparer.Ordinal)
             .Where(group => group.Count() > 1)
             .SelectMany(group => group)
             .Select(invocation => invocation.ArgumentList.Arguments[0].Expression)
@@ -569,14 +575,14 @@ public class CatalogTests
         string.Join(' ', source.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
 
     private static bool IsNameOnlyRow(InvocationExpressionSyntax invocation) =>
-        invocation.Expression is MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.ValueText: "Row" } } member
+        invocation.Expression is MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.ValueText: RowClassName } } member
         && NameOnlyBuilders.Contains(member.Name.Identifier.ValueText)
         && invocation.ArgumentList.Arguments.Count > 0;
 
     private static bool IsHandlerRow(InvocationExpressionSyntax invocation) =>
-        invocation.Expression is MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.ValueText: "Row" } } member
+        invocation.Expression is MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.ValueText: RowClassName } } member
         && HandlerBuilders.Contains(member.Name.Identifier.ValueText)
-        && invocation.ArgumentList.Arguments.Count == 3;
+        && invocation.ArgumentList.Arguments.Count == HandlerArgument + 1;
 
     private static string EngineDir() => Path.Combine(RepoRoot(), "src", "Qlcheck", "Languages", "CSharp", "Catalog");
 

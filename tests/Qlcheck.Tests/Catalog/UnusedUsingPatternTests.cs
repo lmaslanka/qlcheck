@@ -7,6 +7,10 @@ public class UnusedUsingPatternTests
 {
     private const string CompilationName = "qlcheck";
 
+    private const string Id = "unused-using";
+
+    private const string Message = "message";
+
     private static IReadOnlyList<Finding> Run(string source, string path = "Repo.cs") =>
         RunWithReportable(source, path, reportable: true);
 
@@ -14,10 +18,10 @@ public class UnusedUsingPatternTests
     {
         var tree = CSharpTrees.Parse(new SourceFile(path, source));
         var compilation = CSharpCompilations.Create(CompilationName, [tree]);
-        var messages = new Dictionary<string, string>(StringComparer.Ordinal) { ["unused-using"] = "message" };
+        var messages = new Dictionary<string, string>(StringComparer.Ordinal) { [Id] = Message };
         var trees = reportable ? new HashSet<SyntaxTree> { tree } : [];
         var ctx = new CompilationContext(compilation, trees, messages);
-        UnusedUsingPattern.Apply(ctx, "unused-using");
+        UnusedUsingPattern.Apply(ctx, Id);
         return ctx.Findings;
     }
 
@@ -27,9 +31,9 @@ public class UnusedUsingPatternTests
         var library = CSharpCompilations.Create("library", [CSharpTrees.Parse(new SourceFile("Lib.cs", "namespace Lib { internal class Hidden { } }"))]);
         var tree = CSharpTrees.Parse(new SourceFile("Repo.cs", "using Lib;\n\nclass C\n{\n    Hidden field;\n}\n"));
         var compilation = CSharpCompilations.Create(CompilationName, [tree]).AddReferences(library.ToMetadataReference());
-        var ctx = new CompilationContext(compilation, new HashSet<SyntaxTree> { tree }, new Dictionary<string, string>(StringComparer.Ordinal) { ["unused-using"] = "message" });
+        var ctx = new CompilationContext(compilation, new HashSet<SyntaxTree> { tree }, new Dictionary<string, string>(StringComparer.Ordinal) { [Id] = Message });
 
-        UnusedUsingPattern.Apply(ctx, "unused-using");
+        UnusedUsingPattern.Apply(ctx, Id);
 
         Assert.Contains(compilation.GetDiagnostics(), diagnostic => diagnostic.Id == "CS0122");
         Assert.Empty(ctx.Findings);
@@ -47,7 +51,7 @@ public class UnusedUsingPatternTests
             """;
 
         var finding = Assert.Single(Run(source));
-        Assert.Equal("unused-using", finding.Check);
+        Assert.Equal(Id, finding.Check);
         Assert.Equal(string.Empty, finding.Replacement);
     }
 

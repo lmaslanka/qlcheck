@@ -35,16 +35,24 @@ internal static class SimplifyLinqPattern
                 continue;
             }
 
-            var name = member.Name.Identifier.Text;
-            if (PredicateOverloads.Contains(name) && invocation.ArgumentList.Arguments.Count == 0 && IsWhereWithPredicate(ctx, member.Expression) && IsLinq(ctx, invocation))
+            if (Detail(ctx, invocation, member) is { } detail)
             {
-                ctx.Report(id, invocation, $"Use `{name}(predicate)` instead of `Where(predicate).{name}()`.");
-            }
-            else if (name == SelectName && IsIdentityLambda(invocation) && IsLinq(ctx, invocation))
-            {
-                ctx.Report(id, invocation, "Drop the `Select` that returns its argument unchanged.");
+                ctx.Report(id, invocation, detail);
             }
         }
+    }
+
+    private static string? Detail(WalkContext ctx, InvocationExpressionSyntax invocation, MemberAccessExpressionSyntax member)
+    {
+        var name = member.Name.Identifier.Text;
+        if (PredicateOverloads.Contains(name) && invocation.ArgumentList.Arguments.Count == 0 && IsWhereWithPredicate(ctx, member.Expression) && IsLinq(ctx, invocation))
+        {
+            return $"Use `{name}(predicate)` instead of `Where(predicate).{name}()`.";
+        }
+
+        return name == SelectName && IsIdentityLambda(invocation) && IsLinq(ctx, invocation)
+            ? "Drop the `Select` that returns its argument unchanged."
+            : null;
     }
 
     private static bool IsLinq(WalkContext ctx, InvocationExpressionSyntax invocation) =>

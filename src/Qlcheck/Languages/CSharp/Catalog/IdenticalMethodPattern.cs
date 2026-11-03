@@ -23,7 +23,7 @@ internal static class IdenticalMethodPattern
         }
     }
 
-    // Exact copies can call each other; renamed ones differ in names, so they share a method instead (plan 09).
+    // Exact copies can call each other. Renamed copies differ in names, so they share a method instead, see plan 09.
     private static string Advice(CloneGroup group) =>
         group.Exact ? "; make one call the other." : ", apart from renamed identifiers; extract one shared method whose parameters are the parts that differ.";
 

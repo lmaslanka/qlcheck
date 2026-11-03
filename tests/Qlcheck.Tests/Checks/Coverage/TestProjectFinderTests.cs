@@ -1,6 +1,6 @@
 namespace Qlcheck.Tests;
 
-public class TestProjectFinderTests : IDisposable
+public sealed class TestProjectFinderTests : IDisposable
 {
     private const string TempPrefix = "qlcheck_cov_";
 

@@ -42,13 +42,13 @@ public class LcovMapTests
     [Fact]
     public void Matches_a_relative_source_path()
     {
-        var lcov = """
+        const string Lcov = """
             SF:src/Foo.cs
             DA:4,0
             end_of_record
             """;
 
-        var document = LcovMap.Parse(lcov);
+        var document = LcovMap.Parse(Lcov);
 
         Assert.True(document.TryGet(Foo, out var foo));
         Assert.Contains(foo.Lines, line => line.Line == CoveredLine && line.Hits == 0);

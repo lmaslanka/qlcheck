@@ -1,6 +1,6 @@
 namespace Qlcheck.Tests;
 
-public class CsprojReaderTests : IDisposable
+public sealed class CsprojReaderTests : IDisposable
 {
     private const string TempPrefix = "qlcheck_csproj_";
 

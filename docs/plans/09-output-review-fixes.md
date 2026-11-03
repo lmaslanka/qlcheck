@@ -1,6 +1,36 @@
 # Plan 09: checker bugs found reviewing a self-scan
 
-Status: Agreed 2026-11-02 · Depends on: 08
+Status: Done 2026-11-02 (agreed 2026-11-02) · Depends on: 08
+
+## Progress
+
+- **Done** (2026-11-02, branch `output-review-fixes`): steps 1-10. Catalog counts unchanged; the shared-handler
+  baseline holds 61 rows in 21 groups.
+- **Changes from the design:**
+  - The guard reads the engine tables like the name-only guard, rather than adding `WalkRow.Handler`.
+  - Built-in rules pass `RegexOptions.None` through `Parse`, rather than a `Rule.IgnoreCase` field.
+  - The renamed-copy advice reads "..., apart from renamed identifiers; extract one shared method whose parameters are
+    the parts that differ."
+  - Narrowing the references exposed a bug they had hidden: `ProjectReferences` looked for a referenced project's
+    output as `<csproj name>.dll`, but `qlcheck.csproj` sets `<AssemblyName>qlcheck</AssemblyName>`. On a
+    case-sensitive file system the test project lost its reference to qlcheck, giving 1,199 compile errors. Fixed in
+    step 9: `ProjectSettings.AssemblyName` names the output.
+- **Self-scan:** 448 → 447. Removed: the 9 wrong Findings from the review. `Checks/Coverage/` in `src` and in
+  `tests` is now scanned. Fixed in qlcheck's own code:
+  - `public const` → `internal const` in `CoverageCheck` (4 `no-public-field`, 4 `member-not-more-visible`);
+  - two loops → LINQ (`CoverageMap`, `LcovMap`);
+  - three undisposed `StringWriter`s;
+  - one local → `const`.
+- **Explained and kept (new from `Coverage/`):**
+  - `no-path-resolution` and 2 `no-blocking-async` in `CoverageRunner`: it runs the user's `dotnet` and reads both
+    streams synchronously after `WaitForExit`, deliberately.
+  - `no-public-temp-file`, 2 in `src`: the coverage cache under the temp folder is a design choice for later.
+  - `no-public-temp-file`, 3 in tests: they only build paths.
+  - `prefer-linq` on `ProcessStartInfo.ArgumentList`: it has no `AddRange`.
+  - 2 `disposable-pattern` on sealed test classes without a finalizer: the rule wants `GC.SuppressFinalize` even
+    there (noticed below).
+  - 12 `magic-literal-shared`: they point unrelated tests at the new test classes' constants.
+
 
 ## Goal
 
@@ -179,6 +209,14 @@ About 2 days: guard ½ day, the three matchers 1 day, the precision fixes, advic
 - **D4. Platform references come from the runtime folder only**, and `unused-using` treats CS0122 like a missing type.
 
 ## Noticed in passing (not in this plan)
+
+- `commented-code` reports prose comments containing `;` and a parenthesis as commented-out code (two of this plan's
+  comments were reworded to avoid it).
+- `disposable-pattern` asks a sealed class with no finalizer to call `GC.SuppressFinalize`, and skips expression-bodied
+  `Dispose` methods.
+- `magic-literal-shared` suggests a test reuse another test class's constant (`CoverageMapTests.MethodName` for `"M"`).
+- The `src/Qlcheck` compilation has 33 errors from `[GeneratedRegex]` partial methods, because source generators do not
+  run; rows that skip files with errors are silent there.
 
 - `no-nested-generic-signature` ignores visibility (a private helper is reported), like the rows plan 08 fixed.
 - `prefer-linq`'s advice is wrong for `foreach (var x in xs) set.Add(x)`: the fix is `UnionWith`/`AddRange`, not LINQ.

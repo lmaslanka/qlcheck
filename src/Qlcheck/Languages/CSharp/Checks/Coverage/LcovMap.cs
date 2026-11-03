@@ -217,13 +217,7 @@ internal static class LcovMap
 
         public FileHits ToHits()
         {
-            var lines = new List<LineHit>(_lines.Count);
-            foreach (var line in _lines)
-            {
-                lines.Add(new LineHit(line.Line, line.Hits, MethodAt(line.Line)));
-            }
-
-            return new FileHits(Path, lines);
+            return new FileHits(Path, [.. _lines.Select(line => new LineHit(line.Line, line.Hits, MethodAt(line.Line)))]);
         }
 
         private string? MethodAt(int line)

@@ -165,15 +165,15 @@ public class ProjectReferencesTests
         var dir = CreateProjectDir();
         try
         {
-            var libDir = Directory.CreateDirectory(Path.Combine(dir.Root.FullName, "lib"));
-            File.WriteAllText(Path.Combine(libDir.FullName, "Lib.csproj"), "<Project><PropertyGroup><AssemblyName>lib</AssemblyName></PropertyGroup></Project>");
-            var binDir = Directory.CreateDirectory(Path.Combine(libDir.FullName, "bin", "Debug", "net10.0"));
-            EmitAssembly(Path.Combine(binDir.FullName, "lib.dll"));
+            var libDir = Directory.CreateDirectory(Path.Combine(dir.Root.FullName, "Lib"));
+            File.WriteAllText(Path.Combine(libDir.FullName, "Lib.csproj"), "<Project><PropertyGroup><AssemblyName>lowercase</AssemblyName></PropertyGroup></Project>");
+            var binDir = Directory.CreateDirectory(Path.Combine(libDir.FullName, "bin"));
+            EmitAssembly(Path.Combine(binDir.FullName, "lowercase.dll"));
             WriteAssets(dir, $$"""
                 {
                   "packageFolders": { "{{dir.Packages}}": {} },
                   "libraries": {
-                    "Lib/1.0.0": { "type": "project", "path": "lib/Lib.csproj" }
+                    "Lib/1.0.0": { "type": "project", "path": "Lib/Lib.csproj" }
                   },
                   "targets": {
                     "net10.0": {
