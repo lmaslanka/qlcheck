@@ -33,6 +33,10 @@ public class CatalogTests
 
     private const string GoodFixtureTemplateBaseline = "GoodFixtureTemplate.txt";
 
+    private const string SharedHandlersBaseline = "SharedHandlers.txt";
+
+    private static readonly HashSet<string> HandlerBuilders = new(StringComparer.Ordinal) { "Handle", "Test" };
+
     private static readonly HashSet<string> NameOnlyBuilders = new(StringComparer.Ordinal)
     {
         "Invoke", "Invokes", "Create", "Creates", "Member", "Members",
@@ -216,6 +220,27 @@ public class CatalogTests
             .ToHashSet(StringComparer.Ordinal);
 
         Assert.Equal(NameOnlyAllowlist.Order(StringComparer.Ordinal), rows.Order(StringComparer.Ordinal));
+    }
+
+    // A row that runs another row's handler reports under a message that handler was not written for,
+    // and reports every site twice (plan 09). Rows sharing a handler must be listed in the baseline.
+    [Fact]
+    public void Rows_do_not_share_a_handler()
+    {
+        var shared = Directory.GetFiles(EngineDir(), "*Engine.cs")
+            .SelectMany(engine => CSharpSyntaxTree.ParseText(File.ReadAllText(engine)).GetRoot().DescendantNodes())
+            .OfType<InvocationExpressionSyntax>()
+            .Where(IsHandlerRow)
+            .GroupBy(invocation => invocation.ArgumentList.Arguments[2].Expression.ToString(), StringComparer.Ordinal)
+            .Where(group => group.Count() > 1)
+            .SelectMany(group => group)
+            .Select(invocation => invocation.ArgumentList.Arguments[0].Expression)
+            .OfType<LiteralExpressionSyntax>()
+            .Select(literal => literal.Token.ValueText);
+
+        var problems = FixtureBaseline.Compare(
+            nameof(Rows_do_not_share_a_handler), BaselinePath(SharedHandlersBaseline), shared);
+        Assert.True(problems.Length == 0, problems);
     }
 
     // G3: a good fixture whose only statement is a bare return never touches the API the check is
@@ -547,6 +572,11 @@ public class CatalogTests
         invocation.Expression is MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.ValueText: "Row" } } member
         && NameOnlyBuilders.Contains(member.Name.Identifier.ValueText)
         && invocation.ArgumentList.Arguments.Count > 0;
+
+    private static bool IsHandlerRow(InvocationExpressionSyntax invocation) =>
+        invocation.Expression is MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.ValueText: "Row" } } member
+        && HandlerBuilders.Contains(member.Name.Identifier.ValueText)
+        && invocation.ArgumentList.Arguments.Count == 3;
 
     private static string EngineDir() => Path.Combine(RepoRoot(), "src", "Qlcheck", "Languages", "CSharp", "Catalog");
 

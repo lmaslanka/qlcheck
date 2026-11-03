@@ -1,0 +1,117 @@
+# Rows that share a handler (plan 09). Shrink-only: give a row its own handler, or remove it, then
+# delete its line. Never add one.
+
+# Patterns.Braces
+braces-required
+multiline-needs-braces
+
+# Patterns.EmptyBlock
+no-empty-block
+no-nested-block
+
+# Patterns.FormatStringCall
+format-string-args
+format-string-valid
+
+# Patterns.IdenticalBranch
+identical-branch
+identical-branches
+
+# Patterns.ParameterlessGetInvocation
+prefer-property
+property-not-get-method
+
+# Patterns.UnusedLocal
+unused-assignment
+unused-local
+unused-parameter
+
+# Patterns.UnusedPrivate
+unread-private-field
+unused-private-member
+
+# QuietPatterns.AzureState
+azure-function-error-handling
+stateless-azure-function
+
+# QuietPatterns.EqualsNoNotEquals
+equals-and-hashcode
+no-equality-on-reference
+operators-consistent
+
+# QuietPatterns.ZeroInit
+no-default-initializer
+no-redundant-initializer
+
+# StylePatterns.AnyEquals
+prefer-contains
+prefer-exists
+prefer-trueforall
+
+# StylePatterns.BoolCompare
+no-gratuitous-boolean
+no-inverted-boolean
+redundant-boolean
+simplest-condition
+
+# StylePatterns.DefaultMiddle
+default-first-or-last
+no-empty-default
+no-empty-fallthrough-case
+
+# StylePatterns.EqualsWithoutComparison
+float-equality
+format-provider-on-parse
+no-base-equals
+no-base-equals-for-reference
+prefer-isnullorempty
+prefer-string-comparison
+typed-equals-interface
+use-equals-not-operator
+
+# StylePatterns.ExplicitInterface
+interface-method-callable
+no-colliding-interface-inherit
+
+# StylePatterns.ExtensionObject
+extension-own-namespace
+no-extend-object
+
+# StylePatterns.ForeachAdd
+prefer-linq
+simplify-linq
+
+# StylePatterns.NarrowOverride
+no-narrow-visibility
+override-does-more
+override-keeps-defaults
+
+# StylePatterns.ParamsAndOverride
+no-ambiguous-params
+no-params-on-override
+params-on-override
+
+# StylePatterns.PublicStaticField
+no-public-static-field
+no-public-static-mutable
+
+# StylePatterns.RedundantPublic
+redundant-modifier
+seal-attribute
+
+# StylePatterns.SameIf
+identical-if-condition
+no-duplicate-condition
+
+# StylePatterns.StaticWriteInstance
+no-static-write-from-instance
+static-if-no-instance
+
+# StylePatterns.StringToString
+no-hardcoded-date-format
+prefer-format-provider
+redundant-tostring
+tostring-not-null
+unused-return
+use-created-object
+use-return-value

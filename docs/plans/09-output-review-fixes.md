@@ -57,10 +57,10 @@ Acceptance:
 
 ### 1. One handler per row
 
-- `WalkRow` gains `Handler` (the `MethodInfo` of the delegate passed to `Row.Handle`/`Row.Test`).
-- A catalog test fails when two rows share a handler, unless both ids are in `Baseline/SharedHandlers.txt`
-  (shrink-only, like `FixturesCompile.txt`: one group per line, `Handler: id id ...`). The baseline starts with the 21
-  groups this plan does not touch. Reviewing them is later work.
+- A catalog test reads the engine tables, as the name-only guard (G2) does, and fails when two `Row.Handle`/`Row.Test`
+  rows name the same handler, unless their ids are in `Baseline/SharedHandlers.txt` (shrink-only, `FixtureBaseline`,
+  ids grouped under a comment naming the handler). The baseline starts with all 67 rows; steps 2-4 shrink it to the
+  21 groups this plan does not touch. Reviewing them is later work.
 
 ### 2. Real code for the three mismatched rows
 
@@ -112,7 +112,7 @@ and ASP.NET from the reference pack, as today. `unused-using` also stays silent 
 ## Implementation steps (test-first, one commit each)
 
 1. **Handler guard.** Red: `CatalogTests` test that no two rows share a handler outside the baseline; it fails with
-   all 24 groups. Green: `WalkRow.Handler`, `Baseline/SharedHandlers.txt` with all 24 groups.
+   all 24 groups. Green: `Baseline/SharedHandlers.txt` with all 24 groups (67 rows).
 2. **`seal-attribute`.** Red, `StylePatternsTests.cs` (or a new `SealAttributePatternTests.cs`): an unsealed attribute is
    reported; `sealed`, `abstract` and a non-attribute class are not; a `public` interface method is no longer reported.
    Green: the matcher; drop its group from the baseline; update the `fixtures.json` pair.
@@ -139,7 +139,7 @@ and ASP.NET from the reference pack, as today. `unused-using` also stays silent 
 
 ## Files touched
 
-- Catalog: `WalkRow.cs`, `Row.cs`, `StylePatterns.cs`, `Patterns.cs`, `QuietPatterns.cs`, `Queries/StmtFacts.cs`,
+- Catalog: `StylePatterns.cs`, `Patterns.cs`, `QuietPatterns.cs`, `Queries/StmtFacts.cs`,
   `CloneGroup.cs`, `CloneIndex.cs`, `IdenticalMethodPattern.cs`, `UnusedUsingPattern.cs`, `SyntaxEngine.cs` (handler
   names for the three rows)
 - Elsewhere: `Scan/IgnorePatterns.cs`, `Languages/CSharp/CSharpCompilations.cs`
