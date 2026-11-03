@@ -152,7 +152,7 @@ internal static class SyntaxEngine
         Row.Handle("redundant-parentheses", CheckClass.Syntax, Patterns.Parens),
         Row.Handle("redundant-tostring", CheckClass.Syntax, StylePatterns.StringToString),
         Row.Handle("return-empty-not-null", CheckClass.Syntax, QuietPatterns.ReturnsNullArray),
-        Row.Handle("seal-attribute", CheckClass.Syntax, StylePatterns.RedundantPublic),
+        Row.Handle("seal-attribute", CheckClass.Syntax, StylePatterns.UnsealedAttribute),
         Row.Handle("seal-private-class", CheckClass.Syntax, QuietPatterns.PrivateUnsealed),
         Row.Handle("sealed-no-protected", CheckClass.Syntax, Patterns.SealedProtected),
         Row.Handle("shift-out-of-range", CheckClass.Syntax, QuietPatterns.ShiftFar),

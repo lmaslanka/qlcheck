@@ -332,4 +332,18 @@ public class StylePatternsTests
         StylePatterns.AssignedNotReadonly(ctx, MatchFixtures.Id);
         Assert.Empty(ctx.Findings);
     }
+
+    [Theory]
+    [InlineData("public class MarkAttribute : System.Attribute { }", 1)]
+    [InlineData("class BaseAttribute : System.Attribute { } sealed class MarkAttribute : BaseAttribute { }", 1)]
+    [InlineData("public sealed class MarkAttribute : System.Attribute { }", 0)]
+    [InlineData("public abstract class MarkAttribute : System.Attribute { }", 0)]
+    [InlineData("public class Mark { }", 0)]
+    [InlineData("interface I { public void M(); }", 0)]
+    public void UnsealedAttribute_reports_concrete_attributes_that_are_not_sealed(string source, int count)
+    {
+        var ctx = MatchFixtures.Context(source);
+        StylePatterns.UnsealedAttribute(ctx, MatchFixtures.Id);
+        Assert.Equal(count, ctx.Findings.Count);
+    }
 }

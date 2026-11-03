@@ -95,10 +95,6 @@ params-on-override
 no-public-static-field
 no-public-static-mutable
 
-# StylePatterns.RedundantPublic
-redundant-modifier
-seal-attribute
-
 # StylePatterns.SameIf
 identical-if-condition
 no-duplicate-condition

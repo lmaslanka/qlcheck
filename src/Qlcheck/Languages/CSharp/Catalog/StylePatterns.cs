@@ -8,6 +8,8 @@ namespace Qlcheck.Languages.CSharp.Catalog;
 
 internal static class StylePatterns
 {
+    private const string AttributeTypeName = "System.Attribute";
+
     private const int LargeDigits = 5;
 
     private const string IntName = "int";
@@ -151,6 +153,34 @@ internal static class StylePatterns
 
     public static void RedundantPublic(WalkContext ctx, string id) =>
         Report(ctx, id, SyntaxKind.MethodDeclaration, PublicOnInterface);
+
+    // A class deriving from System.Attribute that is neither abstract, sealed nor static (plan 09).
+    public static void UnsealedAttribute(WalkContext ctx, string id)
+    {
+        foreach (var node in ctx.Nodes(SyntaxKind.ClassDeclaration))
+        {
+            if (node is ClassDeclarationSyntax type
+                && !type.Modifiers.Any(modifier => modifier.Kind() is SyntaxKind.AbstractKeyword or SyntaxKind.SealedKeyword or SyntaxKind.StaticKeyword)
+                && ctx.Model.GetDeclaredSymbol(type) is { } symbol
+                && IsAttribute(symbol.BaseType))
+            {
+                ctx.Report(id, type.Identifier);
+            }
+        }
+    }
+
+    private static bool IsAttribute(INamedTypeSymbol? type)
+    {
+        for (var current = type; current is not null; current = current.BaseType)
+        {
+            if (Symbols.QualifiedName(current) == AttributeTypeName)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     public static void RedundantReturn(WalkContext ctx, string id) =>
         Report(ctx, id, SyntaxKind.ReturnStatement, ReturnAtEnd);

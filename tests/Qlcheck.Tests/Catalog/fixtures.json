@@ -1370,8 +1370,8 @@
     "path": "Repo.cs"
   },
   "seal-attribute": {
-    "bad": "interface Holder\n{\n    public void M();\n}\n",
-    "good": "interface Holder\n{\n    void M();\n}\n",
+    "bad": "using System;\n\npublic class MarkAttribute : Attribute\n{\n}\n",
+    "good": "using System;\n\npublic sealed class MarkAttribute : Attribute\n{\n}\n",
     "path": "Repo.cs"
   },
   "seal-private-class": {
