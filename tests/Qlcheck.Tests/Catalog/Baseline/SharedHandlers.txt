@@ -1,10 +1,6 @@
 # Rows that share a handler (plan 09). Shrink-only: give a row its own handler, or remove it, then
 # delete its line. Never add one.
 
-# Patterns.Braces
-braces-required
-multiline-needs-braces
-
 # Patterns.EmptyBlock
 no-empty-block
 no-nested-block

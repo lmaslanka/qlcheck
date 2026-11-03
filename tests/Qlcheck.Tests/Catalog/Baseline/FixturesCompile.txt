@@ -24,7 +24,6 @@ interface-method-callable
 loop-must-change-counter
 merge-identical-catch
 move-method-to-inner-class
-multiline-needs-braces
 no-ambiguous-params
 no-catch-exception
 no-catch-null-reference

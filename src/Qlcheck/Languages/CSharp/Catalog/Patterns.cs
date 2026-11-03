@@ -97,6 +97,19 @@ internal static class Patterns
     public static void Braces(WalkContext ctx, string id) =>
         ReportAny(ctx, id, StmtFacts.NeedsBraces);
 
+    // A braceless body followed by a statement indented to the body's column, which reads as part of
+    // the body but always runs. Reported at that statement (plan 09).
+    public static void MultilineWithoutBraces(WalkContext ctx, string id)
+    {
+        foreach (var node in ctx.Tree.GetRoot().DescendantNodes())
+        {
+            if (StmtFacts.MisleadinglyIndented(node) is { } next)
+            {
+                ctx.Report(id, next);
+            }
+        }
+    }
+
     public static void Parens(WalkContext ctx, string id) =>
         Report(ctx, id, SyntaxKind.ParenthesizedExpression, StmtFacts.RedundantParen);
 

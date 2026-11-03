@@ -56,7 +56,7 @@ internal static class SyntaxEngine
         Row.Handle("merge-if", CheckClass.Syntax, StylePatterns.NestedSameIf),
         Row.Handle("modulus-not-equality", CheckClass.Syntax, QuietPatterns.ModuloEquals),
         Row.Handle("move-method-to-inner-class", CheckClass.Syntax, StylePatterns.MoveToInner),
-        Row.Handle("multiline-needs-braces", CheckClass.Syntax, Patterns.Braces),
+        Row.Handle("multiline-needs-braces", CheckClass.Syntax, Patterns.MultilineWithoutBraces),
         Row.Handle("named-namespace", CheckClass.Syntax, Patterns.NamedNamespace),
         Row.Handle("newline-at-eof", CheckClass.Syntax, Patterns.Newline),
         Row.Handle("no-ambiguous-params", CheckClass.Syntax, StylePatterns.ParamsAndOverride),

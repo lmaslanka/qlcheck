@@ -156,6 +156,64 @@ internal static class StmtFacts
         return count == OneCase || count == TwoCases;
     }
 
+    // The statement after a braceless body of `if`, `else`, `for`, `foreach` or `while` when it starts
+    // on a later line at the body's column, deeper than the keyword line's indent: it looks conditional but is not.
+    // An `if` with an `else`, and an `else if`, leave the check to the last clause of the chain.
+    public static StatementSyntax? MisleadinglyIndented(SyntaxNode node)
+    {
+        var (keyword, body) = node switch
+        {
+            IfStatementSyntax { Else: null } statement => (statement.IfKeyword, statement.Statement),
+            ElseClauseSyntax { Statement: not IfStatementSyntax } clause => (clause.ElseKeyword, clause.Statement),
+            ForStatementSyntax statement => (statement.ForKeyword, statement.Statement),
+            ForEachStatementSyntax statement => (statement.ForEachKeyword, statement.Statement),
+            WhileStatementSyntax statement => (statement.WhileKeyword, statement.Statement),
+            _ => (default, null),
+        };
+        if (body is null or BlockSyntax || Line(body) == Line(keyword) || NextStatement(ChainHead(node)) is not { } next)
+        {
+            return null;
+        }
+
+        return Line(next) > Line(body) && Column(next) == Column(body) && Column(body) > Indent(keyword) ? next : null;
+    }
+
+    private static StatementSyntax ChainHead(SyntaxNode node)
+    {
+        var head = node as StatementSyntax ?? (StatementSyntax)node.Parent!;
+        while (head.Parent is ElseClauseSyntax { Parent: IfStatementSyntax outer })
+        {
+            head = outer;
+        }
+
+        return head;
+    }
+
+    private static StatementSyntax? NextStatement(StatementSyntax statement)
+    {
+        var siblings = statement.Parent switch
+        {
+            BlockSyntax block => block.Statements,
+            SwitchSectionSyntax section => section.Statements,
+            _ => default,
+        };
+        var index = siblings.IndexOf(statement);
+        return index >= 0 && index + 1 < siblings.Count ? siblings[index + 1] : null;
+    }
+
+    private static int Line(SyntaxNode node) => node.GetLocation().GetLineSpan().StartLinePosition.Line;
+
+    private static int Line(SyntaxToken token) => token.GetLocation().GetLineSpan().StartLinePosition.Line;
+
+    private static int Column(SyntaxNode node) => node.GetLocation().GetLineSpan().StartLinePosition.Character;
+
+    // The column of the first non-blank character on the token's line.
+    private static int Indent(SyntaxToken token)
+    {
+        var line = token.SyntaxTree!.GetText().Lines[Line(token)].ToString();
+        return line.Length - line.TrimStart().Length;
+    }
+
     private static StatementSyntax? BodyOf(SyntaxNode node) =>
         LoopBody(node) ?? OtherBody(node);
 

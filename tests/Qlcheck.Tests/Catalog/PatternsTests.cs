@@ -1706,6 +1706,30 @@ public class PatternsTests
         Assert.Empty(ctx.Findings);
     }
 
+    public static TheoryData<string, int> MisleadingIndentCases() => new()
+    {
+        { "if (flag)\n        A();\n        B();", 1 },
+        { "if (flag)\n        A();\n    else\n        A();\n        B();", 1 },
+        { "if (flag)\n        A();\n    else if (!flag)\n        A();\n        B();", 1 },
+        { "for (var i = 0; i < 2; i++)\n        A();\n        B();", 1 },
+        { "foreach (var x in new[] { 1 })\n        A();\n        B();", 1 },
+        { "while (flag)\n        A();\n        B();", 1 },
+        { "if (flag)\n        A();\n    B();", 0 },
+        { "if (flag) A();\n    B();", 0 },
+        { "if (flag)\n    {\n        A();\n    }\n    B();", 0 },
+        { "if (flag)\n        A();\n    else if (!flag)\n        A();\n    B();", 0 },
+    };
+
+    [Theory]
+    [MemberData(nameof(MisleadingIndentCases))]
+    public void MultilineWithoutBraces_reports_a_statement_indented_like_a_braceless_body(string body, int count)
+    {
+        var ctx = MatchFixtures.Context($"class C\n{{\nvoid M(bool flag)\n{{\n    {body}\n}}\nvoid A() {{ }}\nvoid B() {{ }}\n}}\n");
+        Patterns.MultilineWithoutBraces(ctx, MatchFixtures.Id);
+        Assert.Equal(count, ctx.Findings.Count);
+        Assert.All(ctx.Findings, finding => Assert.Contains("B()", ctx.Text.Split('\n')[finding.Line - 1], StringComparison.Ordinal));
+    }
+
     [Theory]
     [InlineData("internal class Outer { public sealed class FooException : Exception { } }", 1)]
     [InlineData("public class Outer { public sealed class FooException : Exception { } }", 0)]
