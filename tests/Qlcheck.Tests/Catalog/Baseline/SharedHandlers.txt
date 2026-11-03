@@ -73,10 +73,6 @@ no-colliding-interface-inherit
 extension-own-namespace
 no-extend-object
 
-# StylePatterns.ForeachAdd
-prefer-linq
-simplify-linq
-
 # StylePatterns.NarrowOverride
 no-narrow-visibility
 override-does-more

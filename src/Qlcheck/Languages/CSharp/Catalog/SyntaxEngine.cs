@@ -159,7 +159,7 @@ internal static class SyntaxEngine
         Row.Handle("shift-right-integer", CheckClass.Syntax, QuietPatterns.ShiftNonInt),
         Row.Handle("short-circuit", CheckClass.Syntax, QuietPatterns.BitAndBool),
         Row.Handle("simplest-condition", CheckClass.Syntax, StylePatterns.BoolCompare),
-        Row.Handle("simplify-linq", CheckClass.Syntax, StylePatterns.ForeachAdd),
+        Row.Handle("simplify-linq", CheckClass.Syntax, SimplifyLinqPattern.Apply),
         Row.Handle("string-concat", CheckClass.Syntax, StringConcatPattern.Apply),
         Row.Handle("string-empty", CheckClass.Syntax, StringEmptyPattern.Apply),
         Row.Handle("switch-at-least-three", CheckClass.Syntax, Patterns.SwitchFew),

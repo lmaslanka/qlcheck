@@ -1410,8 +1410,8 @@
     "path": "Repo.cs"
   },
   "simplify-linq": {
-    "bad": "class Holder\n{\n    void M(int[] source, System.Collections.Generic.List<int> items)\n    {\n        foreach (var item in source)\n        {\n            items.Add(item);\n        }\n    }\n}\n",
-    "good": "class Holder\n{\n    void M(int[] source)\n    {\n        foreach (var item in source)\n        {\n            return;\n        }\n    }\n}\n",
+    "bad": "using System.Linq;\n\nclass Holder\n{\n    bool M(int[] source) => source.Where(item => item > 0).Any();\n}\n",
+    "good": "using System.Linq;\n\nclass Holder\n{\n    bool M(int[] source) => source.Any(item => item > 0);\n}\n",
     "path": "Repo.cs"
   },
   "simplify-type-check": {
