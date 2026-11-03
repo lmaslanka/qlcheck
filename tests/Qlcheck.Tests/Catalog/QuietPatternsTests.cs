@@ -214,4 +214,21 @@ public class QuietPatternsTests
         QuietPatterns.LocalCouldBeConst(ctx, MatchFixtures.Id);
         Assert.Empty(ctx.Findings);
     }
+
+    [Theory]
+    [InlineData("static int Other = Value; static int Value = 1;", 1)]
+    [InlineData("static int Other = Value + Value; static int Value = 1;", 2)]
+    [InlineData("static int A = B, B = 1;", 1)]
+    [InlineData("static int Value = 1; static int Other = Value;", 0)]
+    [InlineData("const string PatternText = \"x\"; static readonly string Pattern = PatternText;", 0)]
+    [InlineData("static readonly string Pattern = PatternText; const string PatternText = \"x\";", 0)]
+    [InlineData("static System.Func<int> F = () => Later; static int Later = 1;", 0)]
+    [InlineData("static int Other = Value; int Value = 1;", 0)]
+    [InlineData("static int Other = Inner.Value; class Inner { public static int Value = 1; }", 0)]
+    public void StaticOrder_reports_a_read_of_a_static_field_declared_later(string members, int count)
+    {
+        var ctx = MatchFixtures.Context($"class C {{ {members} }}");
+        QuietPatterns.StaticOrder(ctx, MatchFixtures.Id);
+        Assert.Equal(count, ctx.Findings.Count);
+    }
 }

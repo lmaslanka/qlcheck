@@ -55,8 +55,16 @@ internal static class StylePatterns
     public static void AbstractMixed(WalkContext ctx, string id) =>
         Report(ctx, id, SyntaxKind.ClassDeclaration, AbstractUnbalanced);
 
-    public static void BraceAtLineStart(WalkContext ctx, string id) =>
-        Report(ctx, id, SyntaxKind.Block, CloseBraceNotAlone);
+    public static void BraceAtLineStart(WalkContext ctx, string id)
+    {
+        foreach (var node in ctx.Nodes(SyntaxKind.Block))
+        {
+            if (node is BlockSyntax block && CloseBraceAfterCode(block))
+            {
+                ctx.Report(id, block.CloseBraceToken);
+            }
+        }
+    }
 
     public static void ConditionalOnNewLine(WalkContext ctx, string id) =>
         ReportTokens(ctx, id, EndsCondition);
@@ -259,16 +267,15 @@ internal static class StylePatterns
         return abstractCount == 0 || abstractCount == methods.Count;
     }
 
-    private static bool CloseBraceNotAlone(SyntaxNode node)
+    // A block spread over several lines whose `}` follows code on its own line. A block on one line,
+    // and code after the brace (`});`, `} while (...)`), are fine (plan 09).
+    private static bool CloseBraceAfterCode(BlockSyntax block)
     {
-        if (node is not BlockSyntax block)
-        {
-            return false;
-        }
-
-        var line = LineText(block.CloseBraceToken);
-        return line.TrimStart().Length > 1;
+        var close = block.CloseBraceToken;
+        return LineOf(block.OpenBraceToken) != LineOf(close) && LineOf(close.GetPreviousToken()) == LineOf(close);
     }
+
+    private static int LineOf(SyntaxToken token) => token.GetLocation().GetLineSpan().StartLinePosition.Line;
 
     private static bool EndsCondition(SyntaxToken token)
     {

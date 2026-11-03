@@ -358,4 +358,24 @@ public class StylePatternsTests
         StylePatterns.ForeachAdd(ctx, MatchFixtures.Id);
         Assert.Equal(count, ctx.Findings.Count);
     }
+
+    public static TheoryData<string, int> CloseBraceCases() => new()
+    {
+        { "void M()\n{\n    A(); }", 1 },
+        { "void M()\n{\n    Run(() =>\n    {\n        A();\n    });\n}", 0 },
+        { "void M()\n{\n    var xs = new[]\n    {\n        1,\n    };\n    do\n    {\n        A();\n    } while (false);\n}", 0 },
+        { "void M() { A(); }", 0 },
+        { "void M()\n{\n    A();\n}", 0 },
+    };
+
+    [Theory]
+    [MemberData(nameof(CloseBraceCases))]
+    public void BraceAtLineStart_reports_a_close_brace_that_follows_code_on_its_line(string member, int count)
+    {
+        var ctx = MatchFixtures.Context($"class C\n{{\n{member}\nvoid A() {{ }}\nvoid Run(System.Action a) {{ }}\n}}\n");
+        StylePatterns.BraceAtLineStart(ctx, MatchFixtures.Id);
+        Assert.Equal(count, ctx.Findings.Count);
+        Assert.All(ctx.Findings, finding => Assert.Equal("    A(); }", ctx.Text.Split('\n')[finding.Line - 1]));
+        Assert.All(ctx.Findings, finding => Assert.Equal(10, finding.Column));
+    }
 }

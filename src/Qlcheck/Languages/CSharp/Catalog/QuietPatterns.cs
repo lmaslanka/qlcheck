@@ -165,8 +165,16 @@ internal static class QuietPatterns
     public static void AzureState(WalkContext ctx, string id) =>
         Flag(ctx, id, SyntaxKind.FieldDeclaration, FunctionHasField);
 
-    public static void StaticOrder(WalkContext ctx, string id) =>
-        Flag(ctx, id, SyntaxKind.FieldDeclaration, StaticUsesLater);
+    public static void StaticOrder(WalkContext ctx, string id)
+    {
+        foreach (var node in ctx.Nodes(SyntaxKind.FieldDeclaration))
+        {
+            foreach (var read in LaterStaticReads(ctx, node))
+            {
+                ctx.Report(id, read);
+            }
+        }
+    }
 
     public static void LocalCouldBeConst(WalkContext ctx, string id) =>
         Flag(ctx, id, SyntaxKind.LocalDeclarationStatement, LiteralNeverWritten);
@@ -526,36 +534,34 @@ internal static class QuietPatterns
         return type is not null && IsAzureFunctionType(type);
     }
 
-    private static bool StaticUsesLater(SyntaxNode node)
+    // Reads, in a static field's initializer, of a static non-const field of the same class declared
+    // later in the same declaration: they see its default value (plan 09). Lambdas run later and are
+    // skipped; constants have no initialisation order.
+    private static IEnumerable<IdentifierNameSyntax> LaterStaticReads(WalkContext ctx, SyntaxNode node)
     {
-        if (!Shapes.HasModifier(node, SyntaxKind.StaticKeyword) || node is not FieldDeclarationSyntax member)
+        if (node is not FieldDeclarationSyntax { Parent: ClassDeclarationSyntax type } field
+            || !Shapes.HasModifier(field, SyntaxKind.StaticKeyword)
+            || Shapes.HasModifier(field, SyntaxKind.ConstKeyword))
         {
-            return false;
+            yield break;
         }
 
-        var name = member.Declaration.Variables[0].Identifier.Text;
-        var type = Shapes.Enclosing(node, SyntaxKind.ClassDeclaration);
-        if (type is null)
+        foreach (var variable in field.Declaration.Variables)
         {
-            return false;
-        }
-
-        var later = false;
-        foreach (var child in type.ChildNodes().OfType<FieldDeclarationSyntax>())
-        {
-            if (child == node)
+            var reads = variable.Initializer?.Value
+                .DescendantNodesAndSelf(child => child is not AnonymousFunctionExpressionSyntax)
+                .OfType<IdentifierNameSyntax>() ?? [];
+            foreach (var read in reads)
             {
-                later = true;
-                continue;
-            }
-
-            if (!later && child.ToString().Contains(name, StringComparison.Ordinal))
-            {
-                return true;
+                if (ctx.Model.GetSymbolInfo(read).Symbol is IFieldSymbol { IsStatic: true, IsConst: false } target
+                    && SymbolEqualityComparer.Default.Equals(target.ContainingType, ctx.Model.GetDeclaredSymbol(type))
+                    && target.DeclaringSyntaxReferences.Any(reference =>
+                        reference.SyntaxTree == node.SyntaxTree && type.Span.Contains(reference.Span) && reference.Span.Start > variable.SpanStart))
+                {
+                    yield return read;
+                }
             }
         }
-
-        return false;
     }
 
     private static bool LiteralNeverWritten(SyntaxNode node)

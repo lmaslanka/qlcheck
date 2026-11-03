@@ -50,7 +50,7 @@
     "path": "Repo.cs"
   },
   "brace-at-line-start": {
-    "bad": "class Holder\n{\n    void M() { return; }\n}\n",
+    "bad": "class Holder\n{\n    void M()\n    {\n        return; }\n}\n",
     "good": "class Holder\n{\n    void M()\n    {\n        return;\n    }\n}\n",
     "path": "Repo.cs"
   },
