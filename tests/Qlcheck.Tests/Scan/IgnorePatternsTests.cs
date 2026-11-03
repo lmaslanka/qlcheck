@@ -20,6 +20,26 @@ public class IgnorePatternsTests
         Assert.False(ignore.IsIgnored("Keep.cs", isDirectory: false));
     }
 
+    [Theory]
+    [InlineData("coverage", true)]
+    [InlineData("src/Checks/Coverage", false)]
+    [InlineData("packages", true)]
+    [InlineData("src/Packages", false)]
+    [InlineData("TestResults", true)]
+    [InlineData("testresults", false)]
+    public void Built_in_rules_match_case_exactly(string directory, bool ignored)
+    {
+        Assert.Equal(ignored, IgnorePatterns.Defaults.IsIgnored(directory, isDirectory: true));
+    }
+
+    [Fact]
+    public void Rules_from_an_ignore_file_still_match_any_case()
+    {
+        var ignore = IgnorePatterns.Parse(["skipme/"]);
+
+        Assert.True(ignore.IsIgnored("src/SkipMe", isDirectory: true));
+    }
+
     [Fact]
     public void Root_anchored_pattern_does_not_match_nested()
     {

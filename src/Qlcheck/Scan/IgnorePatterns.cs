@@ -58,10 +58,15 @@ public sealed class IgnorePatterns
 
     public static string FileName => FileNameValue;
 
-    public static IgnorePatterns Parse(IEnumerable<string> lines) =>
-        new(lines.Select(TryParseRule).OfType<Rule>().ToList());
+    // Rules from an ignore file match any case.
+    public static IgnorePatterns Parse(IEnumerable<string> lines) => Parse(lines, RegexOptions.IgnoreCase);
 
-    public static IgnorePatterns Defaults { get; } = Parse(DefaultLines);
+    // The built-in rules match case exactly, as the tools that write these folders name them, so a
+    // `Coverage/` or `Packages/` source folder is still scanned (plan 09).
+    public static IgnorePatterns Defaults { get; } = Parse(DefaultLines, RegexOptions.None);
+
+    private static IgnorePatterns Parse(IEnumerable<string> lines, RegexOptions caseOption) =>
+        new(lines.Select(line => TryParseRule(line, caseOption)).OfType<Rule>().ToList());
 
     public bool IsIgnored(string relativePath, bool isDirectory) => Match(relativePath, isDirectory) ?? false;
 
@@ -91,7 +96,7 @@ public sealed class IgnorePatterns
         return ignored;
     }
 
-    private static Rule? TryParseRule(string line)
+    private static Rule? TryParseRule(string line, RegexOptions caseOption)
     {
         var raw = line.Trim();
         if (raw.Length == 0 || raw.StartsWith('#'))
@@ -131,7 +136,7 @@ public sealed class IgnorePatterns
 
         var regex = new Regex(
             GlobToRegex(raw, anchored),
-            RegexOptions.CultureInvariant | RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            RegexOptions.CultureInvariant | caseOption | RegexOptions.Compiled);
         return new Rule(negation, directoryOnly, regex);
     }
 
