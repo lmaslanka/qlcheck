@@ -346,4 +346,16 @@ public class StylePatternsTests
         StylePatterns.UnsealedAttribute(ctx, MatchFixtures.Id);
         Assert.Equal(count, ctx.Findings.Count);
     }
+
+    [Theory]
+    [InlineData("foreach (var x in xs) { set.Add(x); }", 1)]
+    [InlineData("foreach (var x in xs) { if (x > 0) { set.Add(x); } else { set.Remove(x); } }", 0)]
+    [InlineData("foreach (var x in xs) { var added = set.Add(x); }", 0)]
+    [InlineData("foreach (var x in xs) { Log(\".Add(\"); }", 0)]
+    public void ForeachAdd_counts_only_a_loop_whose_statement_is_an_Add_call(string loop, int count)
+    {
+        var ctx = MatchFixtures.Context($"class C {{ void M(int[] xs, System.Collections.Generic.HashSet<int> set) {{ {loop} }} void Log(string s) {{ }} }}");
+        StylePatterns.ForeachAdd(ctx, MatchFixtures.Id);
+        Assert.Equal(count, ctx.Findings.Count);
+    }
 }

@@ -1706,6 +1706,18 @@ public class PatternsTests
         Assert.Empty(ctx.Findings);
     }
 
+    [Theory]
+    [InlineData("if (a) { A(); } else if (b) { A(); }", 0)]
+    [InlineData("if (a) { A(); } else if (b) { A(); } else { A(); }", 0)]
+    [InlineData("if (a) { A(); } else A();", 1)]
+    [InlineData("if (a) A();", 1)]
+    public void Braces_does_not_count_else_if_as_a_braceless_body(string statement, int count)
+    {
+        var ctx = MatchFixtures.Context($"class C {{ void M(bool a, bool b) {{ {statement} }} void A() {{ }} }}");
+        Patterns.Braces(ctx, MatchFixtures.Id);
+        Assert.Equal(count, ctx.Findings.Count);
+    }
+
     public static TheoryData<string, int> MisleadingIndentCases() => new()
     {
         { "if (flag)\n        A();\n        B();", 1 },

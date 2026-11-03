@@ -18,7 +18,7 @@ internal static class StylePatterns
 
     private const string ObjectName = "object";
 
-    private const string AddCall = ".Add(";
+    private const string AddName = "Add";
 
     private const string FloatName = "float";
 
@@ -807,7 +807,8 @@ internal static class StylePatterns
             return false;
         }
 
-        return only.ToString().Contains(AddCall, StringComparison.Ordinal);
+        // The statement itself is the `Add` call: not an `if` around one, nor a declaration using its result.
+        return only is ExpressionStatementSyntax { Expression: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: AddName } } };
     }
 
     private static bool EventNotInvoked(SyntaxNode node)

@@ -48,8 +48,9 @@ internal static class StmtFacts
             return false;
         }
 
+        // `else if` is a chain, not a braceless `else`: the nested `if` is checked on its own.
         var statement = BodyOf(node);
-        return statement is not null && statement is not BlockSyntax;
+        return statement is not null and not BlockSyntax && !(node is ElseClauseSyntax && statement is IfStatementSyntax);
     }
 
     public static bool RedundantParen(SyntaxNode node)
