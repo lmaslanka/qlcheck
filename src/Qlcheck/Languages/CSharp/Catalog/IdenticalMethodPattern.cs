@@ -18,10 +18,14 @@ internal static class IdenticalMethodPattern
             foreach (var copy in group.Copies)
             {
                 var others = string.Join(", ", group.Copies.Where(other => other != copy).Select(other => $"`{NameOf(other.WholeBodyOf!)}` ({other})"));
-                ctx.ReportCustom(id, copy.Path, copy.Location, $"{ctx.Message(id)} `{NameOf(copy.WholeBodyOf!)}` has the same body as {others}; make one call the other.");
+                ctx.ReportCustom(id, copy.Path, copy.Location, $"{ctx.Message(id)} `{NameOf(copy.WholeBodyOf!)}` has the same body as {others}{Advice(group)}");
             }
         }
     }
+
+    // Exact copies can call each other; renamed ones differ in names, so they share a method instead (plan 09).
+    private static string Advice(CloneGroup group) =>
+        group.Exact ? "; make one call the other." : ", apart from renamed identifiers; extract one shared method whose parameters are the parts that differ.";
 
     private static string NameOf(SyntaxNode member) =>
         member switch

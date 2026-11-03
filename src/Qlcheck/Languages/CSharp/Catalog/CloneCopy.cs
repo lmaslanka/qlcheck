@@ -14,6 +14,9 @@ internal sealed record CloneCopy(string Path, SyntaxTree Tree, TextSpan Span, St
 
     public Location Location => Location.Create(Tree, Span);
 
+    // The copy's tokens, without trivia, joined by single spaces.
+    public string TokenText => string.Join(' ', Tree.GetRoot().DescendantTokens(Span).Where(token => Span.Contains(token.Span)).Select(token => token.Text));
+
     // The method, accessor or local function whose whole body this copy is, or null when it is
     // only part of a body.
     public SyntaxNode? WholeBodyOf =>

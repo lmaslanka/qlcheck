@@ -37,6 +37,18 @@ public class IdenticalMethodPatternTests
     }
 
     [Fact]
+    public void Renamed_whole_bodies_are_told_to_extract_a_shared_method()
+    {
+        var renamed = Body.Replace("total", "sum", StringComparison.Ordinal);
+
+        var findings = Run(Type(Method(Daily, Body) + Method(Weekly, renamed)));
+
+        Assert.Equal([Identical, Identical], findings.Select(finding => finding.Check));
+        Assert.All(findings, finding => Assert.EndsWith("extract one shared method whose parameters are the parts that differ.", finding.Message, StringComparison.Ordinal));
+        Assert.DoesNotContain(findings, finding => finding.Message.Contains("make one call the other", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void A_copy_that_is_part_of_a_body_is_duplicate_code()
     {
         var findings = Run(Type(Method(Daily, Body) + Method(Weekly, $"        Console.WriteLine();\n{Body}")));
