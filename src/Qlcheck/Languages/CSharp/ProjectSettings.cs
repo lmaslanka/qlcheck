@@ -44,6 +44,8 @@ internal sealed record ProjectSettings(
 
     private const string NullableName = "Nullable";
 
+    private const string AssemblyNameName = "AssemblyName";
+
     private const string OutputTypeName = "OutputType";
 
     private const string TargetFrameworkName = "TargetFramework";
@@ -75,6 +77,9 @@ internal sealed record ProjectSettings(
     // A project with no target listed is taken to be annotated.
     public bool HasNullableAnnotatedTarget => TargetFrameworks.Count == 0 || TargetFrameworks.Any(IsAnnotated);
 
+    // The <AssemblyName> property, or null when the project keeps the default (the csproj file name).
+    public string? AssemblyName { get; init; }
+
     public static ProjectSettings Load(string csproj)
     {
         var project = XDocument.Load(csproj);
@@ -88,7 +93,10 @@ internal sealed record ProjectSettings(
             TargetFrameworksOf(properties),
             IsOn(properties.GetValueOrDefault(ImplicitUsingsName)),
             Items(documents, UsingName).SelectMany(UsingsOf).ToList(),
-            FrameworkReferencesOf(Items(documents, FrameworkReferenceName)));
+            FrameworkReferencesOf(Items(documents, FrameworkReferenceName)))
+        {
+            AssemblyName = properties.GetValueOrDefault(AssemblyNameName) is { Length: > 0 } name ? name : null,
+        };
     }
 
     private static string? FindDirectoryBuildProps(string csproj)

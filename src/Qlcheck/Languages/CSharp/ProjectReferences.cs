@@ -150,7 +150,9 @@ internal static class ProjectReferences
             return;
         }
 
-        var assemblyName = Path.GetFileNameWithoutExtension(referencedCsproj);
+        // The output is named by <AssemblyName> when the project sets one; the file system may be case-sensitive.
+        var assemblyName = (File.Exists(referencedCsproj) ? ProjectSettings.Load(referencedCsproj).AssemblyName : null)
+            ?? Path.GetFileNameWithoutExtension(referencedCsproj);
         var dll = Directory.EnumerateFiles(binDir, assemblyName + DllSuffix, SearchOption.AllDirectories)
             .OrderByDescending(File.GetLastWriteTimeUtc)
             .FirstOrDefault();

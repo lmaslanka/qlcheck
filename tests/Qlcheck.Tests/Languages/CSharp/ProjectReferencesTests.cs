@@ -159,6 +159,38 @@ public class ProjectReferencesTests
         }
     }
 
+    [Fact]
+    public void Load_finds_a_referenced_project_output_by_its_assembly_name()
+    {
+        var dir = CreateProjectDir();
+        try
+        {
+            var libDir = Directory.CreateDirectory(Path.Combine(dir.Root.FullName, "lib"));
+            File.WriteAllText(Path.Combine(libDir.FullName, "Lib.csproj"), "<Project><PropertyGroup><AssemblyName>lib</AssemblyName></PropertyGroup></Project>");
+            var binDir = Directory.CreateDirectory(Path.Combine(libDir.FullName, "bin", "Debug", "net10.0"));
+            EmitAssembly(Path.Combine(binDir.FullName, "lib.dll"));
+            WriteAssets(dir, $$"""
+                {
+                  "packageFolders": { "{{dir.Packages}}": {} },
+                  "libraries": {
+                    "Lib/1.0.0": { "type": "project", "path": "lib/Lib.csproj" }
+                  },
+                  "targets": {
+                    "net10.0": {
+                      "Lib/1.0.0": { "type": "project", "compile": { "bin/placeholder/Lib.dll": {} } }
+                    }
+                  }
+                }
+                """);
+
+            Assert.Single(ProjectReferences.Load(dir.Csproj));
+        }
+        finally
+        {
+            dir.Root.Delete(recursive: true);
+        }
+    }
+
     private static ProjectDir CreateProjectDir()
     {
         var root = Directory.CreateTempSubdirectory("qlcheck_projrefs_");
