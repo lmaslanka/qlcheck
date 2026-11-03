@@ -96,8 +96,11 @@ internal static class CSharpCompilations
             return [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)];
         }
 
+        // Only the runtime's own assemblies: the process also trusts qlcheck, Roslyn and their
+        // dependencies, which a scanned project never referenced (plan 09).
+        var runtime = Path.GetDirectoryName(typeof(object).Assembly.Location);
         return tpa.Split(Path.PathSeparator)
-            .Where(File.Exists)
+            .Where(path => File.Exists(path) && string.Equals(Path.GetDirectoryName(path), runtime, StringComparison.Ordinal))
             .Select(p => (MetadataReference)MetadataReference.CreateFromFile(p))
             .ToArray();
     }

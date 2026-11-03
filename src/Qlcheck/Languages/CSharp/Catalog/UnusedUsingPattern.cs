@@ -10,7 +10,7 @@ internal static class UnusedUsingPattern
 
     private static readonly HashSet<string> UnresolvedDiagnosticIds = new(StringComparer.Ordinal)
     {
-        "CS0103", "CS0246", "CS1061",
+        "CS0103", "CS0122", "CS0246", "CS1061",
     };
 
     public static void Apply(CompilationContext ctx, string id)

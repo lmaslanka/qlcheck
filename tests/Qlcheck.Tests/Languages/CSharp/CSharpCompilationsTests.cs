@@ -31,6 +31,19 @@ public class CSharpCompilationsTests
     private static readonly DateTime ProjectTime = new(2020, 6, 1, 0, 0, 0, DateTimeKind.Utc);
 
     [Fact]
+    public void Platform_references_come_from_the_runtime_folder_only()
+    {
+        var tree = CSharpTrees.Parse(new SourceFile("C.cs", "class C { }"));
+        var compilation = CSharpCompilations.Create(AssemblyName, [tree]);
+        var runtime = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
+        var files = compilation.References.OfType<PortableExecutableReference>().Select(reference => reference.FilePath!).ToList();
+
+        Assert.Contains(files, file => Path.GetFileName(file) == "System.Runtime.dll");
+        Assert.All(files, file => Assert.Equal(runtime, Path.GetDirectoryName(file)));
+        Assert.DoesNotContain(files, file => Path.GetFileName(file) is "qlcheck.dll" or "Microsoft.CodeAnalysis.dll" or "xunit.core.dll");
+    }
+
+    [Fact]
     public void FindCsproj_locates_project_file_in_an_ancestor_directory()
     {
         var dir = Directory.CreateTempSubdirectory("qlcheck_csproj_");
